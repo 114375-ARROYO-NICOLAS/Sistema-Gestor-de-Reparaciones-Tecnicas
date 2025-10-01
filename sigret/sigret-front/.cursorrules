@@ -1,0 +1,138 @@
+You are an expert in TypeScript, Angular, PWA development, and scalable web application development. You write maintainable, performant, and accessible code following Angular and TypeScript best practices.
+
+## TypeScript Best Practices
+
+- Use strict type checking
+- Prefer type inference when the type is obvious
+- Avoid the `any` type; use `unknown` when type is uncertain
+- Use `as const` for literal types and readonly arrays
+- Prefer `interface` over `type` for object shapes
+
+## Angular Best Practices
+
+- Always use standalone components over NgModules
+- Must NOT set `standalone: true` inside Angular decorators. It's the default.
+- Use signals for state management
+- Implement lazy loading for feature routes
+- Do NOT use the `@HostBinding` and `@HostListener` decorators. Put host bindings inside the `host` object of the `@Component` or `@Directive` decorator instead
+- Use `NgOptimizedImage` for all static images.
+  - `NgOptimizedImage` does not work for inline base64 images.
+- Always implement proper error boundaries and loading states
+- Use `trackBy` functions with `@for` loops for better performance
+
+## PWA-Specific Best Practices
+
+- Always handle offline scenarios gracefully
+- Use the Angular Service Worker for caching strategies
+- Implement proper loading states and offline indicators
+- Handle failed HTTP requests with retry mechanisms and fallback content
+- Use `navigator.onLine` to detect connectivity status
+- Implement app update notifications when new versions are available
+- Cache critical resources and API responses
+- Use lazy loading extensively to improve initial load performance
+- Optimize bundle size and implement code splitting
+- Handle install prompts and app shortcuts properly
+- Ensure all images have proper `loading="lazy"` attributes
+- Use `rel="preload"` for critical resources
+
+## Components
+
+- Keep components small and focused on a single responsibility
+- Use `input()` and `output()` functions instead of decorators
+- Use `computed()` for derived state
+- Set `changeDetection: ChangeDetectionStrategy.OnPush` in `@Component` decorator
+- Prefer inline templates for small components
+- Prefer Reactive forms instead of Template-driven ones
+- Do NOT use `ngClass`, use `class` bindings instead
+- Do NOT use `ngStyle`, use `style` bindings instead
+- Always implement proper loading and error states
+- Use `@defer` for non-critical components to improve initial load
+
+## State Management
+
+- Use signals for local component state
+- Use `computed()` for derived state
+- Keep state transformations pure and predictable
+- Do NOT use `mutate` on signals, use `update` or `set` instead
+- Implement proper state persistence for offline scenarios
+- Use `effect()` sparingly and only for side effects
+
+## Templates
+
+- Keep templates simple and avoid complex logic
+- Use native control flow (`@if`, `@for`, `@switch`) instead of `*ngIf`, `*ngFor`, `*ngSwitch`
+- Use the async pipe to handle observables
+- Always provide fallback content for async operations
+- Use semantic HTML elements for better accessibility
+- Implement proper ARIA attributes for screen readers
+
+## Services
+
+- Design services around a single responsibility
+- Use the `providedIn: 'root'` option for singleton services
+- Use the `inject()` function instead of constructor injection
+- Implement proper error handling and retry logic
+- Use interceptors for common concerns (auth, loading, errors)
+- Cache API responses appropriately for offline usage
+
+## PrimeNG Integration
+
+- Import only the specific PrimeNG modules you need
+- Use PrimeNG's built-in accessibility features
+- For styling and layout, priorize PrimeFlex classes instead of custom CSS
+- Use PrimeNG's lazy loading features for large datasets
+- Implement proper keyboard navigation with PrimeNG components
+- Use PrimeNG's responsive utilities for mobile-first design
+
+## Performance Optimization
+
+- Use `OnPush` change detection strategy everywhere possible
+- Implement virtual scrolling for large lists
+- Use `trackBy` functions with loops
+- Lazy load routes and feature modules
+- Optimize images with proper formats (WebP, AVIF)
+- Minimize bundle size with tree-shaking
+- Use `@defer` blocks for non-critical content
+- Implement proper caching strategies with Service Worker
+
+## HTTP and API Integration
+
+- Always handle loading, success, and error states
+- Use proper typing for API responses
+- Implement retry logic with exponential backoff
+- Handle network failures gracefully with fallback content
+- Use interceptors for common concerns (auth tokens, error handling)
+- Cache GET requests appropriately for offline scenarios
+- Use RxJS operators efficiently (`switchMap`, `catchError`, `retry`)
+
+## Accessibility & UX
+
+- Follow WCAG 2.1 AA guidelines
+- Use semantic HTML elements
+- Provide proper ARIA labels and descriptions
+- Ensure keyboard navigation works properly
+- Use focus management for dynamic content
+- Provide clear loading and error feedback
+- Test with screen readers
+- Maintain proper color contrast ratios
+- Support both light and dark themes
+
+## Mobile & Responsive Design
+
+- Use mobile-first responsive design approach
+- Implement touch-friendly interactions (44px minimum touch targets)
+- Use CSS Grid and Flexbox for layouts (PrimeFlex)
+- Test on various device sizes and orientations
+- Optimize for different screen densities
+- Use viewport meta tag properly
+- Implement pull-to-refresh where appropriate
+
+## Security Best Practices
+
+- Sanitize user inputs
+- Use HTTPS everywhere
+- Implement proper authentication and authorization
+- Use Content Security Policy (CSP) headers
+- Avoid storing sensitive data in localStorage
+- Implement proper logout functionality
+- Use secure HTTP-only cookies for sensitive data

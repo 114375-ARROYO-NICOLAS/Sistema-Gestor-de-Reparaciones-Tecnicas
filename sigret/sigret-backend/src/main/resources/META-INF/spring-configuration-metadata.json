@@ -1,0 +1,51 @@
+{
+  "groups": [
+    {
+      "name": "jwt",
+      "type": "com.sigret.config.JwtProperties",
+      "description": "Configuración de JWT para autenticación"
+    },
+    {
+      "name": "cors",
+      "type": "com.sigret.config.CorsProperties", 
+      "description": "Configuración de CORS para el API"
+    }
+  ],
+  "properties": [
+    {
+      "name": "jwt.secret",
+      "type": "java.lang.String",
+      "description": "Clave secreta para firmar los tokens JWT"
+    },
+    {
+      "name": "jwt.expiration",
+      "type": "java.lang.Long",
+      "description": "Tiempo de expiración del token JWT en milisegundos"
+    },
+    {
+      "name": "jwt.refresh-expiration",
+      "type": "java.lang.Long",
+      "description": "Tiempo de expiración del refresh token en milisegundos"
+    },
+    {
+      "name": "cors.allowed-origins",
+      "type": "java.lang.String",
+      "description": "Orígenes permitidos para CORS (separados por comas)"
+    },
+    {
+      "name": "cors.allowed-methods",
+      "type": "java.lang.String",
+      "description": "Métodos HTTP permitidos para CORS"
+    },
+    {
+      "name": "cors.allowed-headers",
+      "type": "java.lang.String",
+      "description": "Headers permitidos para CORS"
+    },
+    {
+      "name": "cors.allow-credentials",
+      "type": "java.lang.Boolean",
+      "description": "Permitir credenciales en las peticiones CORS"
+    }
+  ]
+}

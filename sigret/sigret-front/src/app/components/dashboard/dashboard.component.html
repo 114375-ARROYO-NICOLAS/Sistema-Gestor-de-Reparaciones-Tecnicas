@@ -1,0 +1,100 @@
+<div class="flex flex-column gap-6">
+  <!-- Header -->
+  <div class="text-center">
+    <h1 class="text-4xl font-bold text-900 mb-2">Dashboard</h1>
+    <p class="text-lg text-600">Bienvenido al Sistema Gestor de Reparaciones Técnicas</p>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="grid">
+    <div class="col-12 md:col-6 lg:col-3">
+      <p-card class="surface-card shadow-2 border-round">
+        <div class="flex align-items-center justify-content-center bg-primary border-round mb-4" style="width: 3rem; height: 3rem;">
+          <i class="pi pi-wrench text-primary-50 text-xl"></i>
+        </div>
+        <div class="text-3xl font-bold text-900 mb-1">24</div>
+        <div class="text-sm font-medium text-600">Reparaciones Activas</div>
+        <div class="text-xs text-500">En Proceso</div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <p-card class="surface-card shadow-2 border-round">
+        <div class="flex align-items-center justify-content-center bg-green-500 border-round mb-4" style="width: 3rem; height: 3rem;">
+          <i class="pi pi-users text-white text-xl"></i>
+        </div>
+        <div class="text-3xl font-bold text-900 mb-1">156</div>
+        <div class="text-sm font-medium text-600">Clientes</div>
+        <div class="text-xs text-500">Registrados</div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <p-card class="surface-card shadow-2 border-round">
+        <div class="flex align-items-center justify-content-center bg-orange-500 border-round mb-4" style="width: 3rem; height: 3rem;">
+          <i class="pi pi-calendar text-white text-xl"></i>
+        </div>
+        <div class="text-3xl font-bold text-900 mb-1">8</div>
+        <div class="text-sm font-medium text-600">Citas Hoy</div>
+        <div class="text-xs text-500">Programadas</div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <p-card class="surface-card shadow-2 border-round">
+        <div class="flex align-items-center justify-content-center bg-purple-500 border-round mb-4" style="width: 3rem; height: 3rem;">
+          <i class="pi pi-box text-white text-xl"></i>
+        </div>
+        <div class="text-3xl font-bold text-900 mb-1">342</div>
+        <div class="text-sm font-medium text-600">Inventario</div>
+        <div class="text-xs text-500">Productos</div>
+      </p-card>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <p-card class="surface-card shadow-2 border-round">
+    <ng-template pTemplate="header">
+      <div class="flex align-items-center gap-3">
+        <div class="flex align-items-center justify-content-center bg-primary-100 border-round" style="width: 2rem; height: 2rem;">
+          <i class="pi pi-bolt text-primary"></i>
+        </div>
+        <h2 class="text-xl font-semibold text-900 m-0">Acciones Rápidas</h2>
+      </div>
+    </ng-template>
+    
+    <div class="grid">
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-button 
+          label="Nueva Reparación" 
+          icon="pi pi-plus" 
+          class="w-full">
+        </p-button>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-button 
+          label="Registrar Cliente" 
+          icon="pi pi-user-plus" 
+          severity="secondary"
+          class="w-full">
+        </p-button>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-button 
+          label="Ver Inventario" 
+          icon="pi pi-box" 
+          severity="help"
+          class="w-full">
+        </p-button>
+      </div>
+      <div class="col-12 md:col-6 lg:col-3">
+        <p-button 
+          label="Calendario" 
+          icon="pi pi-calendar" 
+          severity="info"
+          class="w-full">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+</div>

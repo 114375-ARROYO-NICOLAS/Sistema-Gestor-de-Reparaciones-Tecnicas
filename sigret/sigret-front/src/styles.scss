@@ -1,0 +1,98 @@
+// PrimeNG theme is configured in app.config.ts
+// No need to import theme files manually
+
+// Importar fuentes personalizadas
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+// Estilos base para el layout
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  html, body {
+    height: 100vh;
+    font-family: 'Inter', var(--p-font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--p-surface-ground);
+    font-weight: 400;
+    line-height: 1.5;
+  }
+
+  // Configuración de fuentes personalizadas
+  :root {
+    --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  }
+
+  // Aplicar fuente personalizada a elementos específicos
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-primary);
+    font-weight: 600;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-family-mono);
+  }
+
+  // Mejorar la tipografía de PrimeNG
+  .p-component {
+    font-family: var(--font-family-primary);
+  }
+
+  // Estilos para el layout principal
+  .main-layout {
+    font-family: var(--font-family-primary);
+  }
+
+  // Mejorar la legibilidad del texto
+  .text-900, .text-800, .text-700 {
+    font-weight: 500;
+  }
+
+  .text-600, .text-500 {
+    font-weight: 400;
+  }
+  
+  // Clases de utilidad adicionales para tu layout
+  .fixed {
+    position: fixed;
+  }
+  
+  .z-5 { z-index: 1000; }
+  .z-4 { z-index: 999; }
+  .z-3 { z-index: 998; }
+  
+  .top-0 { top: 0; }
+  .left-0 { left: 0; }
+  .right-0 { right: 0; }
+  .bottom-0 { bottom: 0; }
+  
+  .translate-x-0 { transform: translateX(0); }
+  .-translate-x-full { transform: translateX(-100%); }
+  
+  .transition-transform { transition: transform 300ms ease; }
+  .transition-opacity { transition: opacity 300ms ease; }
+  .transition-all { transition: all 300ms ease; }
+  
+  .opacity-0 { opacity: 0; }
+  .opacity-100 { opacity: 1; }
+  
+  .pointer-events-none { pointer-events: none; }
+  .pointer-events-auto { pointer-events: auto; }
+  
+  .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
+  
+  .bg-black-alpha-50 { background-color: rgba(0, 0, 0, 0.5); }
+  
+  .ml-18rem { margin-left: 18rem; }
+  
+  .max-h-0 { max-height: 0; }
+  .max-h-96 { max-height: 24rem; }
+  
+  // Responsive
+  @media (max-width: 768px) {
+    .ml-18rem {
+      margin-left: 0;
+    }
+  }

@@ -1,0 +1,68 @@
+<div class="min-h-screen flex align-items-center justify-content-center p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+  <div class="surface-card p-6 shadow-5 border-round-3xl w-full max-w-25rem">
+    <div class="text-center mb-6">
+      <div class="flex justify-content-center mb-4">
+        <div class="flex align-items-center justify-content-center bg-primary border-round-2xl shadow-3" style="width: 4rem; height: 4rem;">
+          <i class="pi pi-wrench text-primary-50 text-2xl"></i>
+        </div>
+      </div>
+      <h1 class="text-3xl font-bold text-900 mb-2">SIGRET</h1>
+      <p class="text-600 font-medium">Sistema Gestor de Reparaciones Técnicas</p>
+    </div>
+
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <div class="field mb-4">
+        <label for="username" class="block text-900 font-semibold mb-2">
+          Usuario
+        </label>
+        <input
+          type="text"
+          id="username"
+          pInputText
+          formControlName="username"
+          placeholder="Ingrese su usuario"
+          class="w-full"
+        />
+        @if (getFieldError('username')) {
+          <small class="p-error block mt-1">{{ getFieldError('username') }}</small>
+        }
+      </div>
+
+      <div class="field mb-4">
+        <label for="password" class="block text-900 font-semibold mb-2">
+          Contraseña
+        </label>
+        <p-password
+          id="password"
+          formControlName="password"
+          placeholder="Ingrese su contraseña"
+          [feedback]="false"
+          [toggleMask]="true"
+          class="w-full"
+          inputStyleClass="w-full">
+        </p-password>
+        @if (getFieldError('password')) {
+          <small class="p-error block mt-1">{{ getFieldError('password') }}</small>
+        }
+      </div>
+
+      @if (errorMessage()) {
+        <div class="bg-red-50 border-1 border-red-200 border-round p-3 mb-3">
+          <div class="flex align-items-center">
+            <i class="pi pi-exclamation-triangle text-red-500 mr-2"></i>
+            <p class="text-red-700 text-sm m-0">{{ errorMessage() }}</p>
+          </div>
+        </div>
+      }
+
+      <p-button
+        type="submit"
+        label="Iniciar Sesión"
+        icon="pi pi-sign-in"
+        class="w-full"
+        [loading]="isLoading()"
+        [disabled]="loginForm.invalid || isLoading()"
+      ></p-button>
+    </form>
+  </div>
+</div>
