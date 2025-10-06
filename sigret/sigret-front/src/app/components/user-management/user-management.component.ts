@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -19,15 +19,14 @@ import { DividerModule } from 'primeng/divider';
 import { BadgeModule } from 'primeng/badge';
 
 import { UserService } from '../../services/user.service';
-import { EmployeeService } from '../../services/employee.service';
 import { 
   User, 
-  UserCreateRequest, 
   UserUpdateRequest, 
   UserRole,
   UserListResponse 
 } from '../../models/user.model';
-import { EmployeeWithoutUser } from '../../models/employee.model';
+// Los usuarios se crean automáticamente al crear empleados
+// Este componente solo gestiona usuarios existentes (editar, activar/desactivar)
 
 @Component({
   selector: 'app-user-management',
@@ -58,16 +57,28 @@ import { EmployeeWithoutUser } from '../../models/employee.model';
           <p class="text-600 mt-2">Administra los usuarios del sistema y sus permisos</p>
         </div>
         <p-button 
-          label="Nuevo Usuario" 
-          icon="pi pi-plus" 
-          (click)="openCreateDialog()"
-          severity="primary">
+          label="Ir a Gestión de Empleados" 
+          icon="pi pi-users" 
+          (click)="navigateToEmployees()"
+          severity="secondary">
         </p-button>
+      </div>
+
+      <!-- Info Alert -->
+      <div class="mb-4">
+        <div class="bg-blue-50 p-3 border-round border-1 border-blue-200">
+          <p class="text-sm text-blue-900 m-0">
+            <i class="pi pi-info-circle mr-2"></i>
+            <strong>Nota:</strong> Los usuarios se crean automáticamente al crear empleados. 
+            Desde aquí puedes editar roles, activar/desactivar usuarios y cambiar contraseñas.
+            Para crear nuevos usuarios, ve a <strong>Gestión de Empleados</strong>.
+          </p>
+        </div>
       </div>
 
       <!-- Stats Cards -->
       <div class="grid mb-4">
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-4">
           <p-card class="text-center">
             <ng-template pTemplate="content">
               <div class="text-3xl font-bold text-primary">{{ totalUsers() }}</div>
@@ -75,7 +86,7 @@ import { EmployeeWithoutUser } from '../../models/employee.model';
             </ng-template>
           </p-card>
         </div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-4">
           <p-card class="text-center">
             <ng-template pTemplate="content">
               <div class="text-3xl font-bold text-green-500">{{ activeUsers() }}</div>
@@ -83,19 +94,11 @@ import { EmployeeWithoutUser } from '../../models/employee.model';
             </ng-template>
           </p-card>
         </div>
-        <div class="col-12 md:col-3">
+        <div class="col-12 md:col-4">
           <p-card class="text-center">
             <ng-template pTemplate="content">
               <div class="text-3xl font-bold text-orange-500">{{ inactiveUsers() }}</div>
               <div class="text-600">Usuarios Inactivos</div>
-            </ng-template>
-          </p-card>
-        </div>
-        <div class="col-12 md:col-3">
-          <p-card class="text-center">
-            <ng-template pTemplate="content">
-              <div class="text-3xl font-bold text-purple-500">{{ availableEmployees() }}</div>
-              <div class="text-600">Empleados Disponibles</div>
             </ng-template>
           </p-card>
         </div>
@@ -120,11 +123,6 @@ import { EmployeeWithoutUser } from '../../models/employee.model';
         </ng-template>
 
         <ng-template pTemplate="content">
-          @if (isLoading()) {
-            <div class="flex justify-content-center p-4">
-              <p-progressSpinner></p-progressSpinner>
-            </div>
-          } @else {
             <p-table 
               [value]="users()" 
               [paginator]="true" 
@@ -233,80 +231,41 @@ import { EmployeeWithoutUser } from '../../models/employee.model';
                         <p class="text-600">Crea el primer usuario del sistema</p>
                       </div>
                       <p-button 
-                        label="Crear Usuario" 
-                        icon="pi pi-plus"
-                        (click)="openCreateDialog()"
-                        severity="primary">
+                        label="Ir a Gestión de Empleados" 
+                        icon="pi pi-users"
+                        (click)="navigateToEmployees()"
+                        severity="secondary">
                       </p-button>
                     </div>
                   </td>
                 </tr>
               </ng-template>
             </p-table>
-          }
         </ng-template>
       </p-card>
 
-      <!-- Create/Edit User Dialog -->
+      <!-- Edit User Dialog -->
       <p-dialog 
-        [header]="isEditMode() ? 'Editar Usuario' : 'Crear Usuario'"
+        header="Editar Usuario"
         [visible]="showUserDialog()"
+        (visibleChange)="showUserDialog.set($event)"
         [modal]="true"
         [closable]="true"
-        [style]="{ width: '600px' }"
+        [style]="{ width: '500px' }"
         (onHide)="closeUserDialog()">
         
         <form [formGroup]="userForm" (ngSubmit)="saveUser()">
           <div class="grid">
-            <div class="col-12">
-              <label for="empleado" class="block text-900 font-medium mb-2">Empleado *</label>
-              <p-select
-                id="empleado"
-                formControlName="empleadoId"
-                [options]="availableEmployeesList()"
-                optionLabel="nombreCompleto"
-                optionValue="id"
-                placeholder="Seleccionar empleado"
-                class="w-full">
-              </p-select>
-            </div>
-
-            <div class="col-12">
-              <label for="username" class="block text-900 font-medium mb-2">Nombre de Usuario *</label>
-              <div class="p-inputgroup">
-                <input 
-                  id="username"
-                  type="text"
-                  pInputText
-                  formControlName="username"
-                  placeholder="Ingrese el nombre de usuario"
-                  class="w-full">
-                <p-button 
-                  icon="pi pi-refresh"
-                  severity="secondary"
-                  (click)="generateUsername()"
-                  title="Generar automáticamente">
-                </p-button>
+            @if (selectedUser()) {
+              <div class="col-12">
+                <div class="bg-blue-50 p-3 border-round mb-3">
+                  <p class="text-sm text-blue-900 m-0">
+                    <i class="pi pi-user mr-2"></i>
+                    Usuario: <strong>{{ selectedUser()!.username }}</strong> - {{ selectedUser()!.nombreCompleto }}
+                  </p>
+                </div>
               </div>
-              @if (userForm.get('username')?.errors?.['usernameTaken']) {
-                <small class="text-red-500">Este nombre de usuario ya está en uso</small>
-              }
-            </div>
-
-            <div class="col-12">
-              <label for="password" class="block text-900 font-medium mb-2">
-                {{ isEditMode() ? 'Nueva Contraseña' : 'Contraseña' }} 
-                {{ isEditMode() ? '(opcional)' : '*' }}
-              </label>
-              <p-password
-                id="password"
-                formControlName="password"
-                [placeholder]="isEditMode() ? 'Dejar vacío para mantener actual' : 'Ingrese la contraseña'"
-                [feedback]="true"
-                [toggleMask]="true"
-                class="w-full">
-              </p-password>
-            </div>
+            }
 
             <div class="col-12">
               <label for="rol" class="block text-900 font-medium mb-2">Rol *</label>
@@ -333,30 +292,31 @@ import { EmployeeWithoutUser } from '../../models/employee.model';
               </div>
             </div>
           </div>
-
-          <ng-template pTemplate="footer">
-            <div class="flex justify-content-end gap-2">
-              <p-button 
-                label="Cancelar" 
-                severity="secondary"
-                text
-                (click)="closeUserDialog()">
-              </p-button>
-              <p-button 
-                [label]="isEditMode() ? 'Actualizar' : 'Crear'"
-                [loading]="isSaving()"
-                type="submit"
-                [disabled]="userForm.invalid">
-              </p-button>
-            </div>
-          </ng-template>
         </form>
+
+        <ng-template pTemplate="footer">
+          <div class="flex justify-content-end gap-2">
+            <p-button 
+              label="Cancelar" 
+              severity="secondary"
+              text
+              (click)="closeUserDialog()">
+            </p-button>
+            <p-button 
+              label="Actualizar"
+              [loading]="isSaving()"
+              (click)="saveUser()"
+              [disabled]="userForm.invalid">
+            </p-button>
+          </div>
+        </ng-template>
       </p-dialog>
 
       <!-- Change Password Dialog -->
       <p-dialog 
         header="Cambiar Contraseña"
         [visible]="showPasswordDialog()"
+        (visibleChange)="showPasswordDialog.set($event)"
         [modal]="true"
         [closable]="true"
         [style]="{ width: '400px' }"
@@ -403,24 +363,24 @@ import { EmployeeWithoutUser } from '../../models/employee.model';
               }
             </div>
           </div>
-
-          <ng-template pTemplate="footer">
-            <div class="flex justify-content-end gap-2">
-              <p-button 
-                label="Cancelar" 
-                severity="secondary"
-                text
-                (click)="closePasswordDialog()">
-              </p-button>
-              <p-button 
-                label="Cambiar Contraseña"
-                [loading]="isSaving()"
-                type="submit"
-                [disabled]="passwordForm.invalid">
-              </p-button>
-            </div>
-          </ng-template>
         </form>
+
+        <ng-template pTemplate="footer">
+          <div class="flex justify-content-end gap-2">
+            <p-button 
+              label="Cancelar" 
+              severity="secondary"
+              text
+              (click)="closePasswordDialog()">
+            </p-button>
+            <p-button 
+              label="Cambiar Contraseña"
+              [loading]="isSaving()"
+              (click)="changePassword()"
+              [disabled]="passwordForm.invalid">
+            </p-button>
+          </div>
+        </ng-template>
       </p-dialog>
     </div>
 
@@ -440,7 +400,8 @@ import { EmployeeWithoutUser } from '../../models/employee.model';
     .p-dialog-content {
       padding: 1.5rem;
     }
-  `]
+  `],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UserManagementComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
@@ -448,11 +409,10 @@ export class UserManagementComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
   public readonly userService = inject(UserService);
-  private readonly employeeService = inject(EmployeeService);
+  // EmployeeService ya no es necesario aquí
 
   // Signals
   public readonly users = signal<User[]>([]);
-  public readonly availableEmployeesList = signal<EmployeeWithoutUser[]>([]);
   public readonly isLoading = signal(false);
   public readonly isSaving = signal(false);
   public readonly showUserDialog = signal(false);
@@ -462,12 +422,14 @@ export class UserManagementComponent implements OnInit {
   public readonly totalRecords = signal(0);
   public readonly currentPage = signal(0);
   public readonly pageSize = 10;
+  
+  // Flag para evitar loop infinito en lazy load
+  private isLoadingData = false;
 
   // Computed signals
-  public readonly totalUsers = computed(() => this.users().length);
+  public readonly totalUsers = computed(() => this.totalRecords());
   public readonly activeUsers = computed(() => this.users().filter(u => u.activo).length);
   public readonly inactiveUsers = computed(() => this.users().filter(u => !u.activo).length);
-  public readonly availableEmployees = computed(() => this.availableEmployeesList().length);
 
   // Forms
   public userForm: FormGroup;
@@ -486,15 +448,13 @@ export class UserManagementComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadUsers();
-    this.loadAvailableEmployees();
+    // NO llamar a loadUsers() aquí porque el p-table con [lazy]="true" 
+    // lo disparará automáticamente cuando se inicialice
   }
 
   private createUserForm(): FormGroup {
+    // Solo para editar roles y estado, no para crear usuarios
     return this.fb.group({
-      empleadoId: [null, Validators.required],
-      username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
-      password: ['', [Validators.minLength(6)]],
       rol: [UserRole.TECNICO, Validators.required],
       activo: [true]
     });
@@ -524,48 +484,46 @@ export class UserManagementComponent implements OnInit {
   }
 
   loadUsers(event?: any): void {
+    // PREVENIR LOOP INFINITO: Si ya está cargando, no hacer nada
+    if (this.isLoadingData) {
+      console.warn('⚠️ Ya hay una carga de usuarios en progreso, ignorando esta llamada');
+      return;
+    }
+    
+    this.isLoadingData = true;
     this.isLoading.set(true);
     
-    const page = event ? event.first / event.rows : 0;
+    const page = event ? event.first / event.rows : this.currentPage();
     this.currentPage.set(page);
+
+    console.log('🔄 Cargando usuarios - Página:', page);
 
     this.userService.getUsers(page, this.pageSize).subscribe({
       next: (response: UserListResponse) => {
+        console.log('✅ Usuarios cargados:', response.content.length, 'de', response.totalElements);
         this.users.set(response.content);
         this.totalRecords.set(response.totalElements);
         this.isLoading.set(false);
+        this.isLoadingData = false;
       },
       error: (error) => {
+        console.error('❌ Error al cargar usuarios:', error);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
           detail: 'Error al cargar usuarios: ' + error.message
         });
         this.isLoading.set(false);
+        this.isLoadingData = false;
       }
     });
   }
 
-  loadAvailableEmployees(): void {
-    this.employeeService.getEmployeesWithoutUser().subscribe({
-      next: (employees) => {
-        this.availableEmployeesList.set(employees);
-      },
-      error: (error) => {
-        console.error('Error loading available employees:', error);
-        // Don't show error to user as this is not critical
-      }
-    });
-  }
+  // Los empleados con usuarios se gestionan desde el módulo de empleados
+  // No se necesita listar empleados sin usuario porque todos los empleados tienen usuario
 
-  openCreateDialog(): void {
-    this.isEditMode.set(false);
-    this.selectedUser.set(null);
-    this.userForm.reset({
-      rol: UserRole.TECNICO,
-      activo: true
-    });
-    this.showUserDialog.set(true);
+  navigateToEmployees(): void {
+    this.router.navigate(['/empleados']);
   }
 
   openEditDialog(user: User): void {
@@ -588,46 +546,8 @@ export class UserManagementComponent implements OnInit {
     this.isEditMode.set(false);
   }
 
-  generateUsername(): void {
-    const empleadoId = this.userForm.get('empleadoId')?.value;
-    if (empleadoId) {
-      const employee = this.availableEmployeesList().find(e => e.id === empleadoId);
-      if (employee) {
-        // Extract first and last name from employee name
-        const nameParts = employee.nombreCompleto.split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || '';
-        
-        const generatedUsername = this.userService.generateUsername(firstName, lastName);
-        this.userForm.patchValue({ username: generatedUsername });
-        
-        // Check availability
-        this.checkUsernameAvailability(generatedUsername);
-      }
-    }
-  }
-
-  checkUsernameAvailability(username: string): void {
-    if (username && username.length >= 3) {
-      this.userService.checkUsernameAvailability(username).subscribe({
-        next: (available) => {
-          if (!available) {
-            this.userForm.get('username')?.setErrors({ usernameTaken: true });
-          } else {
-            const errors = this.userForm.get('username')?.errors;
-            if (errors?.['usernameTaken']) {
-              delete errors['usernameTaken'];
-              if (Object.keys(errors).length === 0) {
-                this.userForm.get('username')?.setErrors(null);
-              } else {
-                this.userForm.get('username')?.setErrors(errors);
-              }
-            }
-          }
-        }
-      });
-    }
-  }
+  // Métodos eliminados: ya no se crean usuarios desde aquí
+  // Los usuarios se crean automáticamente al crear empleados
 
   saveUser(): void {
     if (this.userForm.valid) {
@@ -635,69 +555,33 @@ export class UserManagementComponent implements OnInit {
       
       const formValue = this.userForm.value;
       
-      if (this.isEditMode()) {
-        const updateData: UserUpdateRequest = {
-          username: formValue.username,
-          rol: formValue.rol,
-          activo: formValue.activo
-        };
-        
-        // Only include password if provided
-        if (formValue.password) {
-          updateData.password = formValue.password;
+      // Solo edición de rol y estado (no se crean usuarios desde aquí)
+      const updateData: UserUpdateRequest = {
+        rol: formValue.rol,
+        activo: formValue.activo
+      };
+      
+      this.userService.updateUser(this.selectedUser()!.id, updateData).subscribe({
+        next: () => {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Éxito',
+            detail: 'Usuario actualizado correctamente'
+          });
+          this.closeUserDialog();
+          // Recargar con la página actual
+          this.loadUsers({ first: this.currentPage() * this.pageSize, rows: this.pageSize });
+          this.isSaving.set(false);
+        },
+        error: (error) => {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'Error al actualizar usuario: ' + error.message
+          });
+          this.isSaving.set(false);
         }
-        
-        this.userService.updateUser(this.selectedUser()!.id, updateData).subscribe({
-          next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Éxito',
-              detail: 'Usuario actualizado correctamente'
-            });
-            this.closeUserDialog();
-            this.loadUsers();
-            this.isSaving.set(false);
-          },
-          error: (error) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: 'Error al actualizar usuario: ' + error.message
-            });
-            this.isSaving.set(false);
-          }
-        });
-      } else {
-        const createData: UserCreateRequest = {
-          empleadoId: formValue.empleadoId,
-          username: formValue.username,
-          password: formValue.password,
-          rol: formValue.rol,
-          activo: formValue.activo
-        };
-        
-        this.userService.createUser(createData).subscribe({
-          next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Éxito',
-              detail: 'Usuario creado correctamente'
-            });
-            this.closeUserDialog();
-            this.loadUsers();
-            this.loadAvailableEmployees(); // Refresh available employees
-            this.isSaving.set(false);
-          },
-          error: (error) => {
-            this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: 'Error al crear usuario: ' + error.message
-            });
-            this.isSaving.set(false);
-          }
-        });
-      }
+      });
     }
   }
 
@@ -709,7 +593,8 @@ export class UserManagementComponent implements OnInit {
           summary: 'Éxito',
           detail: 'Usuario activado correctamente'
         });
-        this.loadUsers();
+        // Recargar con la página actual
+        this.loadUsers({ first: this.currentPage() * this.pageSize, rows: this.pageSize });
       },
       error: (error) => {
         this.messageService.add({
@@ -729,7 +614,8 @@ export class UserManagementComponent implements OnInit {
           summary: 'Éxito',
           detail: 'Usuario desactivado correctamente'
         });
-        this.loadUsers();
+        // Recargar con la página actual
+        this.loadUsers({ first: this.currentPage() * this.pageSize, rows: this.pageSize });
       },
       error: (error) => {
         this.messageService.add({
@@ -802,8 +688,8 @@ export class UserManagementComponent implements OnInit {
           summary: 'Éxito',
           detail: 'Usuario eliminado correctamente'
         });
-        this.loadUsers();
-        this.loadAvailableEmployees(); // Refresh available employees
+        // Recargar con la página actual
+        this.loadUsers({ first: this.currentPage() * this.pageSize, rows: this.pageSize });
       },
       error: (error) => {
         this.messageService.add({

@@ -169,7 +169,7 @@ public class AuthController {
                     description = "No autorizado - Token inválido o expirado"
             )
     })
-    @SecurityRequirement(name = "Bearer Authentication")
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile() {
         try {
@@ -252,7 +252,7 @@ public class AuthController {
                     description = "Token inválido o expirado"
             )
     })
-    @SecurityRequirement(name = "Bearer Authentication")
+    @SecurityRequirement(name = "bearerAuth")
     @GetMapping("/validate")
     public ResponseEntity<?> validateToken() {
         // Si llegamos aquí, el token es válido (pasó por el filtro JWT)

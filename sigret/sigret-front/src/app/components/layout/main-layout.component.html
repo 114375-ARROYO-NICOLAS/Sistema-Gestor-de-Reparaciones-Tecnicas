@@ -1,17 +1,12 @@
-<div class="min-h-screen surface-ground main-layout">
-  <!-- Navbar Principal Fijo -->
-  <div class="fixed top-0 left-0 right-0 z-5 surface-card shadow-2 border-bottom-1 surface-border">
-    <div class="flex align-items-center justify-content-between px-4 py-3">
-      <!-- Logo y Sistema -->
-      <div class="flex align-items-center gap-3">
-        <p-button 
-          icon="pi pi-bars" 
-          severity="secondary"
-          text
-          (click)="toggleSidebar()"
-          class="p-2">
-        </p-button>
-        
+<div class="layout-wrapper" [ngClass]="containerClass">
+  <!-- Topbar -->
+  <div class="layout-topbar">
+    <div class="layout-topbar-start">
+      <button class="layout-topbar-menu-button" (click)="onMenuToggle()">
+        <i class="pi pi-bars"></i>
+      </button>
+      
+      <div class="layout-topbar-logo">
         <div class="flex align-items-center gap-3">
           <div class="flex align-items-center justify-content-center bg-primary border-round" 
                style="width: 2.5rem; height: 2.5rem;">
@@ -26,196 +21,133 @@
           </div>
         </div>
       </div>
-
-      <!-- Controles de Usuario -->
-      <div class="flex align-items-center gap-2">
-        <!-- Notificaciones -->
-        <p-button 
-          icon="pi pi-bell" 
-          severity="secondary"
-          text
-          [badge]="notificationCount() > 0 ? notificationCount().toString() : undefined"
-          badgeClass="p-badge-danger"
-          class="p-2">
-        </p-button>
-        
-        <!-- Toggle Tema -->
-        <p-button 
-          [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
-          severity="secondary"
-          text
-          (click)="toggleTheme()"
-          [title]="isDarkMode() ? 'Modo Claro' : 'Modo Oscuro'"
-          class="p-2">
-        </p-button>
-        
-        <!-- Menú Usuario -->
-        <p-button
-          class="p-2"
-          severity="secondary"
-          text
-          (click)="userMenu.toggle($event)">
-          <div class="flex align-items-center gap-2">
-            <p-avatar 
-              [label]="user()?.nombreCompleto ? user()!.nombreCompleto.charAt(0) : 'U'"
-              shape="circle"
-              size="normal"
-              class="bg-primary text-primary-50">
-            </p-avatar>
-            <span class="hidden sm:inline text-900 font-medium">
-              {{ user()?.nombreCompleto || 'Usuario' }}
-            </span>
-            <i class="pi pi-chevron-down text-xs text-600"></i>
-          </div>
-        </p-button>
-        
-        <p-popover #userMenu>
-          <div class="w-12rem">
-            <div class="px-3 py-2 border-bottom-1 surface-border">
-              <div class="text-sm font-semibold text-900">{{ user()?.nombreCompleto }}</div>
-              <div class="text-xs text-600">{{ user()?.email }}</div>
-            </div>
-            <p-menu [model]="userMenuItems" [popup]="false" class="w-full border-none"></p-menu>
-          </div>
-        </p-popover>
-      </div>
     </div>
-  </div>
 
-  <!-- Contenido Principal con Sidebar -->
-  <div class="flex" style="margin-top: 4.5rem;">
-    <!-- Sidebar Flotante -->
-    <div class="fixed left-0 top-0 h-full z-4 transition-all transition-duration-300"
-         [ngClass]="{
-           'translate-x-0': sidebarExpanded(),
-           '-translate-x-full': !sidebarExpanded()
-         }"
-         style="margin-top: 4.5rem; width: 18rem;">
+    <div class="layout-topbar-end">
+      <!-- Notificaciones -->
+      <p-button 
+        icon="pi pi-bell" 
+        severity="secondary"
+        text
+        [badge]="notificationCount() > 0 ? notificationCount().toString() : undefined"
+        badgeClass="p-badge-danger"
+        class="p-2">
+      </p-button>
       
-      <div class="surface-card h-full shadow-3 border-right-1 surface-border">
-        <div class="flex flex-column h-full">
-          <!-- Header del Sidebar -->
-          <div class="flex align-items-center justify-content-between px-4 py-3 border-bottom-1 surface-border">
-            <span class="text-lg font-bold text-900">Menú</span>
-            <p-button 
-              icon="pi pi-times"
-              severity="secondary"
-              text
-              size="small"
-              (click)="closeSidebar()"
-              class="p-1">
-            </p-button>
-          </div>
-          
-          <!-- Contenido del Menú -->
-          <div class="flex-1 overflow-auto py-2">
-            @for (section of menuItems; track section.label) {
-              <div class="mb-4">
-                <!-- Encabezado de Sección -->
-                <div class="flex align-items-center gap-2 px-4 py-2 text-xs font-bold text-600 uppercase tracking-wider">
-                  <i [class]="section.icon" class="text-sm"></i>
-                  <span>{{ section.label }}</span>
-                </div>
-                
-                <!-- Items del Menú -->
-                @if (section.items) {
-                  <div class="px-2">
-                    @for (item of section.items; track item.label) {
-                      @if (item.children) {
-                        <!-- Submenú con hijos -->
-                        <div class="mb-1">
-                          <a class="flex align-items-center gap-3 px-3 py-3 mx-2 border-round text-decoration-none text-700 hover:surface-hover transition-colors transition-duration-150 cursor-pointer"
-                             (click)="toggleSubmenu(item.label)">
-                            <i [class]="item.icon + ' text-500'"></i>
-                            <span class="flex-1 font-medium">{{ item.label }}</span>
-                            @if (item.badge) {
-                              <span class="bg-primary-100 text-primary-700 border-round px-2 py-1 text-xs font-medium">
-                                {{ item.badge }}
-                              </span>
-                            }
-                            <i class="pi text-xs text-500 transition-transform transition-duration-200"
-                               [ngClass]="{
-                                 'pi-chevron-down': !isSubmenuOpen(item.label),
-                                 'pi-chevron-up': isSubmenuOpen(item.label)
-                               }"></i>
-                          </a>
-                          
-                          <!-- Submenú desplegable -->
-                          <div class="overflow-hidden transition-all transition-duration-200"
-                               [ngClass]="{
-                                 'max-h-0': !isSubmenuOpen(item.label),
-                                 'max-h-96': isSubmenuOpen(item.label)
-                               }">
-                            <div class="ml-6 mt-1">
-                              @for (child of item.children; track child.label) {
-                                <a [routerLink]="child.routerLink"
-                                   routerLinkActive="bg-primary text-primary-50"
-                                   class="flex align-items-center gap-3 px-3 py-2 mx-2 mb-1 border-round text-decoration-none text-700 hover:surface-hover transition-colors transition-duration-150"
-                                   (click)="onMenuItemClick()">
-                                  <i [class]="child.icon + ' text-500 text-sm'"></i>
-                                  <span class="flex-1">{{ child.label }}</span>
-                                  @if (child.badge) {
-                                    <span class="bg-gray-100 text-gray-800 border-round px-2 py-1 text-xs font-medium">
-                                      {{ child.badge }}
-                                    </span>
-                                  }
-                                </a>
-                              }
-                            </div>
-                          </div>
-                        </div>
-                      } @else {
-                        <!-- Item simple sin hijos -->
-                        <a [routerLink]="item.routerLink"
-                           routerLinkActive="bg-primary text-primary-50"
-                           class="flex align-items-center gap-3 px-3 py-3 mx-2 mb-1 border-round text-decoration-none text-700 hover:surface-hover transition-colors transition-duration-150"
-                           (click)="onMenuItemClick()">
-                          <i [class]="item.icon + ' text-500'"></i>
-                          <span class="flex-1 font-medium">{{ item.label }}</span>
-                          @if (item.badge) {
-                            <span class="bg-primary-100 text-primary-700 border-round px-2 py-1 text-xs font-medium">
-                              {{ item.badge }}
-                            </span>
-                          }
-                        </a>
-                      }
-                    }
-                  </div>
-                }
-              </div>
-            }
-          </div>
-          
-          <!-- Footer del Sidebar -->
-          <div class="px-4 py-3 border-top-1 surface-border">
-            <div class="text-xs text-600 text-center">
-              <span>© 2025 SIGRET</span>
-            </div>
-          </div>
+      <!-- Toggle Tema -->
+      <p-button 
+        [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
+        severity="secondary"
+        text
+        (click)="toggleTheme()"
+        [title]="isDarkMode() ? 'Modo Claro' : 'Modo Oscuro'"
+        class="p-2">
+      </p-button>
+      
+      <!-- Menú Usuario -->
+      <p-button
+        class="p-2"
+        severity="secondary"
+        text
+        (click)="userMenu.toggle($event)">
+        <div class="flex align-items-center gap-2">
+          <p-avatar 
+            [label]="user()?.nombreCompleto ? user()!.nombreCompleto.charAt(0) : 'U'"
+            shape="circle"
+            size="normal"
+            class="bg-primary text-primary-50">
+          </p-avatar>
+          <span class="hidden sm:inline text-900 font-medium">
+            {{ user()?.nombreCompleto || 'Usuario' }}
+          </span>
+          <i class="pi pi-chevron-down text-xs text-600"></i>
         </div>
-      </div>
-    </div>
-
-    <!-- Área de Contenido Principal -->
-    <div class="flex-1 min-h-screen transition-all transition-duration-300"
-         [ngClass]="{
-           'ml-0': !sidebarExpanded() || isMobile(),
-           'ml-18rem': sidebarExpanded() && !isMobile()
-         }">
+      </p-button>
       
-      <!-- Contenido de la Página -->
-      <div class="p-4">
-        <router-outlet></router-outlet>
-      </div>
+      <p-popover #userMenu>
+        <div class="w-12rem">
+          <div class="px-3 py-2 border-bottom-1 surface-border">
+            <div class="text-sm font-semibold text-900">{{ user()?.nombreCompleto }}</div>
+            <div class="text-xs text-600">{{ user()?.email }}</div>
+          </div>
+          <p-menu [model]="userMenuItems" [popup]="false" class="w-full border-none"></p-menu>
+        </div>
+      </p-popover>
     </div>
   </div>
 
-  <!-- Overlay para móvil -->
-  <div class="fixed inset-0 bg-black-alpha-50 z-3 transition-opacity transition-duration-200"
-       [ngClass]="{
-         'opacity-100 pointer-events-auto': sidebarExpanded() && isMobile(),
-         'opacity-0 pointer-events-none': !sidebarExpanded() || !isMobile()
-       }"
-       (click)="closeSidebar()">
+  <!-- Sidebar -->
+  <div class="layout-sidebar">
+    <div class="layout-menu">
+      @for (section of menuItems; track section.label) {
+        <div class="layout-root-menuitem">
+          <div class="layout-menuitem-root-text">
+            <i [class]="section.icon" class="text-sm"></i>
+            <span>{{ section.label }}</span>
+          </div>
+          
+          @if (section.items) {
+            <ul>
+              @for (item of section.items; track item.label) {
+                @if (item.children) {
+                  <li [class]="{'active-menuitem': isSubmenuOpen(item.label)}">
+                    <a (click)="toggleSubmenu(item.label)" class="layout-menuitem-link">
+                      <i [class]="item.icon + ' layout-menuitem-icon'"></i>
+                      <span class="layout-menuitem-text">{{ item.label }}</span>
+                      @if (item.badge) {
+                        <span class="layout-menuitem-badge">{{ item.badge }}</span>
+                      }
+                      <i class="pi pi-chevron-down layout-submenu-toggler"></i>
+                    </a>
+                    
+                    <ul class="layout-submenu" 
+                        [class.layout-submenu-enter-active]="isSubmenuOpen(item.label)"
+                        [class.layout-submenu-leave-active]="!isSubmenuOpen(item.label)">
+                      @for (child of item.children; track child.label) {
+                        <li>
+                          <a [routerLink]="child.routerLink"
+                             routerLinkActive="active-route"
+                             class="layout-menuitem-link"
+                             (click)="onMenuItemClick()">
+                            <i [class]="child.icon + ' layout-menuitem-icon'"></i>
+                            <span class="layout-menuitem-text">{{ child.label }}</span>
+                            @if (child.badge) {
+                              <span class="layout-menuitem-badge">{{ child.badge }}</span>
+                            }
+                          </a>
+                        </li>
+                      }
+                    </ul>
+                  </li>
+                } @else {
+                  <li>
+                    <a [routerLink]="item.routerLink"
+                       routerLinkActive="active-route"
+                       class="layout-menuitem-link"
+                       (click)="onMenuItemClick()">
+                      <i [class]="item.icon + ' layout-menuitem-icon'"></i>
+                      <span class="layout-menuitem-text">{{ item.label }}</span>
+                      @if (item.badge) {
+                        <span class="layout-menuitem-badge">{{ item.badge }}</span>
+                      }
+                    </a>
+                  </li>
+                }
+              }
+            </ul>
+          }
+        </div>
+      }
+    </div>
   </div>
+
+  <!-- Main Container -->
+  <div class="layout-main-container">
+    <div class="layout-main">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+
+  <!-- Layout Mask -->
+  <div class="layout-mask animate-fadein"></div>
 </div>

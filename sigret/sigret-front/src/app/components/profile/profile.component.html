@@ -1,0 +1,275 @@
+<div class="profile-container">
+  <!-- Header -->
+  <div class="mb-4">
+    <h2 class="text-2xl font-bold text-900 m-0">Mi Perfil</h2>
+    <p class="text-600 mt-2">Gestiona tu información personal y configuración de cuenta</p>
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex justify-content-center p-4">
+      <p-progressSpinner></p-progressSpinner>
+    </div>
+  } @else if (profile()) {
+    <div class="grid">
+      <!-- Profile Information Card -->
+      <div class="col-12 md:col-8">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-4 flex align-items-center gap-3">
+              <i class="pi pi-user text-4xl text-primary"></i>
+              <div>
+                <h3 class="text-xl font-semibold m-0">{{ profile()!.nombreCompleto }}</h3>
+                <p class="text-600 m-0">{{ profile()!.tipoEmpleado }}</p>
+              </div>
+            </div>
+          </ng-template>
+
+          <ng-template pTemplate="content">
+            <div class="grid">
+              <!-- Personal Information -->
+              <div class="col-12">
+                <h4 class="text-lg font-semibold text-900 mb-3">Información Personal</h4>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <label class="block text-600 font-medium mb-2">Documento</label>
+                <p class="text-900 m-0">{{ profile()!.tipoDocumento }}: {{ profile()!.documento }}</p>
+              </div>
+
+              @if (profile()!.sexo) {
+                <div class="col-12 md:col-6">
+                  <label class="block text-600 font-medium mb-2">Sexo</label>
+                  <p class="text-900 m-0">{{ profile()!.sexo === 'M' ? 'Masculino' : 'Femenino' }}</p>
+                </div>
+              }
+
+              <!-- Employment Information -->
+              <div class="col-12">
+                <p-divider></p-divider>
+                <h4 class="text-lg font-semibold text-900 mb-3">Información de Empleado</h4>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <label class="block text-600 font-medium mb-2">Tipo de Empleado</label>
+                <p class="text-900 m-0">{{ profile()!.tipoEmpleado }}</p>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <label class="block text-600 font-medium mb-2">Estado</label>
+                <p-tag 
+                  [value]="profile()!.empleadoActivo ? 'Activo' : 'Inactivo'"
+                  [severity]="profile()!.empleadoActivo ? 'success' : 'danger'">
+                </p-tag>
+              </div>
+
+              <!-- Account Information -->
+              <div class="col-12">
+                <p-divider></p-divider>
+                <h4 class="text-lg font-semibold text-900 mb-3">Información de Cuenta</h4>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <label class="block text-600 font-medium mb-2">Usuario</label>
+                <p class="text-900 m-0">{{ profile()!.username }}</p>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <label class="block text-600 font-medium mb-2">Rol</label>
+                <p-tag 
+                  [value]="getRoleLabel(profile()!.rol)"
+                  [severity]="getRoleSeverity(profile()!.rol)">
+                </p-tag>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <label class="block text-600 font-medium mb-2">Estado de Usuario</label>
+                <p-tag 
+                  [value]="profile()!.usuarioActivo ? 'Activo' : 'Inactivo'"
+                  [severity]="profile()!.usuarioActivo ? 'success' : 'danger'">
+                </p-tag>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <label class="block text-600 font-medium mb-2">Fecha de Creación</label>
+                <p class="text-900 m-0">{{ profile()!.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</p>
+              </div>
+
+              @if (profile()!.ultimoLogin) {
+                <div class="col-12 md:col-6">
+                  <label class="block text-600 font-medium mb-2">Último Login</label>
+                  <p class="text-900 m-0">{{ profile()!.ultimoLogin | date:'dd/MM/yyyy HH:mm' }}</p>
+                </div>
+              }
+            </div>
+          </ng-template>
+
+          <ng-template pTemplate="footer">
+            <div class="flex justify-content-end">
+              <p-button 
+                label="Cambiar Contraseña" 
+                icon="pi pi-lock"
+                severity="secondary"
+                (onClick)="openChangePasswordDialog()">
+              </p-button>
+            </div>
+          </ng-template>
+        </p-card>
+      </div>
+
+      <!-- Quick Actions Card -->
+      <div class="col-12 md:col-4">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-4">
+              <h3 class="text-lg font-semibold m-0">Acciones Rápidas</h3>
+            </div>
+          </ng-template>
+
+          <ng-template pTemplate="content">
+            <div class="flex flex-column gap-2">
+              <p-button 
+                label="Actualizar Perfil" 
+                icon="pi pi-refresh"
+                severity="secondary"
+                [text]="true"
+                class="w-full"
+                (onClick)="loadProfile()">
+              </p-button>
+              <p-button 
+                label="Cambiar Contraseña" 
+                icon="pi pi-lock"
+                severity="secondary"
+                [text]="true"
+                class="w-full"
+                (onClick)="openChangePasswordDialog()">
+              </p-button>
+            </div>
+          </ng-template>
+        </p-card>
+
+        <!-- Security Tips Card -->
+        <p-card class="mt-3">
+          <ng-template pTemplate="header">
+            <div class="p-4">
+              <h3 class="text-lg font-semibold m-0">
+                <i class="pi pi-shield mr-2"></i>
+                Seguridad
+              </h3>
+            </div>
+          </ng-template>
+
+          <ng-template pTemplate="content">
+            <ul class="list-none p-0 m-0">
+              <li class="mb-2">
+                <i class="pi pi-check-circle text-green-500 mr-2"></i>
+                <span class="text-sm">Usa contraseñas seguras</span>
+              </li>
+              <li class="mb-2">
+                <i class="pi pi-check-circle text-green-500 mr-2"></i>
+                <span class="text-sm">Cambia tu contraseña regularmente</span>
+              </li>
+              <li class="mb-2">
+                <i class="pi pi-check-circle text-green-500 mr-2"></i>
+                <span class="text-sm">No compartas tus credenciales</span>
+              </li>
+              <li>
+                <i class="pi pi-check-circle text-green-500 mr-2"></i>
+                <span class="text-sm">Cierra sesión al terminar</span>
+              </li>
+            </ul>
+          </ng-template>
+        </p-card>
+      </div>
+    </div>
+  }
+
+  <!-- Change Password Dialog -->
+  <p-dialog 
+    header="Cambiar Contraseña"
+    [visible]="showPasswordDialog()"
+    (visibleChange)="showPasswordDialog.set($event)"
+    [modal]="true"
+    [closable]="true"
+    [style]="{ width: '500px' }"
+    (onHide)="closePasswordDialog()">
+    
+    <form [formGroup]="changePasswordForm" (ngSubmit)="changePassword()">
+      <div class="flex flex-column gap-3">
+        <!-- Current Password -->
+        <div>
+          <label for="passwordActual" class="block text-900 font-medium mb-2">Contraseña Actual *</label>
+          <p-password
+            id="passwordActual"
+            formControlName="passwordActual"
+            [feedback]="false"
+            [toggleMask]="true"
+            placeholder="Ingrese su contraseña actual"
+            styleClass="w-full">
+          </p-password>
+          @if (changePasswordForm.get('passwordActual')?.invalid && changePasswordForm.get('passwordActual')?.touched) {
+            <small class="text-red-500">La contraseña actual es requerida (mínimo 6 caracteres)</small>
+          }
+        </div>
+
+        <!-- New Password -->
+        <div>
+          <label for="passwordNueva" class="block text-900 font-medium mb-2">Contraseña Nueva *</label>
+          <p-password
+            id="passwordNueva"
+            formControlName="passwordNueva"
+            [toggleMask]="true"
+            placeholder="Ingrese su nueva contraseña"
+            styleClass="w-full">
+          </p-password>
+          @if (changePasswordForm.get('passwordNueva')?.invalid && changePasswordForm.get('passwordNueva')?.touched) {
+            <small class="text-red-500">La contraseña nueva debe tener al menos 6 caracteres</small>
+          }
+        </div>
+
+        <!-- Confirm New Password -->
+        <div>
+          <label for="passwordNuevaConfirmacion" class="block text-900 font-medium mb-2">Confirmar Contraseña Nueva *</label>
+          <p-password
+            id="passwordNuevaConfirmacion"
+            formControlName="passwordNuevaConfirmacion"
+            [feedback]="false"
+            [toggleMask]="true"
+            placeholder="Confirme su nueva contraseña"
+            styleClass="w-full">
+          </p-password>
+          @if (changePasswordForm.hasError('passwordMismatch') && changePasswordForm.get('passwordNuevaConfirmacion')?.touched) {
+            <small class="text-red-500">Las contraseñas no coinciden</small>
+          }
+        </div>
+
+        <div class="bg-blue-50 p-3 border-round">
+          <p class="text-sm text-blue-900 m-0">
+            <i class="pi pi-info-circle mr-2"></i>
+            La nueva contraseña debe ser diferente a la actual y tener al menos 6 caracteres.
+          </p>
+        </div>
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-end gap-2">
+        <p-button 
+          label="Cancelar" 
+          severity="secondary"
+          [text]="true"
+          (onClick)="closePasswordDialog()">
+        </p-button>
+        <p-button 
+          label="Cambiar Contraseña"
+          [loading]="isChangingPassword()"
+          (onClick)="changePassword()"
+          [disabled]="changePasswordForm.invalid">
+        </p-button>
+      </div>
+    </ng-template>
+  </p-dialog>
+</div>
+
+<!-- Toast -->
+<p-toast></p-toast>
+

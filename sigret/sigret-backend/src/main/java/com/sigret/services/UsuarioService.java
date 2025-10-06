@@ -1,10 +1,8 @@
 package com.sigret.services;
 
-import com.sigret.dtos.usuario.UsuarioCreateDto;
-import com.sigret.dtos.usuario.UsuarioListDto;
-import com.sigret.dtos.usuario.UsuarioResponseDto;
-import com.sigret.dtos.usuario.UsuarioUpdateDto;
+import com.sigret.dtos.usuario.*;
 import com.sigret.entities.Empleado;
+import com.sigret.entities.Persona;
 import com.sigret.entities.Usuario;
 import com.sigret.exception.EmpleadoAlreadyHasUserException;
 import com.sigret.exception.UsernameAlreadyExistsException;
@@ -233,5 +231,62 @@ public class UsuarioService {
                 usuario.getFechaCreacion(),
                 usuario.getUltimoLogin()
         );
+    }
+
+    /**
+     * Obtener perfil del usuario autenticado
+     */
+    @Transactional(readOnly = true)
+    public PerfilResponseDto obtenerPerfil(String username) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado con username: " + username));
+
+        Empleado empleado = usuario.getEmpleado();
+        Persona persona = empleado.getPersona();
+
+        return new PerfilResponseDto(
+                usuario.getId(),
+                usuario.getUsername(),
+                usuario.getRol(),
+                usuario.getActivo(),
+                usuario.getFechaCreacion(),
+                usuario.getUltimoLogin(),
+                empleado.getId(),
+                persona.getNombreCompleto(),
+                persona.getNombre(),
+                persona.getApellido(),
+                persona.getDocumento(),
+                persona.getTipoDocumento().getDescripcion(),
+                persona.getSexo(),
+                empleado.getTipoEmpleado().getDescripcion(),
+                empleado.getActivo()
+        );
+    }
+
+    /**
+     * Cambiar contraseña del usuario autenticado
+     */
+    public void cambiarPasswordAutenticado(String username, CambiarPasswordDto cambiarPasswordDto) {
+        Usuario usuario = usuarioRepository.findByUsername(username)
+                .orElseThrow(() -> new UsuarioNotFoundException("Usuario no encontrado con username: " + username));
+
+        // Validar que las contraseñas nuevas coincidan
+        if (!cambiarPasswordDto.getPasswordNueva().equals(cambiarPasswordDto.getPasswordNuevaConfirmacion())) {
+            throw new RuntimeException("Las contraseñas nuevas no coinciden");
+        }
+
+        // Validar contraseña actual
+        if (!passwordEncoder.matches(cambiarPasswordDto.getPasswordActual(), usuario.getPassword())) {
+            throw new RuntimeException("La contraseña actual es incorrecta");
+        }
+
+        // Validar que la nueva contraseña sea diferente
+        if (passwordEncoder.matches(cambiarPasswordDto.getPasswordNueva(), usuario.getPassword())) {
+            throw new RuntimeException("La nueva contraseña debe ser diferente a la actual");
+        }
+
+        // Cambiar la contraseña
+        usuario.setPassword(passwordEncoder.encode(cambiarPasswordDto.getPasswordNueva()));
+        usuarioRepository.save(usuario);
     }
 }

@@ -1,9 +1,6 @@
 package com.sigret.controllers.usuario;
 
-import com.sigret.dtos.usuario.UsuarioCreateDto;
-import com.sigret.dtos.usuario.UsuarioListDto;
-import com.sigret.dtos.usuario.UsuarioResponseDto;
-import com.sigret.dtos.usuario.UsuarioUpdateDto;
+import com.sigret.dtos.usuario.*;
 import com.sigret.services.UsuarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,6 +15,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -182,5 +181,34 @@ public class UsuarioController {
             @Parameter(description = "Username a verificar") @RequestParam String username) {
         boolean disponible = usuarioService.isUsernameDisponible(username);
         return ResponseEntity.ok(disponible);
+    }
+
+    @GetMapping("/mi-perfil")
+    @Operation(summary = "Obtener mi perfil", description = "Obtiene los datos del perfil del usuario autenticado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Perfil obtenido exitosamente"),
+            @ApiResponse(responseCode = "401", description = "No autenticado")
+    })
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<PerfilResponseDto> obtenerMiPerfil() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        PerfilResponseDto perfil = usuarioService.obtenerPerfil(username);
+        return ResponseEntity.ok(perfil);
+    }
+
+    @PatchMapping("/cambiar-mi-password")
+    @Operation(summary = "Cambiar mi contraseña", description = "Permite al usuario autenticado cambiar su propia contraseña")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contraseña cambiada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o contraseña actual incorrecta"),
+            @ApiResponse(responseCode = "401", description = "No autenticado")
+    })
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> cambiarMiPassword(@Valid @RequestBody CambiarPasswordDto cambiarPasswordDto) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+        usuarioService.cambiarPasswordAutenticado(username, cambiarPasswordDto);
+        return ResponseEntity.ok().build();
     }
 }

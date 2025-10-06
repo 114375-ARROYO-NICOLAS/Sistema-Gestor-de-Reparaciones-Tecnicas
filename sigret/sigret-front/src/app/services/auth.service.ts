@@ -31,8 +31,8 @@ export class AuthService {
   public readonly isRefreshing = signal(false);
 
   constructor(private http: HttpClient) {
-    // Verificar si hay un token válido al inicializar el servicio
-    this.checkTokenValidity();
+    // NO validar automáticamente para evitar loops
+    // La validación se hará cuando el usuario navegue
   }
 
   login(credentials: LoginRequest): Observable<LoginResponse> {
@@ -101,7 +101,9 @@ export class AuthService {
     return this.http.get<TokenValidationResponse>(`${this.API_BASE_URL}/validate`)
       .pipe(
         catchError(error => {
-          this.logout();
+          // NO llamar a logout aquí para evitar loops
+          // Solo limpiar datos localmente
+          this.clearAuthData();
           return throwError(() => error);
         })
       );
@@ -124,13 +126,19 @@ export class AuthService {
   private checkTokenValidity(): void {
     const token = this.getStoredToken();
     if (token) {
+      // Validar token de manera silenciosa
       this.validateToken().subscribe({
         next: () => {
           // Token válido, cargar perfil del usuario
-          this.getProfile().subscribe();
+          this.getProfile().subscribe({
+            error: () => {
+              // Si falla cargar el perfil, limpiar datos silenciosamente
+              this.clearAuthData();
+            }
+          });
         },
         error: () => {
-          // Token inválido, limpiar datos
+          // Token inválido, limpiar datos silenciosamente (sin mostrar toast)
           this.clearAuthData();
         }
       });
@@ -171,7 +179,7 @@ export class AuthService {
     return encryptedToken ? this.decryptToken(encryptedToken) : null;
   }
 
-  private clearAuthData(): void {
+  clearAuthData(): void {
     sessionStorage.removeItem('auth_token');
     localStorage.removeItem('refresh_token');
     
@@ -221,25 +229,10 @@ export class AuthService {
 
   private handleRefreshTokenError(): void {
     this.clearAuthData();
-    this.showSessionExpiredAlert();
-  }
-
-  private showSessionExpiredAlert(): void {
-    const messageService = inject(MessageService);
+    // No mostrar toast aquí, lo maneja el interceptor
+    // Solo redirigir al login
     const router = inject(Router);
-    
-    // Mostrar mensaje de sesión expirada
-    messageService.add({
-      severity: 'warn',
-      summary: 'Sesión Expirada',
-      detail: 'Su sesión ha expirado. Por favor, inicie sesión nuevamente.',
-      life: 3000
-    });
-    
-    // Redirigir al login después de un breve delay
-    setTimeout(() => {
-      router.navigate(['/login']);
-    }, 1500);
+    router.navigate(['/login']);
   }
 
   // Método para obtener el token actual (para interceptors HTTP)

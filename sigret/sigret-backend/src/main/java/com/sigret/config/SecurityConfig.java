@@ -66,7 +66,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         // Endpoints públicos
-                        .requestMatchers("/auth/**").permitAll()
+                        .requestMatchers("/auth/login", "/auth/refresh", "/auth/logout").permitAll()
                         .requestMatchers("/public/**").permitAll()
 
                         // Endpoints para Actuator (opcional)
@@ -80,7 +80,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasRole("PROPIETARIO")
                         .requestMatchers("/api/usuarios/**").hasAnyRole("PROPIETARIO", "ADMINISTRATIVO")
 
-                        // Todos los demás endpoints requieren autenticación
+                        // Todos los demás endpoints requieren autenticación (incluyendo /auth/validate)
                         .anyRequest().authenticated()
                 );
 

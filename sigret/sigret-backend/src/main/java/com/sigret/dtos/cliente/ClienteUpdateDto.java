@@ -1,10 +1,13 @@
 package com.sigret.dtos.cliente;
 
+import com.sigret.dtos.direccion.DireccionCreateDto;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -26,4 +29,7 @@ public class ClienteUpdateDto {
 
     @Size(max = 1000, message = "Los comentarios no pueden exceder 1000 caracteres")
     private String comentarios;
+    
+    // Direcciones (opcional) - si se envía, reemplaza todas las direcciones existentes
+    private List<DireccionCreateDto> direcciones;
 }

@@ -13,7 +13,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     database-platform: org.hibernate.dialect.MySQL8Dialect
     properties:
       hibernate:
@@ -35,8 +35,8 @@ management:
 
 jwt:
   secret: SistemaGestorDeReparacionesTecnicas-SiGReT-2025-ArroyoElectromecanica_SecretKey
-  expiration: 60000
-  refresh-expiration: 3600000
+  expiration: 28800000        # 8 horas (desarrollo) - 28,800,000 ms
+  refresh-expiration: 604800000  # 7 días - 604,800,000 ms
 
 cors:
   allowed-origins: "*"
@@ -53,4 +53,4 @@ springdoc:
     operationsSorter: method
     tagsSorter: alpha
     tryItOutEnabled: true
-  show-actuator: true
+  show-actuator: false

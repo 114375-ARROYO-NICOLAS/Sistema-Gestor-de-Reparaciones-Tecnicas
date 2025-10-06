@@ -1,9 +1,12 @@
 package com.sigret.dtos.cliente;
 
+import com.sigret.dtos.direccion.DireccionListDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+
+import java.util.List;
 
 @Getter
 @Setter
@@ -20,4 +23,7 @@ public class ClienteResponseDto {
     private String telefono;
     private String comentarios;
     private Boolean esPersonaJuridica;
+    
+    // Direcciones de la persona
+    private List<DireccionListDto> direcciones;
 }

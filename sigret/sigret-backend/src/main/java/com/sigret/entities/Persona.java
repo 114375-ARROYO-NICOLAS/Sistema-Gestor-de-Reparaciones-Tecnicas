@@ -52,6 +52,9 @@ public class Persona {
     @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Contacto> contactos = new ArrayList<>();
 
+    @OneToMany(mappedBy = "persona", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Direccion> direcciones = new ArrayList<>();
+
     @OneToOne(mappedBy = "persona", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private Cliente cliente;
 

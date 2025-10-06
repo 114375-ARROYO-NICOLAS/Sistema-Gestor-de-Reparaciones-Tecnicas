@@ -45,3 +45,29 @@ export interface UserListResponse {
 export interface UsernameAvailabilityResponse {
   disponible: boolean;
 }
+
+// DTO para el perfil del usuario autenticado
+export interface UserProfile {
+  usuarioId: number;
+  username: string;
+  rol: UserRole;
+  usuarioActivo: boolean;
+  fechaCreacion: string;
+  ultimoLogin?: string;
+  empleadoId: number;
+  nombreCompleto: string;
+  nombre?: string;
+  apellido?: string;
+  documento: string;
+  tipoDocumento: string;
+  sexo?: string;
+  tipoEmpleado: string;
+  empleadoActivo: boolean;
+}
+
+// DTO para cambiar la contraseña del usuario autenticado
+export interface ChangePasswordRequest {
+  passwordActual: string;
+  passwordNueva: string;
+  passwordNuevaConfirmacion: string;
+}

@@ -28,13 +28,14 @@ public class OpenApiConfig {
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")))
                 .addSecurityItem(new SecurityRequirement()
-                        .addList("Bearer Authentication"))
+                        .addList("bearerAuth"))
                 .components(new Components()
-                        .addSecuritySchemes("Bearer Authentication", createAPIKeyScheme()));
+                        .addSecuritySchemes("bearerAuth", createAPIKeyScheme()));
     }
 
     private SecurityScheme createAPIKeyScheme() {
         return new SecurityScheme()
+                .name("bearerAuth")
                 .type(SecurityScheme.Type.HTTP)
                 .bearerFormat("JWT")
                 .scheme("bearer");

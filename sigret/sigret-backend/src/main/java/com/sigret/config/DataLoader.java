@@ -40,18 +40,40 @@ public class DataLoader implements CommandLineRunner {
     }
 
     private void crearDatosIniciales() {
-        // Crear tipos básicos
+        // Crear tipos de documento
         TipoDocumento dni = new TipoDocumento();
         dni.setDescripcion("DNI");
         tipoDocumentoRepository.save(dni);
 
+        TipoDocumento cuit = new TipoDocumento();
+        cuit.setDescripcion("CUIT");
+        tipoDocumentoRepository.save(cuit);
+
+        TipoDocumento cuil = new TipoDocumento();
+        cuil.setDescripcion("CUIL");
+        tipoDocumentoRepository.save(cuil);
+
+        TipoDocumento pasaporte = new TipoDocumento();
+        pasaporte.setDescripcion("Pasaporte");
+        tipoDocumentoRepository.save(pasaporte);
+
+        // Crear tipos de persona
         TipoPersona fisica = new TipoPersona();
-        fisica.setDescripcion("Persona Física");
+        fisica.setDescripcion("Física");
         tipoPersonaRepository.save(fisica);
 
+        TipoPersona juridica = new TipoPersona();
+        juridica.setDescripcion("Jurídica");
+        tipoPersonaRepository.save(juridica);
+
+        // Crear tipos de empleado
         TipoEmpleado propietario = new TipoEmpleado();
         propietario.setDescripcion("Propietario");
         tipoEmpleadoRepository.save(propietario);
+
+        TipoEmpleado administrativo = new TipoEmpleado();
+        administrativo.setDescripcion("Administrativo");
+        tipoEmpleadoRepository.save(administrativo);
 
         TipoEmpleado tecnico = new TipoEmpleado();
         tecnico.setDescripcion("Técnico");
@@ -110,12 +132,23 @@ public class DataLoader implements CommandLineRunner {
         usuarioTecnico.setActivo(true);
         usuarioRepository.save(usuarioTecnico);
 
+        System.out.println("===========================================");
+        System.out.println("DATOS INICIALES CREADOS EXITOSAMENTE");
+        System.out.println("===========================================");
+        System.out.println("Tipos de Documento: DNI, CUIT, CUIL, Pasaporte");
+        System.out.println("Tipos de Persona: Física, Jurídica");
+        System.out.println("Tipos de Empleado: Propietario, Administrativo, Técnico");
+        System.out.println("===========================================");
         System.out.println("Usuario admin creado:");
-        System.out.println("Username: admin");
-        System.out.println("Password: admin123");
+        System.out.println("  Username: admin");
+        System.out.println("  Password: admin123");
+        System.out.println("  Rol: PROPIETARIO");
+        System.out.println("-------------------------------------------");
         System.out.println("Usuario tecnico creado:");
-        System.out.println("Username: tecnico");
-        System.out.println("Password: tecnico123");
+        System.out.println("  Username: tecnico");
+        System.out.println("  Password: tecnico123");
+        System.out.println("  Rol: TECNICO");
+        System.out.println("===========================================");
 
     }
 }

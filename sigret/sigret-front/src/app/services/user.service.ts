@@ -8,7 +8,9 @@ import {
   UserUpdateRequest, 
   UserListResponse, 
   UsernameAvailabilityResponse,
-  UserRole 
+  UserRole,
+  UserProfile,
+  ChangePasswordRequest
 } from '../models/user.model';
 import { environment } from '../../environments/environment';
 
@@ -141,6 +143,24 @@ export class UserService {
   deleteUser(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
       tap(() => this.refreshUsers()),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get current authenticated user's profile
+   */
+  getMyProfile(): Observable<UserProfile> {
+    return this.http.get<UserProfile>(`${this.apiUrl}/mi-perfil`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Change current authenticated user's password
+   */
+  changeMyPassword(data: ChangePasswordRequest): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/cambiar-mi-password`, data).pipe(
       catchError(this.handleError)
     );
   }

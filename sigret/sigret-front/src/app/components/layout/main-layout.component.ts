@@ -1,4 +1,4 @@
-import { Component, signal, computed, effect, HostListener, OnInit } from '@angular/core';
+import { Component, signal, computed, effect, HostListener, OnInit, Renderer2, ViewChild, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd, RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -9,8 +9,10 @@ import { MenuModule } from 'primeng/menu';
 import { PopoverModule } from 'primeng/popover';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
+import { LayoutService } from '../../services/layout.service';
 import { MenuItem } from 'primeng/api';
 import { filter, map } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 
 interface MenuSection {
   label: string;
@@ -43,9 +45,8 @@ interface MenuItemWithChildren {
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss'
 })
-export class MainLayoutComponent implements OnInit {
+export class MainLayoutComponent implements OnInit, OnDestroy {
   // Estados reactivos
-  protected readonly sidebarExpanded = signal(false);
   protected readonly currentRoute = signal('Dashboard');
   protected readonly screenWidth = signal(window.innerWidth);
   protected readonly openSubmenus = signal<Set<string>>(new Set());
@@ -56,6 +57,17 @@ export class MainLayoutComponent implements OnInit {
   protected readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
   protected readonly isDarkMode = computed(() => this.themeService.isDarkMode());
   protected readonly isMobile = computed(() => this.screenWidth() < 768);
+  
+  // Layout service properties
+  protected readonly layoutConfig = computed(() => this.layoutService.layoutConfig());
+  protected readonly layoutState = computed(() => this.layoutService.layoutState());
+  protected readonly isOverlay = computed(() => this.layoutService.isOverlay());
+  protected readonly isStatic = computed(() => this.layoutService.isStatic());
+  protected readonly isSidebarActive = computed(() => this.layoutService.isSidebarActive());
+  
+  // Subscriptions
+  private overlayMenuOpenSubscription!: Subscription;
+  private menuOutsideClickListener: any;
 
   // Configuración del menú actualizada con soporte para submenús
   protected readonly menuItems: MenuSection[] = [
@@ -235,22 +247,35 @@ export class MainLayoutComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private themeService: ThemeService,
+    private layoutService: LayoutService,
+    private renderer: Renderer2,
     private router: Router
   ) {
     this.initializeRouteTracking();
+    this.initializeLayoutListeners();
   }
 
   ngOnInit(): void {
     this.checkInitialScreenSize();
   }
 
+  ngOnDestroy(): void {
+    if (this.overlayMenuOpenSubscription) {
+      this.overlayMenuOpenSubscription.unsubscribe();
+    }
+
+    if (this.menuOutsideClickListener) {
+      this.menuOutsideClickListener();
+    }
+  }
+
   @HostListener('window:resize', ['$event'])
   onResize(event: any): void {
     this.screenWidth.set(event.target.innerWidth);
     
-    // Cerrar sidebar automáticamente en móvil cuando se redimensiona
-    if (this.isMobile() && this.sidebarExpanded()) {
-      this.sidebarExpanded.set(false);
+    // Cerrar sidebar automáticamente cuando se redimensiona a móvil
+    if (this.isMobile() && this.layoutService.layoutState().staticMenuMobileActive) {
+      this.hideMenu();
     }
   }
 
@@ -265,10 +290,60 @@ export class MainLayoutComponent implements OnInit {
       });
   }
 
+  private initializeLayoutListeners(): void {
+    this.overlayMenuOpenSubscription = this.layoutService.overlayOpen$.subscribe(() => {
+      if (!this.menuOutsideClickListener) {
+        this.menuOutsideClickListener = this.renderer.listen('document', 'click', (event) => {
+          if (this.isOutsideClicked(event)) {
+            this.hideMenu();
+          }
+        });
+      }
+
+      if (this.layoutService.layoutState().staticMenuMobileActive) {
+        this.blockBodyScroll();
+      }
+    });
+
+    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+      this.hideMenu();
+    });
+  }
+
   private checkInitialScreenSize(): void {
     this.screenWidth.set(window.innerWidth);
-    if (!this.isMobile()) {
-      this.sidebarExpanded.set(false); // Empezar con sidebar cerrado por defecto
+  }
+
+  private isOutsideClicked(event: MouseEvent): boolean {
+    const sidebarEl = document.querySelector('.layout-sidebar');
+    const topbarEl = document.querySelector('.layout-topbar-menu-button');
+    const eventTarget = event.target as Node;
+
+    return !(sidebarEl?.isSameNode(eventTarget) || sidebarEl?.contains(eventTarget) || topbarEl?.isSameNode(eventTarget) || topbarEl?.contains(eventTarget));
+  }
+
+  private hideMenu(): void {
+    this.layoutService.hideMenu();
+    if (this.menuOutsideClickListener) {
+      this.menuOutsideClickListener();
+      this.menuOutsideClickListener = null;
+    }
+    this.unblockBodyScroll();
+  }
+
+  private blockBodyScroll(): void {
+    if (document.body.classList) {
+      document.body.classList.add('blocked-scroll');
+    } else {
+      document.body.className += ' blocked-scroll';
+    }
+  }
+
+  private unblockBodyScroll(): void {
+    if (document.body.classList) {
+      document.body.classList.remove('blocked-scroll');
+    } else {
+      document.body.className = document.body.className.replace(new RegExp('(^|\\b)' + 'blocked-scroll'.split(' ').join('|') + '(\\b|$)', 'gi'), ' ');
     }
   }
 
@@ -328,12 +403,18 @@ export class MainLayoutComponent implements OnInit {
     return this.currentRoute();
   }
 
-  protected toggleSidebar(): void {
-    this.sidebarExpanded.update(current => !current);
+  protected onMenuToggle(): void {
+    this.layoutService.onMenuToggle();
   }
 
-  protected closeSidebar(): void {
-    this.sidebarExpanded.set(false);
+  protected get containerClass() {
+    return {
+      'layout-overlay': this.layoutService.layoutConfig().menuMode === 'overlay',
+      'layout-static': this.layoutService.layoutConfig().menuMode === 'static',
+      'layout-static-inactive': this.layoutService.layoutState().staticMenuDesktopInactive && this.layoutService.layoutConfig().menuMode === 'static',
+      'layout-overlay-active': this.layoutService.layoutState().overlayMenuActive,
+      'layout-mobile-active': this.layoutService.layoutState().staticMenuMobileActive
+    };
   }
 
   protected toggleSubmenu(label: string): void {
@@ -354,14 +435,17 @@ export class MainLayoutComponent implements OnInit {
   }
 
   protected onMenuItemClick(): void {
-    // Cerrar sidebar en móvil cuando se hace clic en un elemento del menú
-    if (this.isMobile()) {
-      this.closeSidebar();
-    }
+    // Cerrar sidebar cuando se hace clic en un elemento del menú
+    this.hideMenu();
   }
 
   protected toggleTheme(): void {
     this.themeService.toggleTheme();
+    // Sincronizar con layout service
+    this.layoutService.layoutConfig.update(config => ({
+      ...config,
+      darkTheme: this.themeService.isDarkMode()
+    }));
   }
 
   protected logout(): void {
@@ -384,10 +468,8 @@ export class MainLayoutComponent implements OnInit {
     this.router.navigate(['/settings']);
   }
 
-  // Método mantenido para compatibilidad con tu template actual
+  // Método para manejar el cierre del sidebar
   protected onSidebarHide(): void {
-    if (this.isMobile()) {
-      this.sidebarExpanded.set(false);
-    }
+    this.hideMenu();
   }
 }

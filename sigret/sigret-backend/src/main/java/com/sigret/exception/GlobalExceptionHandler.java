@@ -150,6 +150,46 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
 
+    @ExceptionHandler(EmpleadoNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleEmpleadoNotFound(EmpleadoNotFoundException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Empleado no encontrado");
+        error.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(TipoPersonaNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTipoPersonaNotFound(TipoPersonaNotFoundException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Tipo de persona no encontrado");
+        error.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(TipoEmpleadoNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTipoEmpleadoNotFound(TipoEmpleadoNotFoundException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Tipo de empleado no encontrado");
+        error.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(TipoDocumentoNotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleTipoDocumentoNotFound(TipoDocumentoNotFoundException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Tipo de documento no encontrado");
+        error.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
+    }
+
+    @ExceptionHandler(TipoAlreadyExistsException.class)
+    public ResponseEntity<Map<String, String>> handleTipoAlreadyExists(TipoAlreadyExistsException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Tipo ya existe");
+        error.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException e) {
         Map<String, String> error = new HashMap<>();

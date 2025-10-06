@@ -1,0 +1,68 @@
+.employee-management-container {
+  padding: 1.5rem;
+  
+  :host ::ng-deep {
+    .p-datatable-sm .p-datatable-tbody > tr > td {
+      padding: 0.5rem;
+    }
+    
+    // Clickable row styles
+    .p-datatable-tbody > tr.cursor-pointer {
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+      
+      &:hover {
+        background-color: var(--surface-hover) !important;
+      }
+    }
+    
+    // Address section styles
+    .surface-50 {
+      transition: all 0.2s ease;
+    }
+    
+    .surface-100 {
+      transition: all 0.2s ease;
+    }
+
+  }
+}
+
+// Ensure Google Maps autocomplete dropdown is visible above all PrimeNG components
+// This is a global style since .pac-container is created outside Angular's component
+:host ::ng-deep .pac-container {
+  z-index: 99999 !important;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  font-family: var(--font-family);
+  
+  .pac-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    border-top: 1px solid #e0e0e0;
+    
+    &:first-child {
+      border-top: none;
+    }
+    
+    &:hover {
+      background-color: #f5f5f5;
+    }
+    
+    .pac-icon {
+      margin-right: 8px;
+    }
+    
+    .pac-item-query {
+      color: #333;
+      font-weight: 500;
+    }
+  }
+  
+  .pac-item-selected {
+    background-color: #f5f5f5;
+  }
+}
