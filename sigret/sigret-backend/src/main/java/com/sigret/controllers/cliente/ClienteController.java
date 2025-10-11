@@ -38,7 +38,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
             @ApiResponse(responseCode = "409", description = "Documento ya existe")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<ClienteResponseDto> crearCliente(@Valid @RequestBody ClienteCreateDto clienteCreateDto) {
         ClienteResponseDto clienteCreado = clienteService.crearCliente(clienteCreateDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(clienteCreado);
@@ -50,7 +50,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "200", description = "Cliente encontrado"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<ClienteResponseDto> obtenerClientePorId(
             @Parameter(description = "ID del cliente") @PathVariable Long id) {
         ClienteResponseDto cliente = clienteService.obtenerClientePorId(id);
@@ -58,46 +58,50 @@ public class ClienteController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar clientes", description = "Obtiene una lista paginada de clientes")
+    @Operation(summary = "Listar clientes", description = "Obtiene una lista paginada de clientes activos con filtros opcionales")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de clientes obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
-    public ResponseEntity<Page<ClienteListDto>> obtenerClientes(Pageable pageable) {
-        Page<ClienteListDto> clientes = clienteService.obtenerClientes(pageable);
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
+    public ResponseEntity<Page<ClienteListDto>> obtenerClientes(
+            Pageable pageable,
+            @Parameter(description = "Filtro de búsqueda (nombre, apellido, razón social o documento)") 
+            @RequestParam(required = false) String filtro) {
+        Page<ClienteListDto> clientes = clienteService.obtenerClientes(pageable, filtro);
         return ResponseEntity.ok(clientes);
     }
 
     @GetMapping("/todos")
-    @Operation(summary = "Obtener todos los clientes", description = "Obtiene una lista completa de clientes")
+    @Operation(summary = "Obtener todos los clientes", description = "Obtiene una lista completa de clientes activos")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de clientes obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<List<ClienteListDto>> obtenerTodosLosClientes() {
         List<ClienteListDto> clientes = clienteService.obtenerTodosLosClientes();
         return ResponseEntity.ok(clientes);
     }
 
-    @GetMapping("/buscar")
-    @Operation(summary = "Buscar clientes", description = "Busca clientes por nombre o documento")
+    @GetMapping("/autocompletado")
+    @Operation(summary = "Autocompletado de clientes", description = "Busca clientes por nombre o documento para autocompletado (máximo 10 resultados)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Búsqueda realizada exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
-    public ResponseEntity<List<ClienteListDto>> buscarClientes(
-            @Parameter(description = "Término de búsqueda") @RequestParam String termino) {
-        List<ClienteListDto> clientes = clienteService.buscarClientes(termino);
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
+    public ResponseEntity<List<ClienteListDto>> autocompletadoClientes(
+            @Parameter(description = "Término de búsqueda") @RequestParam String termino,
+            @Parameter(description = "Límite de resultados (por defecto 10)") @RequestParam(defaultValue = "10") int limite) {
+        List<ClienteListDto> clientes = clienteService.buscarClientesAutocompletado(termino, limite);
         return ResponseEntity.ok(clientes);
     }
 
     @GetMapping("/documento/{documento}")
-    @Operation(summary = "Obtener cliente por documento", description = "Obtiene un cliente por su número de documento")
+    @Operation(summary = "Obtener cliente por documento", description = "Obtiene un cliente activo por su número de documento")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cliente encontrado"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<ClienteResponseDto> obtenerClientePorDocumento(
             @Parameter(description = "Número de documento") @PathVariable String documento) {
         ClienteResponseDto cliente = clienteService.obtenerClientePorDocumento(documento);
@@ -110,7 +114,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "200", description = "Cliente con equipos encontrado"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<ClienteResponseDto> obtenerClienteConEquipos(
             @Parameter(description = "ID del cliente") @PathVariable Long id) {
         ClienteResponseDto cliente = clienteService.obtenerClienteConEquipos(id);
@@ -124,7 +128,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado"),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<ClienteResponseDto> actualizarCliente(
             @Parameter(description = "ID del cliente") @PathVariable Long id,
             @Valid @RequestBody ClienteUpdateDto clienteUpdateDto) {
@@ -133,27 +137,28 @@ public class ClienteController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar cliente", description = "Elimina un cliente del sistema")
+    @Operation(summary = "Eliminar cliente (baja lógica)", description = "Realiza una baja lógica del cliente")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Cliente eliminado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO')")
     public ResponseEntity<Void> eliminarCliente(
             @Parameter(description = "ID del cliente") @PathVariable Long id) {
         clienteService.eliminarCliente(id);
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping("/verificar-documento")
-    @Operation(summary = "Verificar documento", description = "Verifica si un documento ya existe")
+    @PutMapping("/{id}/reactivar")
+    @Operation(summary = "Reactivar cliente", description = "Reactiva un cliente previamente desactivado")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Verificación completada")
+            @ApiResponse(responseCode = "200", description = "Cliente reactivado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
-    public ResponseEntity<Boolean> verificarDocumento(
-            @Parameter(description = "Número de documento") @RequestParam String documento) {
-        boolean existe = clienteService.existeClienteConDocumento(documento);
-        return ResponseEntity.ok(existe);
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO')")
+    public ResponseEntity<Void> reactivarCliente(
+            @Parameter(description = "ID del cliente") @PathVariable Long id) {
+        clienteService.reactivarCliente(id);
+        return ResponseEntity.ok().build();
     }
 }

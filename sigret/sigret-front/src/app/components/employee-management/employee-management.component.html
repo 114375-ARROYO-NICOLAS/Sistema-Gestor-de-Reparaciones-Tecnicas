@@ -1,15 +1,17 @@
 <div class="employee-management-container">
   <!-- Header -->
-  <div class="flex justify-content-between align-items-center mb-4">
-    <div>
-      <h2 class="text-2xl font-bold text-900 m-0">Gestión de Empleados</h2>
-      <p class="text-600 mt-2">Administra la información de los empleados del sistema</p>
+  <div class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center gap-3 mb-4">
+    <div class="flex-1">
+      <h2 class="text-xl md:text-2xl font-bold text-900 m-0">Gestión de Empleados</h2>
+      <p class="text-sm md:text-base text-600 mt-1 md:mt-2">Administra la información de los empleados del sistema</p>
     </div>
     <p-button 
       label="Nuevo Empleado" 
       icon="pi pi-plus" 
       (onClick)="openCreateDialog()"
-      severity="primary">
+      severity="primary"
+      class="w-full md:w-auto"
+      [size]="isMobile() ? 'small' : undefined">
     </p-button>
   </div>
 
@@ -44,13 +46,13 @@
   <!-- Employees Table -->
   <p-card>
     <ng-template pTemplate="header">
-      <div class="p-4">
-        <h3 class="text-xl font-semibold m-0 mb-3">Lista de Empleados</h3>
+      <div class="p-3 md:p-4">
+        <h3 class="text-lg md:text-xl font-semibold m-0 mb-3">Lista de Empleados</h3>
         
         <!-- Filtros -->
         <div class="grid">
           <div class="col-12 md:col-4">
-            <label for="filterStatus" class="block text-900 font-medium mb-2">Estado</label>
+            <label for="filterStatus" class="block text-900 font-medium mb-2 text-sm md:text-base">Estado</label>
             <p-select
               id="filterStatus"
               [options]="statusOptions"
@@ -61,7 +63,7 @@
             </p-select>
           </div>
           <div class="col-12 md:col-6">
-            <label for="filterSearch" class="block text-900 font-medium mb-2">Búsqueda</label>
+            <label for="filterSearch" class="block text-900 font-medium mb-2 text-sm md:text-base">Búsqueda</label>
             <input 
               id="filterSearch"
               type="text"
@@ -69,7 +71,7 @@
               [(ngModel)]="filterBusqueda"
               (input)="onFilterChange()"
               placeholder="Buscar por nombre, apellido o documento..."
-              class="w-full">
+              class="w-full text-sm md:text-base">
           </div>
           <div class="col-12 md:col-2 flex align-items-end">
             <p-button 
@@ -94,29 +96,33 @@
           [lazy]="true"
           (onLazyLoad)="loadEmployees($event)"
           [loading]="isLoading()"
-          styleClass="p-datatable-sm">
+          [rowHover]="true"
+          [scrollable]="true"
+          scrollHeight="flex"
+          styleClass="p-datatable-sm"
+          responsiveLayout="scroll">
           
           <ng-template pTemplate="header">
             <tr>
-              <th>Nombre Completo</th>
-              <th>Documento</th>
-              <th>Tipo de Empleado</th>
-              <th>Estado</th>
-              <th>Usuario</th>
-              <th>Rol</th>
-              <th class="text-center">Acciones</th>
+              <th style="min-width: 200px;">Nombre Completo</th>
+              <th style="min-width: 140px;">Documento</th>
+              <th style="min-width: 140px;">Tipo de Empleado</th>
+              <th style="min-width: 100px;">Estado</th>
+              <th style="min-width: 120px;">Usuario</th>
+              <th style="min-width: 100px;">Rol</th>
+              <th class="text-center" style="min-width: 140px;">Acciones</th>
             </tr>
           </ng-template>
 
           <ng-template pTemplate="body" let-employee>
-            <tr class="cursor-pointer hover:bg-gray-50" (click)="openEmployeeDetailsDialog(employee)">
+            <tr class="cursor-pointer" (click)="viewEmployeeDetail(employee)">
               <td>
                 <div class="flex align-items-center gap-2">
                   <i class="pi pi-user text-primary"></i>
                   <span class="font-medium">{{ employee.nombreCompleto }}</span>
                 </div>
               </td>
-              <td>{{ employee.tipoDocumento }}: {{ employee.documento }}</td>
+              <td>{{ employee.tipoDocumento }} {{ employee.documento }}</td>
               <td>{{ employee.tipoEmpleado }}</td>
               <td>
                 <p-tag 
@@ -143,14 +149,6 @@
               </td>
               <td (click)="$event.stopPropagation()">
                 <div class="flex gap-1 justify-content-center">
-                  <p-button 
-                    icon="pi pi-eye" 
-                    severity="info"
-                    size="small"
-                    [text]="true"
-                    (onClick)="openEmployeeDetailsDialog(employee)"
-                    title="Ver detalles">
-                  </p-button>
                   <p-button 
                     icon="pi pi-pencil" 
                     severity="secondary"
@@ -223,7 +221,8 @@
     (visibleChange)="showEmployeeDialog.set($event)"
     [modal]="true"
     [closable]="true"
-    [style]="{ width: '700px' }"
+    [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
+    [style]="{ width: '700px', maxWidth: '95vw' }"
     (onHide)="closeEmployeeDialog()">
     
     <form [formGroup]="employeeForm" (ngSubmit)="saveEmployee()">
@@ -409,9 +408,8 @@
               <div class="grid">
                 <div class="col-12">
                   <label for="addressAutocomplete" class="block text-900 font-medium mb-2">
-                    Buscar dirección con Google Places
+                    Buscar dirección
                   </label>
-                  <!-- Google Places Autocomplete Classic API (más estable) -->
                   <input
                     #addressInput
                     id="addressAutocomplete"
@@ -520,14 +518,24 @@
                       }
                       
                       @if (address.observaciones) {
-                        <div class="text-sm text-600 ml-4 mt-1">
-                          <i class="pi pi-info-circle mr-1"></i>
+                        <div class="text-sm text-700 font-medium ml-4 mt-1">
+                          <i class="pi pi-info-circle mr-1 text-primary"></i>
                           {{ address.observaciones }}
                         </div>
                       }
                     </div>
                     
                     <div class="flex gap-1">
+                      @if (address.latitud && address.longitud) {
+                        <p-button 
+                          icon="pi pi-map-marker"
+                          severity="info"
+                          size="small"
+                          [text]="true"
+                          (onClick)="openInGoogleMaps(address)"
+                          title="Ver en Google Maps">
+                        </p-button>
+                      }
                       @if (!address.esPrincipal) {
                         <p-button 
                           icon="pi pi-star"
@@ -592,246 +600,6 @@
     </ng-template>
   </p-dialog>
 
-  <!-- Employee Details Dialog -->
-  <p-dialog 
-    header="Detalles del Empleado"
-    [visible]="showEmployeeDetailsDialog()"
-    (visibleChange)="showEmployeeDetailsDialog.set($event)"
-    [modal]="true"
-    [closable]="true"
-    [style]="{ width: '800px', maxWidth: '95vw' }"
-    (onHide)="closeEmployeeDetailsDialog()">
-    
-    @if (isLoadingDetails()) {
-      <div class="flex justify-content-center align-items-center p-5">
-        <p-progressSpinner></p-progressSpinner>
-      </div>
-    } @else if (employeeDetails()) {
-      <div class="grid">
-        <!-- Personal Information -->
-        <div class="col-12">
-          <h4 class="text-lg font-semibold text-primary mb-3">
-            <i class="pi pi-user mr-2"></i>Información Personal
-          </h4>
-        </div>
-        
-        <div class="col-12 md:col-6">
-          <div class="mb-3">
-            <label class="text-sm text-600 mb-1 block">Nombre Completo</label>
-            <div class="font-medium text-900">{{ employeeDetails()!.nombreCompleto }}</div>
-          </div>
-        </div>
-        
-        <div class="col-12 md:col-6">
-          <div class="mb-3">
-            <label class="text-sm text-600 mb-1 block">Documento</label>
-            <div class="font-medium text-900">{{ employeeDetails()!.tipoDocumento }}: {{ employeeDetails()!.documento }}</div>
-          </div>
-        </div>
-        
-        @if (employeeDetails()!.tipoPersona) {
-          <div class="col-12 md:col-6">
-            <div class="mb-3">
-              <label class="text-sm text-600 mb-1 block">Tipo de Persona</label>
-              <div class="font-medium text-900">{{ employeeDetails()!.tipoPersona }}</div>
-            </div>
-          </div>
-        }
-        
-        @if (employeeDetails()!.sexo) {
-          <div class="col-12 md:col-6">
-            <div class="mb-3">
-              <label class="text-sm text-600 mb-1 block">Sexo</label>
-              <div class="font-medium text-900">{{ employeeDetails()!.sexo === 'M' ? 'Masculino' : 'Femenino' }}</div>
-            </div>
-          </div>
-        }
-        
-        <!-- Employee Information -->
-        <div class="col-12 mt-3">
-          <p-divider></p-divider>
-          <h4 class="text-lg font-semibold text-primary mb-3">
-            <i class="pi pi-briefcase mr-2"></i>Información Laboral
-          </h4>
-        </div>
-        
-        <div class="col-12 md:col-6">
-          <div class="mb-3">
-            <label class="text-sm text-600 mb-1 block">Tipo de Empleado</label>
-            <div class="font-medium text-900">{{ employeeDetails()!.tipoEmpleado }}</div>
-          </div>
-        </div>
-        
-        <div class="col-12 md:col-6">
-          <div class="mb-3">
-            <label class="text-sm text-600 mb-1 block">Estado</label>
-            <p-tag 
-              [value]="employeeService.getStatusDisplayName(employeeDetails()!.activo || employeeDetails()!.empleadoActivo || false)"
-              [severity]="employeeService.getStatusColor(employeeDetails()!.activo || employeeDetails()!.empleadoActivo || false)">
-            </p-tag>
-          </div>
-        </div>
-        
-        <!-- User Information -->
-        @if (employeeDetails()!.usuarioId) {
-          <div class="col-12 mt-3">
-            <p-divider></p-divider>
-            <h4 class="text-lg font-semibold text-primary mb-3">
-              <i class="pi pi-id-card mr-2"></i>Información de Usuario
-            </h4>
-          </div>
-          
-          <div class="col-12 md:col-6">
-            <div class="mb-3">
-              <label class="text-sm text-600 mb-1 block">Usuario</label>
-              <div class="font-medium text-900">{{ employeeDetails()!.username }}</div>
-            </div>
-          </div>
-          
-          <div class="col-12 md:col-6">
-            <div class="mb-3">
-              <label class="text-sm text-600 mb-1 block">Rol</label>
-              <p-tag [value]="employeeDetails()!.rolUsuario || employeeDetails()!.rol || '-'" severity="info"></p-tag>
-            </div>
-          </div>
-          
-          @if (employeeDetails()!.fechaCreacionUsuario || employeeDetails()!.fechaCreacion) {
-            <div class="col-12 md:col-6">
-              <div class="mb-3">
-                <label class="text-sm text-600 mb-1 block">Fecha de Creación</label>
-                <div class="font-medium text-900">{{ (employeeDetails()!.fechaCreacionUsuario || employeeDetails()!.fechaCreacion) | date:'dd/MM/yyyy HH:mm' }}</div>
-              </div>
-            </div>
-          }
-          
-          @if (employeeDetails()!.ultimoLogin) {
-            <div class="col-12 md:col-6">
-              <div class="mb-3">
-                <label class="text-sm text-600 mb-1 block">Último Login</label>
-                <div class="font-medium text-900">{{ employeeDetails()!.ultimoLogin | date:'dd/MM/yyyy HH:mm' }}</div>
-              </div>
-            </div>
-          }
-        }
-        
-        <!-- Addresses -->
-        @if (employeeDetails()!.direcciones && employeeDetails()!.direcciones!.length > 0) {
-          <div class="col-12 mt-3">
-            <p-divider></p-divider>
-            <h4 class="text-lg font-semibold text-primary mb-3">
-              <i class="pi pi-map-marker mr-2"></i>Direcciones
-            </h4>
-          </div>
-          
-          <div class="col-12">
-            <div class="flex flex-column gap-3">
-              @for (address of employeeDetails()!.direcciones; track address.id || $index) {
-                <div class="surface-100 border-round p-3">
-                  <div class="flex justify-content-between align-items-start">
-                    <div class="flex-1">
-                      <div class="flex align-items-center gap-2 mb-2">
-                        <i class="pi pi-map-marker text-primary"></i>
-                        <span class="font-semibold text-900">{{ getAddressDisplay(address) }}</span>
-                        @if (address.esPrincipal) {
-                          <p-badge value="Principal" severity="success"></p-badge>
-                        }
-                      </div>
-                      
-                      <div class="grid text-sm ml-4">
-                        @if (address.calle || address.numero) {
-                          <div class="col-12 md:col-6">
-                            <span class="text-600">Calle y Número: </span>
-                            <span class="text-900">{{ address.calle }} {{ address.numero }}</span>
-                          </div>
-                        }
-                        
-                        @if (address.piso || address.departamento) {
-                          <div class="col-12 md:col-6">
-                            <span class="text-600">Piso/Depto: </span>
-                            <span class="text-900">
-                              @if (address.piso) { Piso {{ address.piso }} }
-                              @if (address.departamento) { Depto {{ address.departamento }} }
-                            </span>
-                          </div>
-                        }
-                        
-                        @if (address.ciudad) {
-                          <div class="col-12 md:col-6">
-                            <span class="text-600">Ciudad: </span>
-                            <span class="text-900">{{ address.ciudad }}</span>
-                          </div>
-                        }
-                        
-                        @if (address.provincia) {
-                          <div class="col-12 md:col-6">
-                            <span class="text-600">Provincia: </span>
-                            <span class="text-900">{{ address.provincia }}</span>
-                          </div>
-                        }
-                        
-                        @if (address.pais) {
-                          <div class="col-12 md:col-6">
-                            <span class="text-600">País: </span>
-                            <span class="text-900">{{ address.pais }}</span>
-                          </div>
-                        }
-                        
-                        @if (address.codigoPostal) {
-                          <div class="col-12 md:col-6">
-                            <span class="text-600">Código Postal: </span>
-                            <span class="text-900">{{ address.codigoPostal }}</span>
-                          </div>
-                        }
-                        
-                        @if (address.latitud && address.longitud) {
-                          <div class="col-12">
-                            <span class="text-600">Coordenadas: </span>
-                            <span class="text-900">{{ address.latitud }}, {{ address.longitud }}</span>
-                          </div>
-                        }
-                        
-                        @if (address.observaciones) {
-                          <div class="col-12">
-                            <span class="text-600">Observaciones: </span>
-                            <span class="text-900">{{ address.observaciones }}</span>
-                          </div>
-                        }
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              }
-            </div>
-          </div>
-        } @else {
-          <div class="col-12 mt-3">
-            <p-divider></p-divider>
-            <div class="text-center text-600 py-4">
-              <i class="pi pi-map-marker text-3xl mb-2"></i>
-              <p class="m-0">No hay direcciones registradas</p>
-            </div>
-          </div>
-        }
-      </div>
-    }
-    
-    <ng-template pTemplate="footer">
-      <div class="flex justify-content-between gap-2">
-        <p-button 
-          label="Editar Empleado"
-          icon="pi pi-pencil"
-          severity="secondary"
-          (onClick)="openEditDialogFromDetails(); closeEmployeeDetailsDialog()">
-        </p-button>
-        <p-button 
-          label="Cerrar"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="closeEmployeeDetailsDialog()">
-        </p-button>
-      </div>
-    </ng-template>
-  </p-dialog>
 </div>
 
 <!-- Toast and Confirmation Dialog -->

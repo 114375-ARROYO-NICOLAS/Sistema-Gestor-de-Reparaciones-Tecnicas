@@ -22,48 +22,38 @@ export const routes: Routes = [
         loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
       },
       {
-        path: 'reparaciones',
-        loadComponent: () => import('./components/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
-      },
-      {
-        path: 'equipos',
-        loadComponent: () => import('./components/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
-      },
-      {
-        path: 'mensajes',
-        loadComponent: () => import('./components/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
-      },
-      {
-        path: 'calendario',
-        loadComponent: () => import('./components/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
-      },
-      {
         path: 'clientes',
-        loadComponent: () => import('./components/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./components/client-management/client-management.component').then(m => m.ClientManagementComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./components/client-detail/client-detail.component').then(m => m.ClientDetailComponent)
+          }
+        ]
       },
       {
-        path: 'tecnicos',
-        loadComponent: () => import('./components/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
-      },
-      {
-        path: 'inventario',
-        loadComponent: () => import('./components/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
-      },
-      {
-        path: 'profile',
-        loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent)
-      },
-      {
-        path: 'settings',
-        loadComponent: () => import('./components/placeholder/placeholder.component').then(m => m.PlaceholderComponent)
+        path: 'empleados',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./components/employee-management/employee-management.component').then(m => m.EmployeeManagementComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./components/employee-detail/employee-detail.component').then(m => m.EmployeeDetailComponent)
+          }
+        ]
       },
       {
         path: 'usuarios',
         loadComponent: () => import('./components/user-management/user-management.component').then(m => m.UserManagementComponent)
       },
       {
-        path: 'empleados',
-        loadComponent: () => import('./components/employee-management/employee-management.component').then(m => m.EmployeeManagementComponent)
+        path: 'profile',
+        loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent)
       }
     ]
   },

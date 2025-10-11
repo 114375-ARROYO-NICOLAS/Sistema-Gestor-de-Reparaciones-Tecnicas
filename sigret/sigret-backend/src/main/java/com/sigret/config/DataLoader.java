@@ -21,6 +21,9 @@ public class DataLoader implements CommandLineRunner {
     private TipoEmpleadoRepository tipoEmpleadoRepository;
 
     @Autowired
+    private TipoContactoRepository tipoContactoRepository;
+
+    @Autowired
     private PersonaRepository personaRepository;
 
     @Autowired
@@ -78,6 +81,31 @@ public class DataLoader implements CommandLineRunner {
         TipoEmpleado tecnico = new TipoEmpleado();
         tecnico.setDescripcion("Técnico");
         tipoEmpleadoRepository.save(tecnico);
+
+        // Crear tipos de contacto
+        TipoContacto email = new TipoContacto();
+        email.setDescripcion("Email");
+        tipoContactoRepository.save(email);
+
+        TipoContacto telefono = new TipoContacto();
+        telefono.setDescripcion("Teléfono");
+        tipoContactoRepository.save(telefono);
+
+        TipoContacto celular = new TipoContacto();
+        celular.setDescripcion("Celular");
+        tipoContactoRepository.save(celular);
+
+        TipoContacto whatsapp = new TipoContacto();
+        whatsapp.setDescripcion("WhatsApp");
+        tipoContactoRepository.save(whatsapp);
+
+        TipoContacto telegram = new TipoContacto();
+        telegram.setDescripcion("Telegram");
+        tipoContactoRepository.save(telegram);
+
+        TipoContacto fax = new TipoContacto();
+        fax.setDescripcion("Fax");
+        tipoContactoRepository.save(fax);
 
         // Crear persona admin
         Persona personaAdmin = new Persona();
@@ -138,6 +166,7 @@ public class DataLoader implements CommandLineRunner {
         System.out.println("Tipos de Documento: DNI, CUIT, CUIL, Pasaporte");
         System.out.println("Tipos de Persona: Física, Jurídica");
         System.out.println("Tipos de Empleado: Propietario, Administrativo, Técnico");
+        System.out.println("Tipos de Contacto: Email, Teléfono, Celular, WhatsApp, Telegram, Fax");
         System.out.println("===========================================");
         System.out.println("Usuario admin creado:");
         System.out.println("  Username: admin");

@@ -1,1 +1,61 @@
-/* No custom styles - using PrimeFlex classes only */
+// Estilos específicos para el dashboard
+:host {
+  display: block;
+  width: 100%;
+}
+
+// Ajustes responsive para el dashboard
+@media (max-width: 768px) {
+  .text-4xl {
+    font-size: 2rem !important;
+  }
+  
+  .text-3xl {
+    font-size: 1.75rem !important;
+  }
+  
+  .text-lg {
+    font-size: 1rem !important;
+  }
+  
+  // Reducir padding en cards
+  :host ::ng-deep {
+    .p-card .p-card-body {
+      padding: 1rem !important;
+    }
+  }
+}
+
+@media (max-width: 576px) {
+  .text-4xl {
+    font-size: 1.5rem !important;
+  }
+  
+  .text-3xl {
+    font-size: 1.5rem !important;
+  }
+  
+  .text-xl {
+    font-size: 1.125rem !important;
+  }
+  
+  .text-lg {
+    font-size: 0.9375rem !important;
+  }
+  
+  // Iconos más pequeños
+  .text-xl i {
+    font-size: 1rem !important;
+  }
+  
+  // Reducir aún más el padding
+  :host ::ng-deep {
+    .p-card .p-card-body {
+      padding: 0.75rem !important;
+    }
+    
+    .p-card .p-card-header {
+      padding: 0.75rem !important;
+    }
+  }
+}

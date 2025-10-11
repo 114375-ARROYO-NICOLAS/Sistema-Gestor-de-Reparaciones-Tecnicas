@@ -1,5 +1,6 @@
 package com.sigret.dtos.empleado;
 
+import com.sigret.dtos.contacto.ContactoListDto;
 import com.sigret.dtos.direccion.DireccionListDto;
 import com.sigret.enums.RolUsuario;
 import lombok.AllArgsConstructor;
@@ -36,6 +37,9 @@ public class EmpleadoResponseDto {
     private Boolean usuarioActivo;
     private LocalDateTime fechaCreacionUsuario;
     private LocalDateTime ultimoLogin;
+    
+    // Contactos de la persona
+    private List<ContactoListDto> contactos;
     
     // Direcciones de la persona
     private List<DireccionListDto> direcciones;

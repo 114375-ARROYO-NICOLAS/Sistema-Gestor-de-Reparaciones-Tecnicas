@@ -27,22 +27,16 @@ export class ThemeService {
   private applyTheme(): void {
     const theme = this.currentTheme();
     const html = document.documentElement;
-    const body = document.body;
     
-    // Aplicar clase dark-mode para PrimeNG en el html y body
+    // Toggle the dark mode class on <html> element as per PrimeNG documentation
+    // This matches the darkModeSelector: '.app-dark' in app.config.ts
     if (theme === 'dark') {
-      html.classList.add('dark-mode');
-      body.classList.add('dark-mode');
-      html.classList.add('app-dark'); // También añadir app-dark para compatibilidad con Sakai
-      body.classList.add('app-dark');
+      html.classList.add('app-dark');
     } else {
-      html.classList.remove('dark-mode');
-      body.classList.remove('dark-mode');
       html.classList.remove('app-dark');
-      body.classList.remove('app-dark');
     }
     
-    // También aplicar data-theme para compatibilidad
+    // Also set data-theme attribute for compatibility with custom components
     html.setAttribute('data-theme', theme);
   }
 }

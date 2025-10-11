@@ -1,5 +1,7 @@
 package com.sigret.services;
 
+import com.sigret.dtos.contacto.ContactoCreateDto;
+import com.sigret.dtos.contacto.ContactoListDto;
 import com.sigret.dtos.direccion.DireccionCreateDto;
 import com.sigret.dtos.direccion.DireccionListDto;
 import com.sigret.dtos.direccion.GooglePlacesDto;
@@ -10,6 +12,7 @@ import com.sigret.dtos.empleado.EmpleadoUpdateDto;
 import com.sigret.entities.*;
 import com.sigret.exception.DocumentoAlreadyExistsException;
 import com.sigret.exception.EmpleadoNotFoundException;
+import com.sigret.exception.TipoContactoNotFoundException;
 import com.sigret.exception.UsernameAlreadyExistsException;
 import com.sigret.repositories.*;
 import com.sigret.utilities.GooglePlacesParser;
@@ -53,6 +56,12 @@ public class EmpleadoService {
 
     @Autowired
     private DireccionRepository direccionRepository;
+
+    @Autowired
+    private ContactoRepository contactoRepository;
+
+    @Autowired
+    private TipoContactoRepository tipoContactoRepository;
 
     /**
      * Crear un nuevo empleado y automáticamente crear su usuario
@@ -119,6 +128,11 @@ public class EmpleadoService {
 
         // Actualizar la referencia en empleado
         empleado.setUsuario(usuario);
+
+        // Crear contactos si fueron proporcionados
+        if (empleadoCreateDto.getContactos() != null && !empleadoCreateDto.getContactos().isEmpty()) {
+            crearContactos(persona, empleadoCreateDto.getContactos());
+        }
 
         // Crear direcciones si fueron proporcionadas
         if (empleadoCreateDto.getDirecciones() != null && !empleadoCreateDto.getDirecciones().isEmpty()) {
@@ -231,6 +245,11 @@ public class EmpleadoService {
         personaRepository.save(persona);
         empleado = empleadoRepository.save(empleado);
 
+        // Actualizar contactos si fueron proporcionados
+        if (empleadoUpdateDto.getContactos() != null) {
+            actualizarContactos(persona, empleadoUpdateDto.getContactos());
+        }
+
         // Actualizar direcciones si fueron proporcionadas
         if (empleadoUpdateDto.getDirecciones() != null) {
             actualizarDirecciones(persona, empleadoUpdateDto.getDirecciones());
@@ -283,6 +302,38 @@ public class EmpleadoService {
             throw new EmpleadoNotFoundException("Empleado no encontrado con ID: " + id);
         }
         empleadoRepository.deleteById(id);
+    }
+
+    /**
+     * Crear contactos para una persona
+     */
+    private void crearContactos(Persona persona, List<ContactoCreateDto> contactosDto) {
+        for (ContactoCreateDto contactoDto : contactosDto) {
+            // Buscar TipoContacto por ID
+            TipoContacto tipoContacto = tipoContactoRepository.findById(contactoDto.getTipoContactoId())
+                    .orElseThrow(() -> new TipoContactoNotFoundException("Tipo de contacto no encontrado con ID: " + contactoDto.getTipoContactoId()));
+
+            Contacto contacto = new Contacto();
+            contacto.setPersona(persona);
+            contacto.setTipoContacto(tipoContacto);
+            contacto.setDescripcion(contactoDto.getDescripcion());
+
+            contactoRepository.save(contacto);
+        }
+    }
+
+    /**
+     * Actualizar contactos de una persona (reemplaza todos los existentes)
+     */
+    private void actualizarContactos(Persona persona, List<ContactoCreateDto> contactosDto) {
+        // Eliminar todos los contactos existentes
+        List<Contacto> contactosExistentes = contactoRepository.findByPersonaId(persona.getId());
+        contactoRepository.deleteAll(contactosExistentes);
+
+        // Crear los nuevos contactos
+        if (contactosDto != null && !contactosDto.isEmpty()) {
+            crearContactos(persona, contactosDto);
+        }
     }
 
     /**
@@ -393,11 +444,31 @@ public class EmpleadoService {
     }
 
     /**
+     * Convertir lista de contactos a DTOs
+     */
+    private List<ContactoListDto> convertirContactosADto(List<Contacto> contactos) {
+        if (contactos == null) {
+            return new ArrayList<>();
+        }
+        return contactos.stream()
+                .map(c -> new ContactoListDto(
+                        c.getId(),
+                        c.getTipoContacto().getDescripcion(),
+                        c.getDescripcion()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Convertir Empleado a EmpleadoResponseDto
      */
     private EmpleadoResponseDto convertirAEmpleadoResponseDto(Empleado empleado) {
         Persona persona = empleado.getPersona();
         Usuario usuario = empleado.getUsuario();
+
+        // Obtener contactos de la persona
+        List<Contacto> contactos = contactoRepository.findByPersonaId(persona.getId());
+        List<ContactoListDto> contactosDto = convertirContactosADto(contactos);
 
         // Obtener direcciones de la persona
         List<Direccion> direcciones = direccionRepository.findByPersonaId(persona.getId());
@@ -422,6 +493,7 @@ public class EmpleadoService {
                 usuario != null ? usuario.getActivo() : null,
                 usuario != null ? usuario.getFechaCreacion() : null,
                 usuario != null ? usuario.getUltimoLogin() : null,
+                contactosDto,
                 direccionesDto
         );
         

@@ -56,11 +56,11 @@ public class TipoDocumentoController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar tipos de documento", description = "Obtiene una lista de todos los tipos de documento")
+    @Operation(summary = "Listar tipos de documento", description = "Obtiene una lista de todos los tipos de documento (endpoint público)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de tipos de documento obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    // Endpoint público - Sin @PreAuthorize para permitir acceso sin autenticación
     public ResponseEntity<List<TipoDocumentoListDto>> obtenerTodosTiposDocumento() {
         List<TipoDocumentoListDto> tiposDocumento = tipoDocumentoService.obtenerTodosTiposDocumento();
         return ResponseEntity.ok(tiposDocumento);

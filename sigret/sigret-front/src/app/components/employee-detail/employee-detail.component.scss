@@ -1,0 +1,36 @@
+// Estilos específicos para el componente de detalle de empleado
+.employee-detail-container {
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    // Reducir espaciado en móvil
+    .mb-4 {
+      margin-bottom: 1rem !important;
+    }
+    
+    // Hacer que los botones de acciones sean más visibles
+    .p-button {
+      &.p-button-text {
+        min-width: 2.5rem;
+      }
+    }
+  }
+  
+  @media (max-width: 576px) {
+    // Ajustes adicionales para móviles pequeños
+    .text-lg {
+      font-size: 1rem !important;
+    }
+  }
+}
+
+// Mejorar la visualización de información en móvil
+:host ::ng-deep {
+  @media (max-width: 768px) {
+    .p-card {
+      .p-card-body {
+        padding: 1rem;
+      }
+    }
+  }
+}

@@ -1,173 +1,271 @@
 // PrimeNG theme is configured in app.config.ts
 // No need to import theme files manually
 
-// Importar fuentes personalizadas
+// Import custom fonts
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-// Estilos base para el layout
+// Base reset
 * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-  }
-  
-  html, body {
-    height: 100vh;
-    font-family: 'Inter', var(--p-font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    background: var(--p-surface-ground);
-    font-weight: 400;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100vh;
+  font-family: 'Inter', var(--p-font-family), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+    sans-serif;
+  background: var(--p-surface-ground);
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+// Custom font configuration
+:root {
+  --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+// Typography
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-family-primary);
+  font-weight: 600;
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-family-mono);
+}
+
+// Apply custom font to PrimeNG components
+.p-component {
+  font-family: var(--font-family-primary);
+}
+
+// Body theme transition
+body {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+// Google Maps Autocomplete Dropdown - GLOBAL STYLES
+// The .pac-container is created by Google Maps outside of Angular components
+.pac-container {
+  z-index: 9999 !important;
+  border-radius: 6px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  margin-top: 4px;
+  font-family: var(--font-family-primary, 'Inter', sans-serif);
+  border: 1px solid var(--p-surface-border);
+
+  .pac-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-size: 0.95rem;
     line-height: 1.5;
-  }
+    border-top: 1px solid var(--p-surface-border);
+    transition: background-color 0.15s ease;
 
-  // Configuración de fuentes personalizadas
-  :root {
-    --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
-  }
-
-  // Aplicar fuente personalizada a elementos específicos
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-family-primary);
-    font-weight: 600;
-  }
-
-  code, pre, .font-mono {
-    font-family: var(--font-family-mono);
-  }
-
-  // Mejorar la tipografía de PrimeNG
-  .p-component {
-    font-family: var(--font-family-primary);
-  }
-
-  // Estilos para el layout principal
-  .main-layout {
-    font-family: var(--font-family-primary);
-  }
-
-  // Mejorar la legibilidad del texto
-  .text-900, .text-800, .text-700 {
-    font-weight: 500;
-  }
-
-  .text-600, .text-500 {
-    font-weight: 400;
-  }
-  
-  // Clases de utilidad adicionales para tu layout
-  .fixed {
-    position: fixed;
-  }
-  
-  .z-5 { z-index: 1000; }
-  .z-4 { z-index: 999; }
-  .z-3 { z-index: 998; }
-  
-  .top-0 { top: 0; }
-  .left-0 { left: 0; }
-  .right-0 { right: 0; }
-  .bottom-0 { bottom: 0; }
-  
-  .translate-x-0 { transform: translateX(0); }
-  .-translate-x-full { transform: translateX(-100%); }
-  
-  .transition-transform { transition: transform 300ms ease; }
-  .transition-opacity { transition: opacity 300ms ease; }
-  .transition-all { transition: all 300ms ease; }
-  
-  .opacity-0 { opacity: 0; }
-  .opacity-100 { opacity: 1; }
-  
-  .pointer-events-none { pointer-events: none; }
-  .pointer-events-auto { pointer-events: auto; }
-  
-  .inset-0 { top: 0; right: 0; bottom: 0; left: 0; }
-  
-  .bg-black-alpha-50 { background-color: rgba(0, 0, 0, 0.5); }
-  
-  .ml-18rem { margin-left: 18rem; }
-  
-  .max-h-0 { max-height: 0; }
-  .max-h-96 { max-height: 24rem; }
-  
-  // Responsive
-  @media (max-width: 768px) {
-    .ml-18rem {
-      margin-left: 0;
+    &:first-child {
+      border-top: none;
     }
-  }
 
-  // Estilos para modo oscuro
-  .dark-mode, .app-dark {
-    html, body {
-      background: var(--p-surface-ground);
+    &:hover {
+      background-color: var(--p-surface-hover);
+    }
+
+    .pac-icon {
+      margin-right: 10px;
+    }
+
+    .pac-item-query {
       color: var(--p-text-color);
+      font-weight: 500;
+    }
+
+    .pac-matched {
+      font-weight: 600;
     }
   }
 
-  // Asegurar que el fondo del body se actualice con el tema
-  body {
-    transition: background-color 0.3s ease, color 0.3s ease;
+  .pac-item-selected {
+    background-color: var(--p-surface-hover);
+  }
+}
+
+// Ensure pac-container appears above PrimeNG dialogs
+.p-dialog ~ .pac-container {
+  z-index: 9999 !important;
+}
+
+// Responsive improvements for mobile
+@media (max-width: 768px) {
+  // More compact cards on mobile
+  .p-card .p-card-body {
+    padding: 1rem !important;
   }
 
-  // Google Maps Autocomplete Dropdown - GLOBAL STYLES
-  // The .pac-container is created by Google Maps outside of Angular components
-  // It needs to be styled globally and with very high z-index to appear above PrimeNG Dialogs
-  .pac-container {
-    z-index: 9999 !important; // Higher than PrimeNG Dialog (which is typically 1100-1200)
-    border-radius: 6px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-    margin-top: 4px;
-    font-family: var(--font-family-primary, 'Inter', sans-serif);
-    border: 1px solid #e0e0e0;
-    
-    // Ensure the container is visible
-    display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    
-    .pac-item {
-      padding: 10px 14px;
-      cursor: pointer;
-      font-size: 0.95rem;
-      line-height: 1.5;
-      border-top: 1px solid #e0e0e0;
-      transition: background-color 0.15s ease;
-      
-      &:first-child {
-        border-top: none;
-      }
-      
-      &:hover {
-        background-color: #f5f5f5;
-      }
-      
-      .pac-icon {
-        margin-right: 10px;
-        background-position: center;
-      }
-      
-      .pac-item-query {
-        color: #333;
-        font-weight: 500;
-      }
-      
-      .pac-matched {
-        font-weight: 600;
-      }
+  .p-card .p-card-content {
+    padding: 0.5rem 0 !important;
+  }
+
+  // Table improvements
+  .p-datatable {
+    font-size: 0.875rem !important;
+
+    .p-datatable-thead > tr > th {
+      padding: 0.75rem 0.5rem !important;
+      font-size: 0.8125rem !important;
     }
-    
-    .pac-item-selected {
-      background-color: #f5f5f5;
-    }
-    
-    // Make sure it appears after typing
-    &:after {
-      display: none;
+
+    .p-datatable-tbody > tr > td {
+      padding: 0.75rem 0.5rem !important;
     }
   }
-  
-  // Ensure pac-container appears above PrimeNG dialogs
-  .p-dialog ~ .pac-container {
-    z-index: 9999 !important;
+
+  // More compact buttons on mobile
+  .p-button:not(.p-button-icon-only) {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
   }
+
+  // More compact inputs
+  .p-inputtext {
+    padding: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  // More compact selects
+  .p-select {
+    font-size: 0.875rem !important;
+  }
+
+  // Headers more compact
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  h3 {
+    font-size: 1.25rem !important;
+  }
+}
+
+// Extra small screens
+@media (max-width: 640px) {
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  h3 {
+    font-size: 1.125rem !important;
+  }
+
+  // Smaller badges and tags
+  .p-tag {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+
+  .p-badge {
+    font-size: 0.75rem !important;
+    min-width: 1.25rem !important;
+    height: 1.25rem !important;
+    line-height: 1.25rem !important;
+  }
+
+  // Adjust dialogs on very small screens
+  .p-dialog {
+    .p-dialog-header {
+      padding: 1rem !important;
+      font-size: 1.125rem !important;
+    }
+
+    .p-dialog-content {
+      padding: 0 1rem 1rem !important;
+    }
+
+    .p-dialog-footer {
+      padding: 1rem !important;
+    }
+  }
+
+  // Improve spacing in grids
+  .grid {
+    margin: -0.5rem !important;
+
+    > [class*='col'] {
+      padding: 0.5rem !important;
+    }
+  }
+}
+
+// Horizontally scrollable tables
+.p-datatable-scrollable {
+  .p-datatable-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// Improve touch targets on mobile (minimum 44x44px)
+@media (max-width: 768px) {
+  .p-button {
+    min-height: 2.5rem;
+  }
+
+  .p-inputtext,
+  .p-select {
+    min-height: 2.5rem;
+  }
+
+  // Clickable icons
+  .cursor-pointer {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// Prevent zoom on inputs in iOS
+@media (max-width: 768px) {
+  input[type='text'],
+  input[type='email'],
+  input[type='tel'],
+  input[type='password'],
+  input[type='number'],
+  input[type='search'],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+// Improve touch navigation
+* {
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
+// Thinner scrollbar on mobile
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 2px;
+  }
+}

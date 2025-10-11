@@ -1,5 +1,6 @@
 package com.sigret.dtos.empleado;
 
+import com.sigret.dtos.contacto.ContactoCreateDto;
 import com.sigret.dtos.direccion.DireccionCreateDto;
 import com.sigret.enums.RolUsuario;
 import jakarta.validation.constraints.NotBlank;
@@ -49,6 +50,9 @@ public class EmpleadoCreateDto {
     // Campos opcionales para crear usuario con credenciales personalizadas
     private String usernamePersonalizado; // Si no se proporciona, se usa el documento
     private String passwordPersonalizada; // Si no se proporciona, se usa el documento
+    
+    // Contactos (opcional, se gestiona automáticamente)
+    private List<ContactoCreateDto> contactos;
     
     // Direcciones (opcional, se gestiona automáticamente)
     private List<DireccionCreateDto> direcciones;

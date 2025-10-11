@@ -4,17 +4,30 @@ import com.sigret.dtos.cliente.ClienteCreateDto;
 import com.sigret.dtos.cliente.ClienteListDto;
 import com.sigret.dtos.cliente.ClienteResponseDto;
 import com.sigret.dtos.cliente.ClienteUpdateDto;
+import com.sigret.dtos.contacto.ContactoCreateDto;
+import com.sigret.dtos.contacto.ContactoListDto;
 import com.sigret.dtos.direccion.DireccionCreateDto;
 import com.sigret.dtos.direccion.DireccionListDto;
 import com.sigret.dtos.direccion.GooglePlacesDto;
 import com.sigret.entities.Cliente;
+import com.sigret.entities.Contacto;
 import com.sigret.entities.Direccion;
 import com.sigret.entities.Persona;
+import com.sigret.entities.TipoContacto;
+import com.sigret.entities.TipoDocumento;
+import com.sigret.entities.TipoPersona;
 import com.sigret.exception.ClienteNotFoundException;
 import com.sigret.exception.DocumentoAlreadyExistsException;
+import com.sigret.exception.TipoDocumentoNotFoundException;
+import com.sigret.exception.TipoContactoNotFoundException;
+import com.sigret.exception.TipoPersonaNotFoundException;
 import com.sigret.repositories.ClienteRepository;
+import com.sigret.repositories.ContactoRepository;
 import com.sigret.repositories.DireccionRepository;
 import com.sigret.repositories.PersonaRepository;
+import com.sigret.repositories.TipoContactoRepository;
+import com.sigret.repositories.TipoDocumentoRepository;
+import com.sigret.repositories.TipoPersonaRepository;
 import com.sigret.services.ClienteService;
 import com.sigret.utilities.GooglePlacesParser;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,30 +54,56 @@ public class ClienteServiceImpl implements ClienteService {
     @Autowired
     private DireccionRepository direccionRepository;
 
+    @Autowired
+    private ContactoRepository contactoRepository;
+
+    @Autowired
+    private TipoPersonaRepository tipoPersonaRepository;
+
+    @Autowired
+    private TipoDocumentoRepository tipoDocumentoRepository;
+
+    @Autowired
+    private TipoContactoRepository tipoContactoRepository;
+
     @Override
     public ClienteResponseDto crearCliente(ClienteCreateDto clienteCreateDto) {
-        // Validar que el documento no existe
-        if (existeClienteConDocumento(clienteCreateDto.getDocumento())) {
+        // Validar que el documento no existe (validación interna)
+        if (clienteRepository.existsByPersonaDocumento(clienteCreateDto.getDocumento())) {
             throw new DocumentoAlreadyExistsException("Ya existe un cliente con el documento: " + clienteCreateDto.getDocumento());
         }
 
-        // Crear o encontrar la persona
+        // Buscar TipoPersona por ID
+        TipoPersona tipoPersona = tipoPersonaRepository.findById(clienteCreateDto.getTipoPersonaId())
+                .orElseThrow(() -> new TipoPersonaNotFoundException("Tipo de persona no encontrado con ID: " + clienteCreateDto.getTipoPersonaId()));
+
+        // Buscar TipoDocumento por ID
+        TipoDocumento tipoDocumento = tipoDocumentoRepository.findById(clienteCreateDto.getTipoDocumentoId())
+                .orElseThrow(() -> new TipoDocumentoNotFoundException("Tipo de documento no encontrado con ID: " + clienteCreateDto.getTipoDocumentoId()));
+
+        // Crear la persona
         Persona persona = new Persona();
-        persona.setTipoPersona(clienteCreateDto.getTipoPersona());
+        persona.setTipoPersona(tipoPersona);
         persona.setNombre(clienteCreateDto.getNombre());
         persona.setApellido(clienteCreateDto.getApellido());
         persona.setRazonSocial(clienteCreateDto.getRazonSocial());
-        persona.setTipoDocumento(clienteCreateDto.getTipoDocumento());
+        persona.setTipoDocumento(tipoDocumento);
         persona.setDocumento(clienteCreateDto.getDocumento());
         persona.setSexo(clienteCreateDto.getSexo());
 
         Persona personaGuardada = personaRepository.save(persona);
 
-        // Crear el cliente
+        // Crear el cliente (activo por defecto)
         Cliente cliente = new Cliente(personaGuardada);
         cliente.setComentarios(clienteCreateDto.getComentarios());
+        cliente.setActivo(true);
 
         Cliente clienteGuardado = clienteRepository.save(cliente);
+
+        // Crear contactos si fueron proporcionados
+        if (clienteCreateDto.getContactos() != null && !clienteCreateDto.getContactos().isEmpty()) {
+            crearContactos(personaGuardada, clienteCreateDto.getContactos());
+        }
 
         // Crear direcciones si fueron proporcionadas
         if (clienteCreateDto.getDirecciones() != null && !clienteCreateDto.getDirecciones().isEmpty()) {
@@ -77,7 +116,7 @@ public class ClienteServiceImpl implements ClienteService {
     @Override
     @Transactional(readOnly = true)
     public ClienteResponseDto obtenerClientePorId(Long id) {
-        Cliente cliente = clienteRepository.findById(id)
+        Cliente cliente = clienteRepository.findByIdWithPersona(id)
                 .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado con ID: " + id));
 
         return convertirAClienteResponseDto(cliente);
@@ -85,15 +124,22 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ClienteListDto> obtenerClientes(Pageable pageable) {
-        Page<Cliente> clientes = clienteRepository.findAll(pageable);
+    public Page<ClienteListDto> obtenerClientes(Pageable pageable, String filtro) {
+        Page<Cliente> clientes;
+        
+        if (filtro != null && !filtro.trim().isEmpty()) {
+            clientes = clienteRepository.buscarClientesConFiltros(filtro.trim(), pageable);
+        } else {
+            clientes = clienteRepository.findByActivoTrue(pageable);
+        }
+        
         return clientes.map(this::convertirAClienteListDto);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ClienteListDto> obtenerTodosLosClientes() {
-        List<Cliente> clientes = clienteRepository.findAll();
+        List<Cliente> clientes = clienteRepository.findByActivoTrue();
         return clientes.stream()
                 .map(this::convertirAClienteListDto)
                 .collect(Collectors.toList());
@@ -101,12 +147,14 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ClienteListDto> buscarClientes(String termino) {
-        List<Cliente> clientes = clienteRepository.findAll().stream()
-                .filter(c -> c.getNombreCompleto().toLowerCase().contains(termino.toLowerCase()) ||
-                           c.getDocumento().contains(termino))
-                .collect(Collectors.toList());
-
+    public List<ClienteListDto> buscarClientesAutocompletado(String termino, int limite) {
+        if (termino == null || termino.trim().isEmpty()) {
+            return new ArrayList<>();
+        }
+        
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limite);
+        List<Cliente> clientes = clienteRepository.buscarClientesPorTermino(termino.trim(), pageable);
+        
         return clientes.stream()
                 .map(this::convertirAClienteListDto)
                 .collect(Collectors.toList());
@@ -115,7 +163,7 @@ public class ClienteServiceImpl implements ClienteService {
     @Override
     @Transactional(readOnly = true)
     public ClienteResponseDto obtenerClientePorDocumento(String documento) {
-        Cliente cliente = clienteRepository.findByPersonaDocumento(documento)
+        Cliente cliente = clienteRepository.findByPersonaDocumentoAndActivoTrue(documento)
                 .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado con documento: " + documento));
 
         return convertirAClienteResponseDto(cliente);
@@ -147,6 +195,11 @@ public class ClienteServiceImpl implements ClienteService {
         personaRepository.save(persona);
         Cliente clienteActualizado = clienteRepository.save(cliente);
 
+        // Actualizar contactos si fueron proporcionados
+        if (clienteUpdateDto.getContactos() != null) {
+            actualizarContactos(persona, clienteUpdateDto.getContactos());
+        }
+
         // Actualizar direcciones si fueron proporcionadas
         if (clienteUpdateDto.getDirecciones() != null) {
             actualizarDirecciones(persona, clienteUpdateDto.getDirecciones());
@@ -157,25 +210,62 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Override
     public void eliminarCliente(Long id) {
-        if (!clienteRepository.existsById(id)) {
-            throw new ClienteNotFoundException("Cliente no encontrado con ID: " + id);
-        }
-        clienteRepository.deleteById(id);
+        Cliente cliente = clienteRepository.findByIdIncludingInactive(id)
+                .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado con ID: " + id));
+        
+        // Baja lógica
+        cliente.setActivo(false);
+        clienteRepository.save(cliente);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public boolean existeClienteConDocumento(String documento) {
-        return clienteRepository.existsByPersonaDocumento(documento);
+    public void reactivarCliente(Long id) {
+        Cliente cliente = clienteRepository.findByIdIncludingInactive(id)
+                .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado con ID: " + id));
+        
+        cliente.setActivo(true);
+        clienteRepository.save(cliente);
     }
 
     @Override
     @Transactional(readOnly = true)
     public ClienteResponseDto obtenerClienteConEquipos(Long id) {
-        Cliente cliente = clienteRepository.findById(id)
+        Cliente cliente = clienteRepository.findByIdWithPersona(id)
                 .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado con ID: " + id));
 
         return convertirAClienteResponseDto(cliente);
+    }
+
+    /**
+     * Crear contactos para una persona
+     */
+    private void crearContactos(Persona persona, List<ContactoCreateDto> contactosDto) {
+        for (ContactoCreateDto contactoDto : contactosDto) {
+            // Buscar TipoContacto por ID
+            TipoContacto tipoContacto = tipoContactoRepository.findById(contactoDto.getTipoContactoId())
+                    .orElseThrow(() -> new TipoContactoNotFoundException("Tipo de contacto no encontrado con ID: " + contactoDto.getTipoContactoId()));
+
+            Contacto contacto = new Contacto();
+            contacto.setPersona(persona);
+            contacto.setTipoContacto(tipoContacto);
+            contacto.setDescripcion(contactoDto.getDescripcion());
+
+            contactoRepository.save(contacto);
+        }
+    }
+
+    /**
+     * Actualizar contactos de una persona (reemplaza todos los existentes)
+     */
+    private void actualizarContactos(Persona persona, List<ContactoCreateDto> contactosDto) {
+        // Eliminar todos los contactos existentes
+        List<Contacto> contactosExistentes = contactoRepository.findByPersonaId(persona.getId());
+        contactoRepository.deleteAll(contactosExistentes);
+
+        // Crear los nuevos contactos
+        if (contactosDto != null && !contactosDto.isEmpty()) {
+            crearContactos(persona, contactosDto);
+        }
     }
 
     /**
@@ -286,6 +376,10 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     private ClienteResponseDto convertirAClienteResponseDto(Cliente cliente) {
+        // Obtener contactos de la persona
+        List<Contacto> contactos = contactoRepository.findByPersonaId(cliente.getPersona().getId());
+        List<ContactoListDto> contactosDto = convertirContactosADto(contactos);
+
         // Obtener direcciones de la persona
         List<Direccion> direcciones = direccionRepository.findByPersonaId(cliente.getPersona().getId());
         List<DireccionListDto> direccionesDto = convertirDireccionesADto(direcciones);
@@ -300,20 +394,110 @@ public class ClienteServiceImpl implements ClienteService {
                 cliente.getPrimerTelefono(),
                 cliente.getComentarios(),
                 cliente.esPersonaJuridica(),
+                contactosDto,
                 direccionesDto
         );
         
         return response;
     }
 
+    /**
+     * Convertir lista de contactos a DTOs
+     */
+    private List<ContactoListDto> convertirContactosADto(List<Contacto> contactos) {
+        if (contactos == null) {
+            return new ArrayList<>();
+        }
+        return contactos.stream()
+                .map(c -> new ContactoListDto(
+                        c.getId(),
+                        c.getTipoContacto().getDescripcion(),
+                        c.getDescripcion()
+                ))
+                .collect(Collectors.toList());
+    }
+
     private ClienteListDto convertirAClienteListDto(Cliente cliente) {
+        // Obtener dirección principal formateada
+        String direccionPrincipal = obtenerDireccionPrincipalFormateada(cliente.getPersona().getId());
+        
         return new ClienteListDto(
                 cliente.getId(),
                 cliente.getNombreCompleto(),
                 cliente.getDocumento(),
                 cliente.getPrimerEmail(),
                 cliente.getPrimerTelefono(),
+                direccionPrincipal,
                 cliente.esPersonaJuridica()
         );
+    }
+
+    /**
+     * Obtiene la dirección principal de una persona y la formatea de forma corta
+     * Formato: "calle numero, barrio" o "calle numero - piso departamento, barrio"
+     */
+    private String obtenerDireccionPrincipalFormateada(Long personaId) {
+        List<Direccion> direcciones = direccionRepository.findByPersonaId(personaId);
+        
+        if (direcciones == null || direcciones.isEmpty()) {
+            return null;
+        }
+        
+        // Buscar dirección principal o la primera si no hay principal
+        Direccion direccionPrincipal = direcciones.stream()
+                .filter(Direccion::getEsPrincipal)
+                .findFirst()
+                .orElse(direcciones.get(0));
+        
+        return formatearDireccionCorta(direccionPrincipal);
+    }
+
+    /**
+     * Formatea una dirección de forma corta
+     * Formato: "calle numero, barrio" o "calle numero - piso departamento, barrio"
+     */
+    private String formatearDireccionCorta(Direccion direccion) {
+        if (direccion == null) {
+            return null;
+        }
+        
+        StringBuilder direccionCorta = new StringBuilder();
+        
+        // Calle y número
+        if (direccion.getCalle() != null && !direccion.getCalle().trim().isEmpty()) {
+            direccionCorta.append(direccion.getCalle());
+            
+            if (direccion.getNumero() != null && !direccion.getNumero().trim().isEmpty()) {
+                direccionCorta.append(" ").append(direccion.getNumero());
+            }
+        }
+        
+        // Piso y departamento (si existen)
+        if ((direccion.getPiso() != null && !direccion.getPiso().trim().isEmpty()) ||
+            (direccion.getDepartamento() != null && !direccion.getDepartamento().trim().isEmpty())) {
+            
+            direccionCorta.append(" - ");
+            
+            if (direccion.getPiso() != null && !direccion.getPiso().trim().isEmpty()) {
+                direccionCorta.append(direccion.getPiso());
+            }
+            
+            if (direccion.getDepartamento() != null && !direccion.getDepartamento().trim().isEmpty()) {
+                if (direccion.getPiso() != null && !direccion.getPiso().trim().isEmpty()) {
+                    direccionCorta.append(" ");
+                }
+                direccionCorta.append(direccion.getDepartamento());
+            }
+        }
+        
+        // Barrio
+        if (direccion.getBarrio() != null && !direccion.getBarrio().trim().isEmpty()) {
+            if (direccionCorta.length() > 0) {
+                direccionCorta.append(", ");
+            }
+            direccionCorta.append(direccion.getBarrio());
+        }
+        
+        return direccionCorta.length() > 0 ? direccionCorta.toString() : null;
     }
 }

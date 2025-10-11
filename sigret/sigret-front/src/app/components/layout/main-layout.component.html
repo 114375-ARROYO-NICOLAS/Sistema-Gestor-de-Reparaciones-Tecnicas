@@ -1,72 +1,78 @@
-<div class="layout-wrapper" [ngClass]="containerClass">
-  <!-- Topbar -->
-  <div class="layout-topbar">
-    <div class="layout-topbar-start">
-      <button class="layout-topbar-menu-button" (click)="onMenuToggle()">
-        <i class="pi pi-bars"></i>
-      </button>
-      
-      <div class="layout-topbar-logo">
-        <div class="flex align-items-center gap-3">
-          <div class="flex align-items-center justify-content-center bg-primary border-round" 
-               style="width: 2.5rem; height: 2.5rem;">
-            <i class="pi pi-wrench text-primary-50"></i>
-          </div>
-          <div>
-            <h1 class="text-xl font-bold text-900 m-0">SIGRET</h1>
-            <div class="flex align-items-center gap-1 text-sm text-600">
-              <i class="pi pi-home text-xs"></i>
-              <span>{{ getBreadcrumb() }}</span>
-            </div>
+<!-- Topbar -->
+<div class="fixed top-0 left-0 w-full h-4rem surface-card border-bottom-1 surface-border shadow-2"
+     style="z-index: 1000;">
+  <div class="flex align-items-center justify-content-between h-full px-3 lg:px-4">
+    <!-- Left Section -->
+    <div class="flex align-items-center gap-2 lg:gap-3 flex-1 min-w-0">
+      <!-- Menu Toggle Button -->
+      <p-button
+        icon="pi pi-bars"
+        [text]="true"
+        [rounded]="true"
+        size="large"
+        (click)="onMenuToggle()"
+        class="p-0">
+      </p-button>
+
+      <!-- Logo & Breadcrumb -->
+      <div class="flex align-items-center gap-2 min-w-0 flex-1">
+        <div class="flex align-items-center justify-content-center bg-primary border-round w-2rem h-2rem">
+          <i class="pi pi-wrench text-white text-sm"></i>
+        </div>
+        <div class="overflow-hidden">
+          <h1 class="font-bold text-900 m-0 white-space-nowrap text-base lg:text-xl">SIGRET</h1>
+          <div class="hidden sm:flex align-items-center gap-1 text-xs text-600">
+            <i class="pi pi-home text-xs"></i>
+            <span class="overflow-hidden text-overflow-ellipsis white-space-nowrap">{{ getBreadcrumb() }}</span>
           </div>
         </div>
       </div>
     </div>
 
-    <div class="layout-topbar-end">
-      <!-- Notificaciones -->
-      <p-button 
-        icon="pi pi-bell" 
-        severity="secondary"
-        text
-        [badge]="notificationCount() > 0 ? notificationCount().toString() : undefined"
-        badgeClass="p-badge-danger"
-        class="p-2">
-      </p-button>
-      
-      <!-- Toggle Tema -->
-      <p-button 
-        [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
-        severity="secondary"
-        text
-        (click)="toggleTheme()"
-        [title]="isDarkMode() ? 'Modo Claro' : 'Modo Oscuro'"
-        class="p-2">
-      </p-button>
-      
-      <!-- Menú Usuario -->
+    <!-- Right Section -->
+    <div class="flex align-items-center gap-1 lg:gap-2">
+      <!-- Notifications -->
       <p-button
-        class="p-2"
-        severity="secondary"
-        text
+        icon="pi pi-bell"
+        [text]="true"
+        [rounded]="true"
+        [badge]="notificationCount() > 0 ? notificationCount().toString() : undefined"
+        badgeClass="p-badge-danger">
+      </p-button>
+
+      <!-- Theme Toggle -->
+      <p-button
+        [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'"
+        [text]="true"
+        [rounded]="true"
+        (click)="toggleTheme()"
+        [title]="isDarkMode() ? 'Modo Claro' : 'Modo Oscuro'">
+      </p-button>
+
+      <!-- User Menu -->
+      <p-button
+        [text]="true"
+        [rounded]="true"
         (click)="userMenu.toggle($event)">
         <div class="flex align-items-center gap-2">
-          <p-avatar 
+          <p-avatar
             [label]="user()?.nombreCompleto ? user()!.nombreCompleto.charAt(0) : 'U'"
             shape="circle"
             size="normal"
-            class="bg-primary text-primary-50">
+            [style]="{ width: '2rem', height: '2rem' }"
+            class="bg-primary">
           </p-avatar>
-          <span class="hidden sm:inline text-900 font-medium">
+          <span class="hidden md:inline text-900 font-medium text-sm">
             {{ user()?.nombreCompleto || 'Usuario' }}
           </span>
-          <i class="pi pi-chevron-down text-xs text-600"></i>
+          <i class="pi pi-chevron-down text-xs text-600 hidden md:inline"></i>
         </div>
       </p-button>
-      
+
+      <!-- User Popover Menu -->
       <p-popover #userMenu>
         <div class="w-12rem">
-          <div class="px-3 py-2 border-bottom-1 surface-border">
+          <div class="p-3 border-bottom-1 surface-border">
             <div class="text-sm font-semibold text-900">{{ user()?.nombreCompleto }}</div>
             <div class="text-xs text-600">{{ user()?.email }}</div>
           </div>
@@ -75,79 +81,110 @@
       </p-popover>
     </div>
   </div>
+</div>
 
-  <!-- Sidebar -->
-  <div class="layout-sidebar">
-    <div class="layout-menu">
-      @for (section of menuItems; track section.label) {
-        <div class="layout-root-menuitem">
-          <div class="layout-menuitem-root-text">
-            <i [class]="section.icon" class="text-sm"></i>
-            <span>{{ section.label }}</span>
-          </div>
-          
-          @if (section.items) {
-            <ul>
-              @for (item of section.items; track item.label) {
-                @if (item.children) {
-                  <li [class]="{'active-menuitem': isSubmenuOpen(item.label)}">
-                    <a (click)="toggleSubmenu(item.label)" class="layout-menuitem-link">
-                      <i [class]="item.icon + ' layout-menuitem-icon'"></i>
-                      <span class="layout-menuitem-text">{{ item.label }}</span>
-                      @if (item.badge) {
-                        <span class="layout-menuitem-badge">{{ item.badge }}</span>
-                      }
-                      <i class="pi pi-chevron-down layout-submenu-toggler"></i>
-                    </a>
-                    
-                    <ul class="layout-submenu" 
-                        [class.layout-submenu-enter-active]="isSubmenuOpen(item.label)"
-                        [class.layout-submenu-leave-active]="!isSubmenuOpen(item.label)">
-                      @for (child of item.children; track child.label) {
-                        <li>
-                          <a [routerLink]="child.routerLink"
-                             routerLinkActive="active-route"
-                             class="layout-menuitem-link"
-                             (click)="onMenuItemClick()">
-                            <i [class]="child.icon + ' layout-menuitem-icon'"></i>
-                            <span class="layout-menuitem-text">{{ child.label }}</span>
-                            @if (child.badge) {
-                              <span class="layout-menuitem-badge">{{ child.badge }}</span>
-                            }
-                          </a>
-                        </li>
-                      }
-                    </ul>
-                  </li>
-                } @else {
-                  <li>
-                    <a [routerLink]="item.routerLink"
-                       routerLinkActive="active-route"
-                       class="layout-menuitem-link"
-                       (click)="onMenuItemClick()">
-                      <i [class]="item.icon + ' layout-menuitem-icon'"></i>
-                      <span class="layout-menuitem-text">{{ item.label }}</span>
-                      @if (item.badge) {
-                        <span class="layout-menuitem-badge">{{ item.badge }}</span>
-                      }
-                    </a>
-                  </li>
-                }
-              }
-            </ul>
-          }
+<!-- Drawer (Sidebar) -->
+<p-drawer
+  [(visible)]="isSidebarVisible"
+  [modal]="isMobile()"
+  [position]="'left'"
+  [showCloseIcon]="false"
+  [style]="{ width: isMobile() ? '280px' : '320px' }"
+  class="app-drawer">
+
+  <ng-template #header>
+    <div class="flex align-items-center justify-content-between w-full">
+      <span class="font-bold text-xl text-900">Menú</span>
+      <p-button
+        icon="pi pi-times"
+        [text]="true"
+        [rounded]="true"
+        (click)="onMenuToggle()">
+      </p-button>
+    </div>
+  </ng-template>
+
+  <!-- Menu Content -->
+  <div class="flex flex-column gap-2 pt-2">
+    @for (section of menuItems; track section.label) {
+      <div>
+        <!-- Section Header -->
+        <div class="flex align-items-center gap-2 px-3 py-2 text-xs uppercase font-bold text-600">
+          <i [class]="section.icon" class="text-sm"></i>
+          <span>{{ section.label }}</span>
         </div>
-      }
-    </div>
-  </div>
 
-  <!-- Main Container -->
-  <div class="layout-main-container">
-    <div class="layout-main">
-      <router-outlet></router-outlet>
-    </div>
-  </div>
+        <!-- Menu Items -->
+        @if (section.items) {
+          <div class="flex flex-column gap-1">
+            @for (item of section.items; track item.label) {
+              @if (item.children) {
+                <!-- Menu Item with Children -->
+                <div>
+                  <a
+                    (click)="toggleSubmenu(item.label)"
+                    class="flex align-items-center cursor-pointer no-underline text-color p-3 border-round-lg hover:surface-hover transition-colors transition-duration-200">
+                    <i [class]="item.icon" class="mr-2 text-lg"></i>
+                    <span class="flex-1 font-medium">{{ item.label }}</span>
+                    @if (item.badge) {
+                      <span class="inline-flex align-items-center justify-content-center bg-primary text-white border-round px-2 py-1 text-xs font-semibold ml-2">
+                        {{ item.badge }}
+                      </span>
+                    }
+                    <i
+                      class="pi pi-chevron-down text-xs ml-2 transition-transform transition-duration-200"
+                      [class.rotate-180]="isSubmenuOpen(item.label)">
+                    </i>
+                  </a>
 
-  <!-- Layout Mask -->
-  <div class="layout-mask animate-fadein"></div>
+                  <!-- Submenu -->
+                  <div
+                    class="overflow-hidden transition-all transition-duration-300"
+                    [style.max-height]="isSubmenuOpen(item.label) ? '500px' : '0'">
+                    @for (child of item.children; track child.label) {
+                      <a
+                        [routerLink]="child.routerLink"
+                        routerLinkActive="surface-100 text-primary font-semibold"
+                        class="flex align-items-center no-underline text-color p-3 pl-5 border-round-lg hover:surface-hover transition-colors transition-duration-200"
+                        (click)="onMenuItemClick()">
+                        <i [class]="child.icon" class="mr-2 text-base"></i>
+                        <span class="flex-1">{{ child.label }}</span>
+                        @if (child.badge) {
+                          <span class="inline-flex align-items-center justify-content-center bg-primary text-white border-round px-2 py-1 text-xs font-semibold ml-2">
+                            {{ child.badge }}
+                          </span>
+                        }
+                      </a>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <!-- Simple Menu Item -->
+                <a
+                  [routerLink]="item.routerLink"
+                  routerLinkActive="surface-100 text-primary font-semibold"
+                  class="flex align-items-center no-underline text-color p-3 border-round-lg hover:surface-hover transition-colors transition-duration-200"
+                  (click)="onMenuItemClick()">
+                  <i [class]="item.icon" class="mr-2 text-lg"></i>
+                  <span class="flex-1 font-medium">{{ item.label }}</span>
+                  @if (item.badge) {
+                    <span class="inline-flex align-items-center justify-content-center bg-primary text-white border-round px-2 py-1 text-xs font-semibold ml-2">
+                      {{ item.badge }}
+                    </span>
+                  }
+                </a>
+              }
+            }
+          </div>
+        }
+      </div>
+    }
+  </div>
+</p-drawer>
+
+<!-- Main Content -->
+<div class="flex flex-column min-h-screen" style="padding-top: 4rem;">
+  <div class="flex-1 p-3 lg:p-4">
+    <router-outlet></router-outlet>
+  </div>
 </div>

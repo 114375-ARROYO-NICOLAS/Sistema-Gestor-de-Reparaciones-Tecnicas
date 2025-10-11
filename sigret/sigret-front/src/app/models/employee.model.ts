@@ -1,3 +1,6 @@
+// Import contact models
+import { Contacto, ContactoCreateDto } from './contact.model';
+
 export interface Employee {
   id: number;
   tipoEmpleado: EmployeeType;
@@ -5,6 +8,7 @@ export interface Employee {
   activo: boolean;
   nombreCompleto: string;
   tieneUsuario?: boolean;
+  contactos?: Contacto[];
   direcciones?: Address[];
 }
 
@@ -87,6 +91,7 @@ export interface EmployeeCreateRequest {
   rolUsuario: string; // PROPIETARIO, ADMINISTRATIVO, TECNICO
   usernamePersonalizado?: string; // Opcional, si no se proporciona usa el documento
   passwordPersonalizada?: string; // Opcional, si no se proporciona usa el documento
+  contactos?: ContactoCreateDto[]; // Contactos opcionales
   direcciones?: Address[]; // Direcciones opcionales
 }
 
@@ -114,6 +119,7 @@ export interface EmployeeResponse {
   fechaCreacion?: string;
   fechaCreacionUsuario?: string;
   ultimoLogin?: string;
+  contactos?: Contacto[];
   direcciones?: Address[];
 }
 
@@ -123,7 +129,8 @@ export interface EmployeeUpdateRequest {
   apellido?: string;
   tipoEmpleadoId?: number;
   activo?: boolean;
-  direcciones?: Address[]; // Direcciones opcionales
+  contactos?: ContactoCreateDto[]; // Contactos opcionales - reemplaza todos si se envía
+  direcciones?: Address[]; // Direcciones opcionales - reemplaza todos si se envía
 }
 
 export interface EmployeeListResponse {
@@ -157,6 +164,7 @@ export interface EmployeeListDto {
   usuarioActivo?: boolean;
   fechaCreacionUsuario?: string;
   ultimoLogin?: string;
+  contactos?: Contacto[];
   direcciones?: Address[];
 }
 

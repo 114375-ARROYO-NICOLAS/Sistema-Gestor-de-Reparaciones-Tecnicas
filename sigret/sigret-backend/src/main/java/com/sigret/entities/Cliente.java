@@ -1,7 +1,6 @@
 package com.sigret.entities;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -26,6 +25,9 @@ public class Cliente {
 
     @Column(name = "comentarios", columnDefinition = "TEXT")
     private String comentarios;
+
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
 
     // Relaciones inversas
     @OneToMany(mappedBy = "cliente", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

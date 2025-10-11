@@ -56,11 +56,11 @@ public class TipoPersonaController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar tipos de persona", description = "Obtiene una lista de todos los tipos de persona")
+    @Operation(summary = "Listar tipos de persona", description = "Obtiene una lista de todos los tipos de persona (endpoint público)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de tipos de persona obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    // Endpoint público - Sin @PreAuthorize para permitir acceso sin autenticación
     public ResponseEntity<List<TipoPersonaListDto>> obtenerTodosTiposPersona() {
         List<TipoPersonaListDto> tiposPersona = tipoPersonaService.obtenerTodosTiposPersona();
         return ResponseEntity.ok(tiposPersona);

@@ -1,0 +1,490 @@
+<div class="client-detail-container">
+  @if (isLoading()) {
+    <div class="flex justify-content-center align-items-center" style="height: 400px;">
+      <p-progressSpinner></p-progressSpinner>
+    </div>
+  } @else if (client()) {
+    <!-- Header -->
+    <div class="flex flex-column md:flex-row justify-content-between align-items-start gap-3 mb-4">
+      <div class="flex align-items-start gap-2 flex-1">
+        <p-button 
+          icon="pi pi-arrow-left" 
+          [text]="true"
+          severity="secondary"
+          size="small"
+          (onClick)="goBack()"
+          title="Volver a la lista">
+        </p-button>
+        <div class="flex-1 min-width-0">
+          <h2 class="text-xl md:text-2xl font-bold text-900 m-0 overflow-hidden text-overflow-ellipsis">{{ client()!.nombreCompleto }}</h2>
+          <div class="flex align-items-center gap-2 mt-2 flex-wrap">
+            <p-tag 
+              [value]="clientService.getStatusDisplayName(client()!.activo)"
+              [severity]="clientService.getStatusColor(client()!.activo)">
+            </p-tag>
+            <span class="text-sm md:text-base text-600">{{ client()!.tipoPersona }}</span>
+          </div>
+        </div>
+      </div>
+      <p-button 
+        label="Editar" 
+        icon="pi pi-pencil" 
+        severity="primary"
+        size="small"
+        class="w-full md:w-auto"
+        (onClick)="editClient()">
+      </p-button>
+    </div>
+
+    <!-- Información General -->
+    <div class="mb-4">
+      <p-card>
+          <ng-template pTemplate="content">
+            <div class="grid">
+              <div class="col-12">
+                <h3 class="text-lg font-semibold text-primary mb-3">
+                  <i class="pi pi-user mr-2"></i>Datos Personales
+                </h3>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <div class="mb-3">
+                  <label class="text-sm text-600 mb-1 block">Nombre Completo</label>
+                  <div class="font-medium text-900">{{ client()!.nombreCompleto }}</div>
+                </div>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <div class="mb-3">
+                  <label class="text-sm text-600 mb-1 block">Tipo de Persona</label>
+                  <div class="font-medium text-900">{{ client()!.tipoPersona }}</div>
+                </div>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <div class="mb-3">
+                  <label class="text-sm text-600 mb-1 block">Tipo de Documento</label>
+                  <div class="font-medium text-900">{{ client()!.tipoDocumento }}</div>
+                </div>
+              </div>
+
+              <div class="col-12 md:col-6">
+                <div class="mb-3">
+                  <label class="text-sm text-600 mb-1 block">Número de Documento</label>
+                  <div class="font-medium text-900">{{ client()!.documento }}</div>
+                </div>
+              </div>
+
+              @if (client()!.sexo) {
+                <div class="col-12 md:col-6">
+                  <div class="mb-3">
+                    <label class="text-sm text-600 mb-1 block">Sexo</label>
+                    <div class="font-medium text-900">{{ client()!.sexo === 'M' ? 'Masculino' : 'Femenino' }}</div>
+                  </div>
+                </div>
+              }
+
+              @if (client()!.fechaCreacion) {
+                <div class="col-12 md:col-6">
+                  <div class="mb-3">
+                    <label class="text-sm text-600 mb-1 block">Fecha de Registro</label>
+                    <div class="font-medium text-900">{{ client()!.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</div>
+                  </div>
+                </div>
+              }
+
+              <div class="col-12 md:col-6">
+                <div class="mb-3">
+                  <label class="text-sm text-600 mb-1 block">Estado</label>
+                  <p-tag 
+                    [value]="clientService.getStatusDisplayName(client()!.activo)"
+                    [severity]="clientService.getStatusColor(client()!.activo)">
+                  </p-tag>
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </p-card>
+    </div>
+
+    <!-- Contactos -->
+    <div class="mb-4">
+      <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3 flex justify-content-between align-items-center">
+              <h3 class="text-lg font-semibold m-0">
+                <i class="pi pi-phone mr-2"></i>Información de Contacto
+              </h3>
+              <p-button 
+                label="Agregar Contacto" 
+                icon="pi pi-plus"
+                size="small"
+                severity="primary"
+                (onClick)="openAddContactDialog()">
+              </p-button>
+            </div>
+          </ng-template>
+
+          <ng-template pTemplate="content">
+            @if (client()!.contactos && client()!.contactos!.length > 0) {
+              <div class="flex flex-column gap-3">
+                @for (contacto of client()!.contactos; track contacto.id || $index) {
+                  <div class="surface-50 border-round p-3">
+                    <div class="flex justify-content-between align-items-center">
+                      <div class="flex align-items-center gap-3">
+                        <i [class]="'pi ' + getContactIcon(contacto.tipoContacto) + ' text-primary text-xl'"></i>
+                        <div>
+                          <div class="text-sm text-600">{{ contacto.tipoContacto }}</div>
+                          <div class="font-medium text-900">{{ contacto.descripcion }}</div>
+                        </div>
+                      </div>
+                      <div class="flex gap-1">
+                        <p-button 
+                          icon="pi pi-pencil"
+                          severity="secondary"
+                          size="small"
+                          [text]="true"
+                          (onClick)="openEditContactDialog(contacto, $index)"
+                          title="Editar">
+                        </p-button>
+                        <p-button 
+                          icon="pi pi-trash"
+                          severity="danger"
+                          size="small"
+                          [text]="true"
+                          (onClick)="deleteContact(contacto, $index)"
+                          title="Eliminar">
+                        </p-button>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center text-600 py-5">
+                <i class="pi pi-phone text-4xl mb-3"></i>
+                <p class="text-lg font-medium mb-2">No hay contactos registrados</p>
+                <p class="text-sm mb-3">Agrega información de contacto para este cliente</p>
+                <p-button 
+                  label="Agregar Primer Contacto" 
+                  icon="pi pi-plus"
+                  severity="primary"
+                  (onClick)="openAddContactDialog()">
+                </p-button>
+              </div>
+            }
+          </ng-template>
+        </p-card>
+    </div>
+
+    <!-- Direcciones -->
+    <div class="mb-4">
+      <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3 flex justify-content-between align-items-center">
+              <h3 class="text-lg font-semibold m-0">
+                <i class="pi pi-map-marker mr-2"></i>Direcciones Registradas
+              </h3>
+              <p-button 
+                label="Agregar Dirección" 
+                icon="pi pi-plus"
+                size="small"
+                severity="primary">
+              </p-button>
+            </div>
+          </ng-template>
+
+          <ng-template pTemplate="content">
+            @if (client()!.direcciones && client()!.direcciones!.length > 0) {
+              <div class="flex flex-column gap-3">
+                @for (address of client()!.direcciones; track address.id || $index) {
+                  <div class="surface-100 border-round p-3">
+                    <div class="flex justify-content-between align-items-start">
+                      <div class="flex-1">
+                        <div class="flex align-items-center gap-2 mb-2">
+                          <i class="pi pi-map-marker text-primary"></i>
+                          <span class="font-semibold text-900">{{ getAddressDisplay(address) }}</span>
+                          @if (address.esPrincipal) {
+                            <p-badge value="Principal" severity="success"></p-badge>
+                          }
+                        </div>
+
+                        <div class="grid text-sm ml-4">
+                          @if (address.calle || address.numero) {
+                            <div class="col-12 md:col-6">
+                              <span class="text-600">Calle y Número: </span>
+                              <span class="text-900">{{ address.calle }} {{ address.numero }}</span>
+                            </div>
+                          }
+
+                          @if (address.piso || address.departamento) {
+                            <div class="col-12 md:col-6">
+                              <span class="text-600">Piso/Depto: </span>
+                              <span class="text-900">
+                                @if (address.piso) { Piso {{ address.piso }} }
+                                @if (address.departamento) { Depto {{ address.departamento }} }
+                              </span>
+                            </div>
+                          }
+
+                          @if (address.ciudad) {
+                            <div class="col-12 md:col-6">
+                              <span class="text-600">Ciudad: </span>
+                              <span class="text-900">{{ address.ciudad }}</span>
+                            </div>
+                          }
+
+                          @if (address.provincia) {
+                            <div class="col-12 md:col-6">
+                              <span class="text-600">Provincia: </span>
+                              <span class="text-900">{{ address.provincia }}</span>
+                            </div>
+                          }
+
+                          @if (address.codigoPostal) {
+                            <div class="col-12 md:col-6">
+                              <span class="text-600">Código Postal: </span>
+                              <span class="text-900">{{ address.codigoPostal }}</span>
+                            </div>
+                          }
+
+                          @if (address.observaciones) {
+                            <div class="col-12">
+                              <span class="text-600">Observaciones: </span>
+                              <span class="text-900 font-medium">
+                                <i class="pi pi-info-circle mr-1"></i>
+                                {{ address.observaciones }}
+                              </span>
+                            </div>
+                          }
+                        </div>
+                      </div>
+
+                      <div class="ml-2 flex flex-column gap-1">
+                        @if (address.latitud && address.longitud) {
+                          <p-button 
+                            icon="pi pi-map"
+                            label="Ver en Maps"
+                            severity="info"
+                            size="small"
+                            [outlined]="true"
+                            title="Abrir en Google Maps">
+                          </p-button>
+                        }
+                        <p-button 
+                          icon="pi pi-pencil"
+                          severity="secondary"
+                          size="small"
+                          [outlined]="true"
+                          title="Editar">
+                        </p-button>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="text-center text-600 py-5">
+                <i class="pi pi-map-marker text-4xl mb-3"></i>
+                <p class="text-lg font-medium mb-2">No hay direcciones registradas</p>
+                <p class="text-sm mb-3">Agrega una dirección para este cliente</p>
+                <p-button 
+                  label="Agregar Primera Dirección" 
+                  icon="pi pi-plus"
+                  severity="primary">
+                </p-button>
+              </div>
+            }
+          </ng-template>
+        </p-card>
+    </div>
+  }
+</div>
+
+<!-- Edit Client Dialog -->
+<p-dialog 
+  header="Editar Cliente"
+  [visible]="showEditDialog()"
+  (visibleChange)="showEditDialog.set($event)"
+  [modal]="true"
+  [closable]="true"
+  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
+  [style]="{ width: '600px', maxWidth: '95vw' }"
+  (onHide)="closeEditDialog()">
+  
+  <form [formGroup]="clientEditForm" (ngSubmit)="saveClientEdit()">
+    <div class="grid">
+      <!-- Person Type -->
+      <div class="col-12 md:col-6">
+        <label for="tipoPersona" class="block text-900 font-medium mb-2">Tipo de Persona *</label>
+        <p-select
+          id="tipoPersona"
+          formControlName="tipoPersonaId"
+          [options]="personTypes()"
+          optionLabel="descripcion"
+          optionValue="id"
+          placeholder="Seleccionar tipo"
+          (onChange)="onPersonTypeChange()"
+          class="w-full">
+        </p-select>
+      </div>
+
+      <!-- Document Type -->
+      <div class="col-12 md:col-6">
+        <label for="tipoDocumento" class="block text-900 font-medium mb-2">Tipo de Documento *</label>
+        <p-select
+          id="tipoDocumento"
+          formControlName="tipoDocumentoId"
+          [options]="documentTypes()"
+          optionLabel="descripcion"
+          optionValue="id"
+          placeholder="Seleccionar tipo"
+          class="w-full">
+        </p-select>
+      </div>
+
+      <!-- Document Number -->
+      <div class="col-12">
+        <label for="documento" class="block text-900 font-medium mb-2">Número de Documento *</label>
+        <input 
+          id="documento"
+          type="text"
+          pInputText
+          formControlName="documento"
+          placeholder="Ingrese el número de documento"
+          class="w-full">
+      </div>
+
+      <!-- Name fields (for natural person) -->
+      @if (isNaturalPerson()) {
+        <div class="col-12 md:col-6">
+          <label for="nombre" class="block text-900 font-medium mb-2">Nombre *</label>
+          <input 
+            id="nombre"
+            type="text"
+            pInputText
+            formControlName="nombre"
+            placeholder="Ingrese el nombre"
+            class="w-full">
+        </div>
+
+        <div class="col-12 md:col-6">
+          <label for="apellido" class="block text-900 font-medium mb-2">Apellido *</label>
+          <input 
+            id="apellido"
+            type="text"
+            pInputText
+            formControlName="apellido"
+            placeholder="Ingrese el apellido"
+            class="w-full">
+        </div>
+
+        <div class="col-12 md:col-6">
+          <label for="sexo" class="block text-900 font-medium mb-2">Sexo</label>
+          <p-select
+            id="sexo"
+            formControlName="sexo"
+            [options]="sexOptions"
+            placeholder="Seleccionar sexo"
+            class="w-full">
+          </p-select>
+        </div>
+      }
+
+      <!-- Company name (for legal person) -->
+      @if (!isNaturalPerson()) {
+        <div class="col-12">
+          <label for="razonSocial" class="block text-900 font-medium mb-2">Razón Social *</label>
+          <input 
+            id="razonSocial"
+            type="text"
+            pInputText
+            formControlName="razonSocial"
+            placeholder="Ingrese la razón social"
+            class="w-full">
+        </div>
+      }
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button 
+        label="Cancelar" 
+        severity="secondary"
+        [text]="true"
+        (onClick)="closeEditDialog()">
+      </p-button>
+      <p-button 
+        label="Actualizar"
+        [loading]="isSaving()"
+        (onClick)="saveClientEdit()"
+        [disabled]="!clientEditForm.valid">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Contact Dialog -->
+<p-dialog 
+  [header]="isEditingContact() ? 'Editar Contacto' : 'Agregar Contacto'"
+  [visible]="showContactDialog()"
+  (visibleChange)="showContactDialog.set($event)"
+  [modal]="true"
+  [closable]="true"
+  [breakpoints]="{ '960px': '80vw', '640px': '95vw' }"
+  [style]="{ width: '500px', maxWidth: '95vw' }"
+  (onHide)="closeContactDialog()">
+  
+  <form [formGroup]="contactForm" (ngSubmit)="saveContact()">
+    <div class="grid">
+      <div class="col-12">
+        <label for="tipoContacto" class="block text-900 font-medium mb-2">Tipo de Contacto *</label>
+        <p-select
+          id="tipoContacto"
+          formControlName="tipoContactoId"
+          [options]="tiposContacto()"
+          optionLabel="descripcion"
+          optionValue="id"
+          placeholder="Seleccionar tipo"
+          class="w-full">
+        </p-select>
+      </div>
+
+      <div class="col-12">
+        <label for="descripcion" class="block text-900 font-medium mb-2">Descripción *</label>
+        <input 
+          id="descripcion"
+          type="text"
+          pInputText
+          formControlName="descripcion"
+          placeholder="Email, teléfono, etc."
+          class="w-full">
+        <small class="text-600 block mt-1">
+          Máximo 200 caracteres
+        </small>
+      </div>
+    </div>
+  </form>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button 
+        label="Cancelar" 
+        severity="secondary"
+        [text]="true"
+        (onClick)="closeContactDialog()">
+      </p-button>
+      <p-button 
+        [label]="isEditingContact() ? 'Actualizar' : 'Agregar'"
+        [loading]="isSaving()"
+        (onClick)="saveContact()"
+        [disabled]="!contactForm.valid">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+

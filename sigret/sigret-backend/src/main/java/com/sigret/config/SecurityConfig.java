@@ -76,6 +76,12 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/swagger-resources/**", "/webjars/**").permitAll()
 
+                        // Catálogos públicos (para mejorar UX - no requieren autenticación)
+                        .requestMatchers("/api/tipos-persona/**").permitAll()
+                        .requestMatchers("/api/tipos-documento/**").permitAll()
+                        .requestMatchers("/api/tipos-empleado/**").permitAll()
+                        .requestMatchers("/api/tipos-contacto/**").permitAll()
+
                         // Endpoints específicos por rol
                         .requestMatchers("/api/admin/**").hasRole("PROPIETARIO")
                         .requestMatchers("/api/usuarios/**").hasAnyRole("PROPIETARIO", "ADMINISTRATIVO")

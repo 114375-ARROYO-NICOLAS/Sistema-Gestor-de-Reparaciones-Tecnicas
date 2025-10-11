@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, effect, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -62,6 +63,7 @@ export class EmployeeManagementComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly router = inject(Router);
   public readonly employeeService = inject(EmployeeService);
 
   // Signals
@@ -73,14 +75,12 @@ export class EmployeeManagementComponent implements OnInit {
   public readonly isLoading = signal(false);
   public readonly isSaving = signal(false);
   public readonly showEmployeeDialog = signal(false);
-  public readonly showEmployeeDetailsDialog = signal(false);
   public readonly isEditMode = signal(false);
   public readonly selectedEmployee = signal<EmployeeListDto | null>(null);
-  public readonly employeeDetails = signal<EmployeeResponse | null>(null);
-  public readonly isLoadingDetails = signal(false);
   public readonly totalRecords = signal(0);
   public readonly currentPage = signal(0);
   public readonly pageSize = 10;
+  public readonly formValid = signal(false);
   
   // Address management signals
   public readonly addresses = signal<Address[]>([]);
@@ -114,28 +114,12 @@ export class EmployeeManagementComponent implements OnInit {
   
   // Can save if form is valid OR addresses changed (for edit mode)
   public readonly canSaveEmployee = computed(() => {
-    const isEdit = this.isEditMode();
-    const formValid = this.employeeForm.valid;
-    const formDirty = this.employeeForm.dirty;
-    const addressChanged = this.addressesChanged();
-    
-    console.log('🔍 canSaveEmployee check:', {
-      isEdit,
-      formValid,
-      formDirty,
-      addressChanged,
-      currentAddresses: this.addresses().length,
-      initialAddresses: this.initialAddresses().length
-    });
-    
-    if (!isEdit) {
+    if (!this.isEditMode()) {
       // Create mode: form must be valid
-      return formValid;
+      return this.formValid();
     } else {
-      // Edit mode: form must be valid AND something changed
-      const canSave = formValid && (formDirty || addressChanged);
-      console.log('✅ Can save in edit mode?', canSave);
-      return canSave;
+      // Edit mode: Allow save if addresses changed OR form is valid and dirty
+      return this.addressesChanged() || (this.formValid() && this.employeeForm.dirty);
     }
   });
 
@@ -157,6 +141,14 @@ export class EmployeeManagementComponent implements OnInit {
 
   constructor() {
     this.employeeForm = this.createEmployeeForm();
+    
+    // Subscribe to form status changes to update signal
+    this.employeeForm.statusChanges.subscribe(() => {
+      this.formValid.set(this.employeeForm.valid);
+    });
+    
+    // Initialize form valid state
+    this.formValid.set(this.employeeForm.valid);
   }
 
   ngOnInit(): void {
@@ -223,9 +215,9 @@ export class EmployeeManagementComponent implements OnInit {
       tipoPersonaId: [1, Validators.required], // 1 = Persona Física por defecto
       tipoDocumentoId: [1, Validators.required], // 1 = DNI por defecto
       documento: ['', [Validators.required, Validators.minLength(6)]],
-        nombre: [''],
-        apellido: [''],
-        razonSocial: [''],
+      nombre: ['', Validators.required], // Requerido por defecto (Persona Física)
+      apellido: ['', Validators.required], // Requerido por defecto (Persona Física)
+      razonSocial: [''],
       sexo: [''],
       rolUsuario: ['TECNICO', Validators.required], // Solo para crear
       usernamePersonalizado: [''], // Opcional
@@ -336,20 +328,30 @@ export class EmployeeManagementComponent implements OnInit {
     this.selectedEmployee.set(null);
     this.addresses.set([]); // Reset addresses
     this.initialAddresses.set([]); // Save initial state
+    
+    // Reset form with default values
     this.employeeForm.reset({
       tipoEmpleadoId: null,
       tipoPersonaId: 1,
       tipoDocumentoId: 1,
       documento: '',
-        nombre: '',
-        apellido: '',
-        razonSocial: '',
+      nombre: '',
+      apellido: '',
+      razonSocial: '',
       sexo: '',
       rolUsuario: 'TECNICO',
       usernamePersonalizado: '',
       passwordPersonalizada: '',
       activo: true
     });
+    
+    // Aplicar validaciones según el tipo de persona por defecto
+    setTimeout(() => {
+      this.onPersonTypeChange();
+      this.employeeForm.markAsUntouched();
+      this.employeeForm.markAsPristine();
+    });
+    
     this.showEmployeeDialog.set(true);
   }
 
@@ -415,61 +417,9 @@ export class EmployeeManagementComponent implements OnInit {
     this.removePacContainer();
   }
   
-  // Employee Details Dialog methods
-  openEmployeeDetailsDialog(employee: EmployeeListDto): void {
-    this.isLoadingDetails.set(true);
-    this.showEmployeeDetailsDialog.set(true);
-    
-    this.employeeService.getEmployeeById(employee.id).subscribe({
-      next: (employeeDetails) => {
-        this.employeeDetails.set(employeeDetails);
-        this.isLoadingDetails.set(false);
-      },
-      error: (error) => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: error.message || 'Error al cargar los detalles del empleado'
-        });
-        this.isLoadingDetails.set(false);
-        this.showEmployeeDetailsDialog.set(false);
-      }
-    });
-  }
-  
-  closeEmployeeDetailsDialog(): void {
-    this.showEmployeeDetailsDialog.set(false);
-    this.employeeDetails.set(null);
-  }
-  
-  openEditDialogFromDetails(): void {
-    const details = this.employeeDetails();
-    if (!details) return;
-    
-    // Convert EmployeeResponse to EmployeeListDto for editing
-    const employeeListDto: EmployeeListDto = {
-      id: details.id || details.empleadoId || 0,
-      nombreCompleto: details.nombreCompleto,
-      nombre: details.nombre,
-      apellido: details.apellido,
-      razonSocial: details.razonSocial,
-      documento: details.documento,
-      tipoDocumento: details.tipoDocumento,
-      tipoPersona: details.tipoPersona,
-      sexo: details.sexo,
-      tipoEmpleado: details.tipoEmpleado,
-      tipoEmpleadoId: details.tipoEmpleadoId,
-      activo: details.activo || details.empleadoActivo || false,
-      tieneUsuario: !!details.usuarioId,
-      username: details.username,
-      rolUsuario: details.rolUsuario || details.rol,
-      usuarioActivo: details.usuarioActivo,
-      fechaCreacionUsuario: details.fechaCreacionUsuario || details.fechaCreacion,
-      ultimoLogin: details.ultimoLogin,
-      direcciones: details.direcciones
-    };
-    
-    this.openEditDialog(employeeListDto);
+  // Navigate to employee detail page
+  viewEmployeeDetail(employee: EmployeeListDto): void {
+    this.router.navigate(['/empleados', employee.id]);
   }
   
   // Google Places - Classic Autocomplete API
@@ -518,7 +468,7 @@ export class EmployeeManagementComponent implements OnInit {
         componentRestrictions: { country: 'ar' },
         fields: ['place_id', 'formatted_address', 'address_components', 'geometry', 'name'],
         sessionToken: sessionToken,
-        types: ['address']
+        types: ['geocode', 'establishment']
       });
       
       // Listen for place selection
@@ -756,6 +706,25 @@ export class EmployeeManagementComponent implements OnInit {
     
     return parts.join(', ') || 'Dirección sin especificar';
   }
+  
+  // Open address in Google Maps
+  openInGoogleMaps(address: Address): void {
+    if (!address.latitud || !address.longitud) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Esta dirección no tiene coordenadas disponibles'
+      });
+      return;
+    }
+    
+    // Build Google Maps URL with coordinates
+    // Format: https://www.google.com/maps/search/?api=1&query=LAT,LNG
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address.latitud},${address.longitud}`;
+    
+    // Open in new tab
+    window.open(mapsUrl, '_blank');
+  }
 
   onPersonTypeChange(): void {
     if (this.isNaturalPerson()) {
@@ -778,7 +747,12 @@ export class EmployeeManagementComponent implements OnInit {
   }
 
   saveEmployee(): void {
-    if (this.employeeForm.valid) {
+    // In edit mode, allow saving if only addresses changed (even if form is invalid)
+    const canProceed = this.isEditMode() 
+      ? (this.employeeForm.valid || this.addressesChanged())
+      : this.employeeForm.valid;
+    
+    if (canProceed) {
       this.isSaving.set(true);
       
       const formValue = this.employeeForm.value;
@@ -946,5 +920,9 @@ export class EmployeeManagementComponent implements OnInit {
         });
       }
     });
+  }
+
+  isMobile(): boolean {
+    return window.innerWidth < 768;
   }
 }

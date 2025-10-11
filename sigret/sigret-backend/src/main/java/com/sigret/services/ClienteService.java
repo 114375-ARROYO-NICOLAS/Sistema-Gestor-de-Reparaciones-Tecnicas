@@ -18,24 +18,24 @@ public interface ClienteService {
     ClienteResponseDto crearCliente(ClienteCreateDto clienteCreateDto);
     
     /**
-     * Obtener un cliente por ID
+     * Obtener un cliente por ID (solo activos)
      */
     ClienteResponseDto obtenerClientePorId(Long id);
     
     /**
-     * Obtener todos los clientes con paginación
+     * Obtener todos los clientes activos con paginación y filtros opcionales
      */
-    Page<ClienteListDto> obtenerClientes(Pageable pageable);
+    Page<ClienteListDto> obtenerClientes(Pageable pageable, String filtro);
     
     /**
-     * Obtener todos los clientes
+     * Obtener todos los clientes activos
      */
     List<ClienteListDto> obtenerTodosLosClientes();
     
     /**
-     * Buscar clientes por nombre o documento
+     * Buscar clientes por nombre o documento (para autocompletado, límite de resultados)
      */
-    List<ClienteListDto> buscarClientes(String termino);
+    List<ClienteListDto> buscarClientesAutocompletado(String termino, int limite);
     
     /**
      * Obtener cliente por documento
@@ -48,14 +48,14 @@ public interface ClienteService {
     ClienteResponseDto actualizarCliente(Long id, ClienteUpdateDto clienteUpdateDto);
     
     /**
-     * Eliminar un cliente
+     * Eliminar un cliente (baja lógica)
      */
     void eliminarCliente(Long id);
     
     /**
-     * Verificar si un documento ya existe
+     * Reactivar un cliente
      */
-    boolean existeClienteConDocumento(String documento);
+    void reactivarCliente(Long id);
     
     /**
      * Obtener cliente con sus equipos

@@ -30,7 +30,7 @@ export const appConfig: ApplicationConfig = {
         preset: Lara,
         options: {
           prefix: 'p',
-          darkModeSelector: '.dark-mode',
+          darkModeSelector: '.app-dark',  // Custom selector for dark mode toggle
           cssLayer: false
         }
       },

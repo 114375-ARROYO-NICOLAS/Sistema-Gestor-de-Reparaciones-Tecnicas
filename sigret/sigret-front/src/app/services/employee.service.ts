@@ -15,6 +15,7 @@ import {
   EmployeeListDto,
   EmployeeFilterParams
 } from '../models/employee.model';
+import { TipoContacto } from '../models/contact.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -142,6 +143,15 @@ export class EmployeeService {
    */
   getDocumentTypes(): Observable<DocumentType[]> {
     return this.http.get<DocumentType[]>(`${environment.apiUrl}/tipos-documento`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Get contact types (Email, Teléfono, Celular, WhatsApp, etc.)
+   */
+  getTiposContacto(): Observable<TipoContacto[]> {
+    return this.http.get<TipoContacto[]>(`${environment.apiUrl}/tipos-contacto`).pipe(
       catchError(this.handleError)
     );
   }

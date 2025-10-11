@@ -1,0 +1,40 @@
+// Estilos específicos para el componente de detalle de cliente
+.client-detail-container {
+  width: 100%;
+  
+  @media (max-width: 768px) {
+    // Reducir espaciado en móvil
+    .mb-4 {
+      margin-bottom: 1rem !important;
+    }
+    
+    // Hacer que los botones de acciones sean más visibles
+    .p-button {
+      &.p-button-text {
+        min-width: 2.5rem;
+      }
+    }
+  }
+  
+  @media (max-width: 576px) {
+    // Ajustes adicionales para móviles pequeños
+    .text-lg {
+      font-size: 1rem !important;
+    }
+  }
+}
+
+// Mejorar la visualización de direcciones en móvil
+:host ::ng-deep {
+  @media (max-width: 768px) {
+    .surface-100 {
+      padding: 0.75rem !important;
+    }
+    
+    // Hacer que los mapas de direcciones sean más accesibles
+    .p-button-outlined {
+      padding: 0.375rem 0.75rem !important;
+      font-size: 0.875rem !important;
+    }
+  }
+}
