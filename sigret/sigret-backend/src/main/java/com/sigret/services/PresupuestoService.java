@@ -4,7 +4,6 @@ import com.sigret.dtos.presupuesto.PresupuestoCreateDto;
 import com.sigret.dtos.presupuesto.PresupuestoListDto;
 import com.sigret.dtos.presupuesto.PresupuestoResponseDto;
 import com.sigret.dtos.presupuesto.PresupuestoUpdateDto;
-import com.sigret.entities.Presupuesto;
 import com.sigret.enums.EstadoPresupuesto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

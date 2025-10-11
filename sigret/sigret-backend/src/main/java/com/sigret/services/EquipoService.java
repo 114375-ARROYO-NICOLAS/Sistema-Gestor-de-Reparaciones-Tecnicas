@@ -4,7 +4,6 @@ import com.sigret.dtos.equipo.EquipoCreateDto;
 import com.sigret.dtos.equipo.EquipoListDto;
 import com.sigret.dtos.equipo.EquipoResponseDto;
 import com.sigret.dtos.equipo.EquipoUpdateDto;
-import com.sigret.entities.Equipo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

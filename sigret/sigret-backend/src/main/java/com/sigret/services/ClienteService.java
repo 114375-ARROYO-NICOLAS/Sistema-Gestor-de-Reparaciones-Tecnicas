@@ -4,7 +4,6 @@ import com.sigret.dtos.cliente.ClienteCreateDto;
 import com.sigret.dtos.cliente.ClienteListDto;
 import com.sigret.dtos.cliente.ClienteResponseDto;
 import com.sigret.dtos.cliente.ClienteUpdateDto;
-import com.sigret.entities.Cliente;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

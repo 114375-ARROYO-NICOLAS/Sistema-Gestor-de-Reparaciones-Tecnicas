@@ -4,7 +4,6 @@ import com.sigret.dtos.modelo.ModeloCreateDto;
 import com.sigret.dtos.modelo.ModeloListDto;
 import com.sigret.dtos.modelo.ModeloResponseDto;
 import com.sigret.dtos.modelo.ModeloUpdateDto;
-import com.sigret.entities.Modelo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

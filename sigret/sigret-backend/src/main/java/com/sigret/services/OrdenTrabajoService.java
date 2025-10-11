@@ -4,7 +4,7 @@ import com.sigret.dtos.ordenTrabajo.OrdenTrabajoCreateDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoListDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoResponseDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoUpdateDto;
-import com.sigret.entities.OrdenTrabajo;
+
 import com.sigret.enums.EstadoOrdenTrabajo;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

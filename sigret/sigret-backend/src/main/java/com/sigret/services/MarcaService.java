@@ -4,7 +4,6 @@ import com.sigret.dtos.marca.MarcaCreateDto;
 import com.sigret.dtos.marca.MarcaListDto;
 import com.sigret.dtos.marca.MarcaResponseDto;
 import com.sigret.dtos.marca.MarcaUpdateDto;
-import com.sigret.entities.Marca;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 

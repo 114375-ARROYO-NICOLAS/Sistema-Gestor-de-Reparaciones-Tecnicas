@@ -4,7 +4,6 @@ import com.sigret.dtos.servicio.ServicioCreateDto;
 import com.sigret.dtos.servicio.ServicioListDto;
 import com.sigret.dtos.servicio.ServicioResponseDto;
 import com.sigret.dtos.servicio.ServicioUpdateDto;
-import com.sigret.entities.Servicio;
 import com.sigret.enums.EstadoServicio;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
