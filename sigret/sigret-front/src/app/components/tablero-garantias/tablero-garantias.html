@@ -1,0 +1,224 @@
+<div class="tablero-garantias-container p-4">
+  <p-toast></p-toast>
+
+  <!-- Header -->
+  <div class="flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="text-3xl font-bold text-900 m-0 mb-2 flex align-items-center gap-2">
+        <i class="pi pi-shield text-primary"></i>
+        Tablero de Garantías
+      </h2>
+      <p class="text-600 m-0">Gestiona las garantías mediante arrastrar y soltar</p>
+    </div>
+
+    <p-button
+      label="Recargar"
+      icon="pi pi-refresh"
+      [outlined]="true"
+      (onClick)="cargarGarantias()">
+    </p-button>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex flex-column align-items-center justify-content-center py-8 gap-3">
+      <p-progressSpinner
+        [style]="{ width: '50px', height: '50px' }"
+        strokeWidth="4"
+        animationDuration="1s">
+      </p-progressSpinner>
+      <p class="text-lg text-color-secondary m-0">Cargando garantías...</p>
+    </div>
+  }
+
+  <!-- Contenido Principal -->
+  @if (!loading()) {
+    <!-- Zona de Garantías Nuevas (Recibidas) -->
+    <div class="mb-4">
+      <p-card class="bg-bluegray-50">
+        <ng-template pTemplate="header">
+          <div class="p-3 pb-0 border-bottom-1 surface-border">
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex align-items-center gap-2">
+                <i class="pi pi-inbox text-bluegray-600 text-xl"></i>
+                <h3 class="text-lg font-semibold m-0 text-bluegray-700">Garantías Recibidas</h3>
+              </div>
+              <p-tag [value]="garantiasRecibidas().length.toString()" severity="secondary"></p-tag>
+            </div>
+            <p class="text-sm text-600 m-0 mt-2">Arrastra las garantías a la columna "Esperando Evaluación" para comenzar el proceso</p>
+          </div>
+        </ng-template>
+
+        <div class="flex gap-3 overflow-x-auto py-2">
+          @if (garantiasRecibidas().length === 0) {
+            <div class="text-center text-500 py-4 w-full">
+              <i class="pi pi-check-circle text-4xl mb-2 block text-300"></i>
+              <p class="m-0">No hay garantías nuevas pendientes</p>
+            </div>
+          }
+
+          @for (servicio of garantiasRecibidas(); track servicio.id) {
+            <div class="surface-card border-round shadow-2 p-3 cursor-move hover:shadow-4 transition-duration-200 flex-shrink-0"
+                 style="width: 280px;"
+                 draggable="true"
+                 (dragstart)="onDragStart(servicio, $event)">
+
+              <!-- Header de la card -->
+              <div class="flex justify-content-between align-items-start mb-3">
+                <p-tag [value]="servicio.numeroServicio" severity="secondary" icon="pi pi-shield"></p-tag>
+                <p-button
+                  icon="pi pi-external-link"
+                  [text]="true"
+                  [rounded]="true"
+                  size="small"
+                  severity="secondary"
+                  (onClick)="verDetalle(servicio.id)"
+                  pTooltip="Ver detalle"
+                  tooltipPosition="left">
+                </p-button>
+              </div>
+
+              <!-- Cliente -->
+              <div class="mb-2">
+                <span class="block text-xs text-500 mb-1">
+                  <i class="pi pi-user mr-1"></i>
+                  Cliente
+                </span>
+                <span class="font-semibold text-900">{{ servicio.clienteNombre }}</span>
+              </div>
+
+              <!-- Equipo -->
+              <div class="mb-2">
+                <span class="block text-xs text-500 mb-1">
+                  <i class="pi pi-desktop mr-1"></i>
+                  Equipo
+                </span>
+                <span class="text-sm text-700">{{ servicio.equipoDescripcion }}</span>
+                @if (servicio.equipoMarca) {
+                  <span class="text-xs text-500 block">{{ servicio.equipoMarca }} {{ servicio.equipoModelo }}</span>
+                }
+              </div>
+
+              <!-- Fecha de recepción -->
+              <div class="flex align-items-center gap-2 text-xs text-500 mt-3 pt-2 border-top-1 surface-border">
+                <i class="pi pi-calendar"></i>
+                <span>{{ formatFecha(servicio.fechaRecepcion) }}</span>
+              </div>
+            </div>
+          }
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Tablero Kanban -->
+    <div class="flex gap-3 overflow-x-auto pb-4">
+      @for (columna of columnasConServicios(); track columna.estado) {
+        <div class="flex-shrink-0" style="width: 320px;">
+          <!-- Header de columna -->
+          <div class="border-round-top p-3 border-1 border-bottom-none surface-100"
+               [ngClass]="{
+                 'border-orange-200': columna.estado === 'ESPERANDO_EVALUACION_GARANTIA',
+                 'border-blue-200': columna.estado === 'EN_REPARACION',
+                 'border-green-200': columna.estado === 'TERMINADO',
+                 'border-cyan-200': columna.estado === 'GARANTIA_SIN_REPARACION',
+                 'border-red-200': columna.estado === 'GARANTIA_RECHAZADA'
+               }">
+            <div class="flex align-items-center justify-content-between">
+              <div class="flex align-items-center gap-2">
+                <i [class]="'pi ' + columna.icon + ' ' + columna.color"></i>
+                <h3 class="text-base font-semibold m-0" [ngClass]="columna.color">{{ columna.titulo }}</h3>
+              </div>
+              <p-tag [value]="columna.servicios.length.toString()" [severity]="getEstadoSeverity(columna.estado)"></p-tag>
+            </div>
+          </div>
+
+          <!-- Drop zone -->
+          <div class="surface-border border-1 border-round-bottom p-3 surface-ground"
+               style="min-height: 400px; max-height: calc(100vh - 500px); overflow-y: auto;"
+               [ngClass]="{ 'bg-primary-50 border-primary-300': columnaHover() === columna.estado }"
+               (dragover)="onDragOver($event)"
+               (dragenter)="onDragEnter(columna)"
+               (dragleave)="onDragLeave()"
+               (drop)="onDrop(columna, $event)">
+
+            <!-- Cards de servicios -->
+            @if (columna.servicios.length === 0) {
+              <div class="text-center text-500 py-4">
+                <i class="pi pi-inbox text-3xl mb-2 block text-400"></i>
+                <p class="m-0 text-sm">Arrastra aquí</p>
+              </div>
+            }
+
+            @for (servicio of columna.servicios; track servicio.id) {
+              <div class="surface-card border-round shadow-1 p-3 mb-3 cursor-move hover:shadow-3 transition-duration-200 border-1 surface-border"
+                   draggable="true"
+                   (dragstart)="onDragStart(servicio, $event)">
+
+                <!-- Header de la card -->
+                <div class="flex justify-content-between align-items-start mb-2">
+                  <p-tag [value]="servicio.numeroServicio" severity="info" icon="pi pi-shield"></p-tag>
+                  <p-button
+                    icon="pi pi-external-link"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="secondary"
+                    (onClick)="verDetalle(servicio.id)"
+                    pTooltip="Ver detalle"
+                    tooltipPosition="left">
+                  </p-button>
+                </div>
+
+                <!-- Cliente -->
+                <div class="mb-2">
+                  <span class="block text-xs text-500 mb-1">
+                    <i class="pi pi-user mr-1"></i>
+                    Cliente
+                  </span>
+                  <span class="font-semibold text-900">{{ servicio.clienteNombre }}</span>
+                </div>
+
+                <!-- Equipo -->
+                <div class="mb-2">
+                  <span class="block text-xs text-500 mb-1">
+                    <i class="pi pi-desktop mr-1"></i>
+                    Equipo
+                  </span>
+                  <span class="text-sm text-700">{{ servicio.equipoDescripcion }}</span>
+                  @if (servicio.equipoMarca) {
+                    <span class="text-xs text-500 block">{{ servicio.equipoMarca }} {{ servicio.equipoModelo }}</span>
+                  }
+                </div>
+
+                <!-- Empleado de recepción -->
+                @if (servicio.empleadoRecepcionNombre) {
+                  <div class="mb-2">
+                    <span class="block text-xs text-500 mb-1">
+                      <i class="pi pi-user-edit mr-1"></i>
+                      Recepción
+                    </span>
+                    <span class="text-sm text-600">{{ servicio.empleadoRecepcionNombre }}</span>
+                  </div>
+                }
+
+                <!-- Fecha de recepción -->
+                <div class="flex align-items-center gap-2 text-xs text-500 mt-3 pt-2 border-top-1 surface-border">
+                  <i class="pi pi-calendar"></i>
+                  <span>{{ formatFecha(servicio.fechaRecepcion) }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Información de arrastre -->
+  @if (servicioArrastrado()) {
+    <div class="fixed bottom-0 left-0 right-0 p-3 bg-primary text-white text-center shadow-8 z-5">
+      <i class="pi pi-arrow-right-arrow-left mr-2"></i>
+      Arrastrando: <strong>{{ servicioArrastrado()!.numeroServicio }}</strong> - {{ servicioArrastrado()!.clienteNombre }}
+    </div>
+  }
+</div>

@@ -1,0 +1,71 @@
+.servicio-search-container {
+  max-width: 1600px;
+  margin: 0 auto;
+
+  .filtros-card {
+    position: sticky;
+    top: 1rem;
+    height: fit-content;
+    max-height: calc(100vh - 8rem);
+    overflow-y: auto;
+
+    ::ng-deep {
+      .p-card-body {
+        padding: 1rem;
+      }
+
+      .p-card-footer {
+        padding: 1rem;
+        border-top: 1px solid var(--surface-border);
+      }
+    }
+  }
+
+  // Estilos para el accordion
+  ::ng-deep {
+    .p-accordion {
+      .p-accordionpanel {
+        margin-bottom: 0.5rem;
+      }
+
+      .p-accordionpanel-header {
+        background: var(--surface-50);
+        border-radius: 8px;
+        margin-bottom: 0.25rem;
+
+        &:hover {
+          background: var(--surface-100);
+        }
+      }
+
+      .p-accordionpanel-content {
+        padding: 1rem;
+      }
+    }
+
+    // Estilos para MultiSelect
+    .p-multiselect {
+      width: 100%;
+
+      .p-multiselect-label {
+        padding: 0.5rem;
+      }
+
+      &.p-multiselect-chip {
+        .p-multiselect-label {
+          padding: 0.25rem 0.5rem;
+        }
+      }
+    }
+  }
+
+  // Responsive
+  @media (max-width: 992px) {
+    .filtros-card {
+      position: relative;
+      top: 0;
+      max-height: none;
+      margin-bottom: 1rem;
+    }
+  }
+}

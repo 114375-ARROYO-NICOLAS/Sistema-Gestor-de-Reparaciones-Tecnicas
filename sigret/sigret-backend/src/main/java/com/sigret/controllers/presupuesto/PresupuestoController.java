@@ -140,11 +140,25 @@ public class PresupuestoController {
             @ApiResponse(responseCode = "200", description = "Estado cambiado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Presupuesto no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
     public ResponseEntity<PresupuestoResponseDto> cambiarEstadoPresupuesto(
             @Parameter(description = "ID del presupuesto") @PathVariable Long id,
             @Parameter(description = "Nuevo estado") @RequestParam EstadoPresupuesto nuevoEstado) {
         PresupuestoResponseDto presupuestoActualizado = presupuestoService.cambiarEstadoPresupuesto(id, nuevoEstado);
+        return ResponseEntity.ok(presupuestoActualizado);
+    }
+
+    @PatchMapping("/{id}/asignar-empleado")
+    @Operation(summary = "Asignar empleado", description = "Asigna un empleado a un presupuesto")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Empleado asignado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Presupuesto o empleado no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<PresupuestoResponseDto> asignarEmpleado(
+            @Parameter(description = "ID del presupuesto") @PathVariable Long id,
+            @Parameter(description = "ID del empleado") @RequestParam Long empleadoId) {
+        PresupuestoResponseDto presupuestoActualizado = presupuestoService.asignarEmpleado(id, empleadoId);
         return ResponseEntity.ok(presupuestoActualizado);
     }
 

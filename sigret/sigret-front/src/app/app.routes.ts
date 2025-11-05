@@ -42,6 +42,10 @@ export const routes: Routes = [
             loadComponent: () => import('./components/employee-management/employee-management.component').then(m => m.EmployeeManagementComponent)
           },
           {
+            path: 'nuevo',
+            loadComponent: () => import('./components/employee-create/employee-create').then(m => m.EmployeeCreateComponent)
+          },
+          {
             path: ':id',
             loadComponent: () => import('./components/employee-detail/employee-detail.component').then(m => m.EmployeeDetailComponent)
           }
@@ -50,6 +54,86 @@ export const routes: Routes = [
       {
         path: 'usuarios',
         loadComponent: () => import('./components/user-management/user-management.component').then(m => m.UserManagementComponent)
+      },
+      {
+        path: 'equipos',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./components/equipo-management/equipo-management.component').then(m => m.EquipoManagementComponent)
+          },
+          {
+            path: 'nuevo',
+            loadComponent: () => import('./components/equipo-create/equipo-create.component').then(m => m.EquipoCreateComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./components/equipo-detail/equipo-detail.component').then(m => m.EquipoDetailComponent)
+          },
+          {
+            path: ':id/editar',
+            loadComponent: () => import('./components/equipo-create/equipo-create.component').then(m => m.EquipoCreateComponent)
+          }
+        ]
+      },
+      {
+        path: 'servicios',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./components/tablero-servicios/tablero-servicios.component').then(m => m.TableroServiciosComponent)
+          },
+          {
+            path: 'buscar',
+            loadComponent: () => import('./components/servicio-search/servicio-search').then(m => m.ServicioSearch)
+          },
+          {
+            path: 'nuevo',
+            loadComponent: () => import('./components/servicio-create/servicio-create').then(m => m.ServicioCreateComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./components/servicio-detail/servicio-detail').then(m => m.ServicioDetail)
+          }
+        ]
+      },
+      {
+        path: 'garantias',
+        loadComponent: () => import('./components/tablero-garantias/tablero-garantias').then(m => m.TableroGarantiasComponent)
+      },
+      {
+        path: 'presupuestos',
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./components/budget-board/budget-board').then(m => m.BudgetBoardComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./components/presupuesto-detail/presupuesto-detail').then(m => m.PresupuestoDetail)
+          }
+        ]
+      },
+      {
+        path: 'ordenes-trabajo',
+        loadComponent: () => import('./components/work-order-board/work-order-board').then(m => m.WorkOrderBoardComponent)
+      },
+      {
+        path: 'configuracion',
+        children: [
+          {
+            path: 'tipos-equipo',
+            loadComponent: () => import('./components/configuracion/tipo-equipo-config/tipo-equipo-config').then(m => m.TipoEquipoConfigComponent)
+          },
+          {
+            path: 'marcas',
+            loadComponent: () => import('./components/configuracion/marca-config/marca-config').then(m => m.MarcaConfigComponent)
+          },
+          {
+            path: 'modelos',
+            loadComponent: () => import('./components/configuracion/modelo-config/modelo-config').then(m => m.ModeloConfigComponent)
+          }
+        ]
       },
       {
         path: 'profile',

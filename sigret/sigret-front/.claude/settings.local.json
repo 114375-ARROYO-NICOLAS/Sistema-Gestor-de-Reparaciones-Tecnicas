@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Nico/Escritorio/PS/Sistema-Gestor-de-Reparaciones-Tecnicas/sigret/sigret-backend/**)",
+      "Bash(npm install:*)",
+      "Bash(timeout 30 npm start:*)",
+      "Bash(npx ng build:*)",
+      "Bash(dir /s /b \"servicio-create.component.ts\")",
+      "Bash(dir /s /b \"d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\repositories\\*Presupuesto*.java\")",
+      "Bash(npx ng generate component:*)",
+      "Bash(dir:*)",
+      "Bash(cat:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

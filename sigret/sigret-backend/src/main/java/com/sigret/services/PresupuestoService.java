@@ -57,7 +57,12 @@ public interface PresupuestoService {
      * Cambiar estado de un presupuesto
      */
     PresupuestoResponseDto cambiarEstadoPresupuesto(Long id, EstadoPresupuesto nuevoEstado);
-    
+
+    /**
+     * Asignar empleado a un presupuesto
+     */
+    PresupuestoResponseDto asignarEmpleado(Long presupuestoId, Long empleadoId);
+
     /**
      * Aprobar presupuesto
      */

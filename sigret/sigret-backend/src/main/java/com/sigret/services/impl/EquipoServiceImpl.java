@@ -4,12 +4,17 @@ import com.sigret.dtos.equipo.EquipoCreateDto;
 import com.sigret.dtos.equipo.EquipoListDto;
 import com.sigret.dtos.equipo.EquipoResponseDto;
 import com.sigret.dtos.equipo.EquipoUpdateDto;
+import com.sigret.entities.Cliente;
+import com.sigret.entities.ClienteEquipo;
 import com.sigret.entities.Equipo;
 import com.sigret.entities.Marca;
 import com.sigret.entities.Modelo;
 import com.sigret.entities.TipoEquipo;
+import com.sigret.exception.ClienteNotFoundException;
 import com.sigret.exception.EquipoNotFoundException;
 import com.sigret.exception.NumeroSerieAlreadyExistsException;
+import com.sigret.repositories.ClienteEquipoRepository;
+import com.sigret.repositories.ClienteRepository;
 import com.sigret.repositories.EquipoRepository;
 import com.sigret.repositories.MarcaRepository;
 import com.sigret.repositories.ModeloRepository;
@@ -39,6 +44,12 @@ public class EquipoServiceImpl implements EquipoService {
 
     @Autowired
     private TipoEquipoRepository tipoEquipoRepository;
+
+    @Autowired
+    private ClienteEquipoRepository clienteEquipoRepository;
+
+    @Autowired
+    private ClienteRepository clienteRepository;
 
     @Override
     public EquipoResponseDto crearEquipo(EquipoCreateDto equipoCreateDto) {
@@ -210,5 +221,51 @@ public class EquipoServiceImpl implements EquipoService {
                 equipo.getMarca().getDescripcion(),
                 equipo.getModelo() != null ? equipo.getModelo().getDescripcion() : null
         );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<EquipoListDto> obtenerEquiposPorCliente(Long clienteId) {
+        List<Equipo> equipos = clienteEquipoRepository.findEquiposByClienteId(clienteId);
+        return equipos.stream()
+                .map(this::convertirAEquipoListDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void asociarEquipoACliente(Long equipoId, Long clienteId) {
+        // Verificar que el equipo existe
+        Equipo equipo = equipoRepository.findById(equipoId)
+                .orElseThrow(() -> new EquipoNotFoundException("Equipo no encontrado con ID: " + equipoId));
+
+        // Verificar que el cliente existe
+        Cliente cliente = clienteRepository.findById(clienteId)
+                .orElseThrow(() -> new ClienteNotFoundException("Cliente no encontrado con ID: " + clienteId));
+
+        // Verificar si ya existe la asociación
+        if (clienteEquipoRepository.existsByClienteIdAndEquipoId(clienteId, equipoId)) {
+            throw new IllegalStateException("El equipo ya está asociado a este cliente");
+        }
+
+        // Crear la asociación
+        ClienteEquipo clienteEquipo = new ClienteEquipo();
+        clienteEquipo.setCliente(cliente);
+        clienteEquipo.setEquipo(equipo);
+        clienteEquipo.setActivo(true);
+
+        clienteEquipoRepository.save(clienteEquipo);
+    }
+
+    @Override
+    public void desasociarEquipoDeCliente(Long equipoId, Long clienteId) {
+        ClienteEquipo clienteEquipo = clienteEquipoRepository.findByClienteIdAndEquipoIdAndActivoTrue(clienteId, equipoId);
+
+        if (clienteEquipo == null) {
+            throw new IllegalStateException("No existe asociación activa entre este equipo y cliente");
+        }
+
+        // Marcar como inactivo en lugar de eliminar
+        clienteEquipo.setActivo(false);
+        clienteEquipoRepository.save(clienteEquipo);
     }
 }

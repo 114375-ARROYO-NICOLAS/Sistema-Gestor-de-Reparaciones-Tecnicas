@@ -1,0 +1,108 @@
+<div class="equipo-detail-container">
+  @if (loading()) {
+    <div class="flex justify-content-center align-items-center" style="min-height: 400px;">
+      <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+    </div>
+  } @else if (equipo()) {
+    <div class="surface-card p-4 shadow-2 border-round">
+      <!-- Header -->
+      <div class="flex justify-content-between align-items-start mb-4">
+        <div>
+          <div class="flex align-items-center gap-2 mb-2">
+            <p-button
+              icon="pi pi-arrow-left"
+              [text]="true"
+              [rounded]="true"
+              severity="secondary"
+              (onClick)="goBack()">
+            </p-button>
+            <h2 class="text-900 font-bold text-4xl m-0">Detalle del Equipo</h2>
+          </div>
+          <p class="text-600 m-0 ml-5">Información completa del equipo</p>
+        </div>
+        <p-button
+          label="Editar"
+          icon="pi pi-pencil"
+          (onClick)="editEquipo()">
+        </p-button>
+      </div>
+
+      <!-- Content -->
+      <div class="grid">
+        <!-- Descripción -->
+        <div class="col-12">
+          <p-card>
+            <ng-template pTemplate="header">
+              <div class="p-3">
+                <h3 class="m-0 text-primary">
+                  <i class="pi pi-desktop mr-2"></i>
+                  Información General
+                </h3>
+              </div>
+            </ng-template>
+            <ng-template pTemplate="content">
+              <div class="grid">
+                <div class="col-12">
+                  <label class="text-600 text-sm">Descripción Completa:</label>
+                  <p class="font-bold text-xl m-0 mt-1">{{ equipo()!.descripcionCompleta }}</p>
+                </div>
+
+                <div class="col-12 md:col-6">
+                  <label class="text-600 text-sm">Tipo de Equipo:</label>
+                  <p class="font-medium m-0 mt-1">{{ equipo()!.tipoEquipo }}</p>
+                </div>
+
+                <div class="col-12 md:col-6">
+                  <label class="text-600 text-sm">Marca:</label>
+                  <p class="font-medium m-0 mt-1">{{ equipo()!.marca }}</p>
+                </div>
+
+                <div class="col-12 md:col-6">
+                  <label class="text-600 text-sm">Modelo:</label>
+                  <p class="m-0 mt-1">
+                    @if (equipo()!.modelo) {
+                      {{ equipo()!.modelo }}
+                    } @else {
+                      <span class="text-500">-</span>
+                    }
+                  </p>
+                </div>
+
+                <div class="col-12 md:col-6">
+                  <label class="text-600 text-sm">Número de Serie:</label>
+                  <p class="m-0 mt-1">
+                    @if (equipo()!.numeroSerie) {
+                      <p-badge [value]="equipo()!.numeroSerie!" severity="info"></p-badge>
+                    } @else {
+                      <span class="text-500">-</span>
+                    }
+                  </p>
+                </div>
+
+                <div class="col-12 md:col-6">
+                  <label class="text-600 text-sm">Color:</label>
+                  <p class="m-0 mt-1">
+                    @if (equipo()!.color) {
+                      {{ equipo()!.color }}
+                    } @else {
+                      <span class="text-500">-</span>
+                    }
+                  </p>
+                </div>
+
+                @if (equipo()!.observaciones) {
+                  <div class="col-12">
+                    <label class="text-600 text-sm">Observaciones:</label>
+                    <p class="m-0 mt-1 white-space-pre-wrap">{{ equipo()!.observaciones }}</p>
+                  </div>
+                }
+              </div>
+            </ng-template>
+          </p-card>
+        </div>
+      </div>
+    </div>
+  }
+</div>
+
+<p-toast />

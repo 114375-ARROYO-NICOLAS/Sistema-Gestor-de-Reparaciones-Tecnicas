@@ -1,5 +1,6 @@
 package com.sigret.dtos.servicio;
 
+import com.sigret.dtos.detalleservicio.DetalleServicioDto;
 import com.sigret.enums.EstadoServicio;
 import com.sigret.enums.TipoIngreso;
 import lombok.AllArgsConstructor;
@@ -10,6 +11,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -30,7 +33,7 @@ public class ServicioResponseDto {
     private TipoIngreso tipoIngreso;
     private String firmaIngreso;
     private String firmaConformidad;
-    
+
     // Campos de garantía
     private Boolean esGarantia;
     private Long servicioGarantiaId;
@@ -42,7 +45,7 @@ public class ServicioResponseDto {
     private String tecnicoEvaluacionNombre;
     private LocalDateTime fechaEvaluacionGarantia;
     private String observacionesEvaluacionGarantia;
-    
+
     // Campos existentes
     private Boolean abonaVisita;
     private BigDecimal montoVisita;
@@ -53,4 +56,7 @@ public class ServicioResponseDto {
     private LocalDate fechaDevolucionPrevista;
     private LocalDate fechaDevolucionReal;
     private String descripcionCompleta;
+
+    // Detalles del servicio
+    private List<DetalleServicioDto> detalles = new ArrayList<>();
 }

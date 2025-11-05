@@ -1,0 +1,626 @@
+<div class="servicio-create-container">
+  <!-- Header -->
+  <div class="mb-4">
+    <h2 class="text-3xl font-bold text-900 m-0 mb-2">
+      <i class="pi pi-file-plus mr-2"></i>
+      Crear Nuevo Servicio
+    </h2>
+    <p class="text-600 m-0">Complete los pasos para registrar un nuevo servicio técnico</p>
+  </div>
+
+  <!-- Stepper -->
+  <div class="surface-card border-round shadow-2 p-4">
+    <p-stepper [(value)]="activeStep" (activeStepChange)="onStepChange($any($event))">
+      <!-- Step Headers -->
+      <p-step-list>
+        <p-step [value]="1">Información General</p-step>
+        <p-step [value]="2">Equipo y Falla</p-step>
+        <p-step [value]="3">Componentes</p-step>
+        <p-step [value]="4">Confirmación</p-step>
+      </p-step-list>
+
+      <!-- Step Panels -->
+      <p-step-panels>
+        <!-- Panel 1: Información General -->
+        <p-step-panel [value]="1">
+          <ng-template #content let-activateCallback="activateCallback">
+            <div>
+              <form [formGroup]="servicioForm">
+                <div class="flex flex-column gap-4">
+                  <!-- Cliente -->
+                  <div>
+                    <label for="cliente" class="block text-900 font-medium mb-2">Cliente *</label>
+                    <p-autocomplete
+                      id="cliente"
+                      [(ngModel)]="selectedCliente"
+                      [ngModelOptions]="{standalone: true}"
+                      [suggestions]="clientes()"
+                      (completeMethod)="buscarClientes($event)"
+                      (onSelect)="onClienteSelected($event)"
+                      (onClear)="onClienteCleared()"
+                      optionLabel="nombreCompleto"
+                      [dataKey]="'id'"
+                      placeholder="Escriba al menos 2 caracteres para buscar..."
+                      [showEmptyMessage]="true"
+                      emptyMessage="No se encontraron clientes"
+                      class="w-full">
+                      <ng-template let-cliente pTemplate="item">
+                        <div class="flex align-items-center gap-2">
+                          <i class="pi pi-user"></i>
+                          <div class="flex flex-column">
+                            <span class="font-medium">{{ cliente.nombreCompleto }}</span>
+                            <span class="text-sm text-color-secondary">{{ cliente.documento }}</span>
+                          </div>
+                        </div>
+                      </ng-template>
+                    </p-autocomplete>
+                    @if (servicioForm.get('clienteId')?.invalid && servicioForm.get('clienteId')?.touched) {
+                      <small class="text-red-500">Cliente es requerido</small>
+                    }
+                  </div>
+
+                  <!-- Empleado Recepción -->
+                  <div>
+                    <label for="empleado" class="block text-900 font-medium mb-2">Empleado Recepción *</label>
+                    <p-select
+                      id="empleado"
+                      formControlName="empleadoRecepcionId"
+                      [options]="empleados()"
+                      optionLabel="nombreCompleto"
+                      optionValue="id"
+                      placeholder="Seleccionar empleado"
+                      class="w-full">
+                      <ng-template let-empleado #item>
+                        <div class="flex align-items-center gap-2">
+                          <i class="pi pi-user-edit"></i>
+                          <span>{{ empleado.nombreCompleto }} - {{ empleado.tipoEmpleado }}</span>
+                        </div>
+                      </ng-template>
+                    </p-select>
+                  </div>
+
+                  <!-- Tipo de Ingreso y Es Garantía -->
+                  <div class="grid">
+                    <div class="col-12 md:col-6">
+                      <label for="tipoIngreso" class="block text-900 font-medium mb-2">Tipo de Ingreso *</label>
+                      <p-select
+                        id="tipoIngreso"
+                        formControlName="tipoIngreso"
+                        [options]="tiposIngreso"
+                        placeholder="Seleccionar tipo"
+                        class="w-full">
+                      </p-select>
+                    </div>
+
+                    <div class="col-12 md:col-6">
+                      <div class="flex align-items-center gap-2 h-full">
+                        <input
+                          type="checkbox"
+                          id="esGarantia"
+                          formControlName="esGarantia"
+                          class="mr-2">
+                        <label for="esGarantia" class="text-900 font-medium">¿Es Garantía?</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Selector de Servicio Previo (solo si esGarantia = true) -->
+                  @if (servicioForm.get('esGarantia')?.value && selectedCliente()) {
+                    <div>
+                      <label for="servicioPrevio" class="block text-900 font-medium mb-2">Servicio Anterior *</label>
+                      <p-select
+                        id="servicioPrevio"
+                        [(ngModel)]="selectedServicioPrevio"
+                        [ngModelOptions]="{standalone: true}"
+                        [options]="serviciosPrevios()"
+                        (onChange)="onServicioPrevioSelected($event)"
+                        (onClear)="onServicioPrevioCleared()"
+                        [showClear]="true"
+                        placeholder="Seleccione el servicio anterior"
+                        class="w-full">
+                        <ng-template let-servicio #item>
+                          <div class="flex flex-column gap-1">
+                            <div class="flex align-items-center gap-2">
+                              <p-badge [value]="servicio.numeroServicio" severity="info"></p-badge>
+                              <span class="font-semibold">{{ servicio.equipoDescripcion }}</span>
+                            </div>
+                            <span class="text-sm text-color-secondary">
+                              <i class="pi pi-calendar mr-1"></i>
+                              {{ servicio.fechaRecepcion | date: 'dd/MM/yyyy' }}
+                              @if (servicio.equipoMarca) {
+                                <span class="ml-2">- {{ servicio.equipoMarca }}</span>
+                              }
+                              @if (servicio.equipoModelo) {
+                                <span> {{ servicio.equipoModelo }}</span>
+                              }
+                            </span>
+                          </div>
+                        </ng-template>
+                      </p-select>
+                      @if (servicioForm.get('servicioGarantiaId')?.invalid && servicioForm.get('servicioGarantiaId')?.touched) {
+                        <small class="text-red-500 block mt-1">Debe seleccionar el servicio anterior para la garantía</small>
+                      }
+                      @if (serviciosPrevios().length === 0) {
+                        <p-message severity="info" class="mt-2 block">
+                          <ng-template #content>
+                            No hay servicios elegibles para garantía. Solo se muestran servicios TERMINADOS de los últimos 90 días.
+                          </ng-template>
+                        </p-message>
+                      }
+                    </div>
+                  }
+
+                  <!-- Fechas -->
+                  <div class="grid">
+                    <div class="col-12 md:col-6">
+                      <label for="fechaRecepcion" class="block text-900 font-medium mb-2">Fecha Recepción *</label>
+                      <p-datepicker
+                        id="fechaRecepcion"
+                        formControlName="fechaRecepcion"
+                        dateFormat="dd/mm/yy"
+                        [showIcon]="true"
+                        placeholder="Seleccionar fecha"
+                        appendTo="body"
+                        class="w-full">
+                      </p-datepicker>
+                    </div>
+
+                    <div class="col-12 md:col-6">
+                      <label for="fechaDevolucion" class="block text-900 font-medium mb-2">Fecha Devolución Prevista</label>
+                      <p-datepicker
+                        id="fechaDevolucion"
+                        formControlName="fechaDevolucionPrevista"
+                        dateFormat="dd/mm/yy"
+                        [showIcon]="true"
+                        placeholder="Seleccionar fecha"
+                        appendTo="body"
+                        class="w-full">
+                      </p-datepicker>
+                    </div>
+                  </div>
+                </div>
+              </form>
+
+              <div class="flex justify-content-end mt-4">
+                <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Panel 2: Equipo y Falla -->
+        <p-step-panel [value]="2">
+          <ng-template #content let-activateCallback="activateCallback">
+            <div>
+              <form [formGroup]="servicioForm">
+                <div class="flex flex-column gap-4">
+                  <!-- Equipo -->
+                  <div>
+                    <label for="equipo" class="block text-900 font-medium mb-2">Equipo *</label>
+                    <p-select
+                      id="equipo"
+                      formControlName="equipoId"
+                      [options]="equipos()"
+                      optionLabel="descripcionCompleta"
+                      optionValue="id"
+                      placeholder="Seleccionar equipo del cliente"
+                      [showClear]="false"
+                      emptyMessage="Primero debe seleccionar un cliente"
+                      class="w-full">
+                      <ng-template let-equipo pTemplate="item">
+                        <div class="flex flex-column gap-1 py-2">
+                          <div class="flex align-items-center gap-2">
+                            <i class="pi pi-desktop text-primary"></i>
+                            <span class="font-medium">{{ equipo.tipoEquipo }} {{ equipo.marca }} {{ equipo.modelo || '' }}</span>
+                          </div>
+                          @if (equipo.numeroSerie) {
+                            <span class="text-sm text-600 ml-4">S/N: {{ equipo.numeroSerie }}</span>
+                          }
+                        </div>
+                      </ng-template>
+                    </p-select>
+                    @if (equipoCargadoDesdeGarantia()) {
+                      <p-message severity="success" class="mt-2 block">
+                        <ng-template #content>
+                          <i class="pi pi-check-circle mr-2"></i>
+                          Equipo cargado automáticamente desde el servicio de garantía
+                        </ng-template>
+                      </p-message>
+                    }
+                    @if (equipos().length === 0 && selectedCliente()) {
+                      <small class="text-orange-500 block mt-2">
+                        <i class="pi pi-info-circle mr-1"></i>
+                        Este cliente no tiene equipos registrados. Puede crear uno desde la gestión de equipos.
+                      </small>
+                    }
+                  </div>
+
+                  <!-- Falla Reportada -->
+                  <div>
+                    <label for="fallaReportada" class="block text-900 font-medium mb-2">Falla Reportada</label>
+                    <textarea
+                      id="fallaReportada"
+                      pInputTextarea
+                      formControlName="fallaReportada"
+                      placeholder="Describa la falla reportada por el cliente"
+                      rows="4"
+                      class="w-full">
+                    </textarea>
+                  </div>
+
+                  <!-- Observaciones -->
+                  <div>
+                    <label for="observaciones" class="block text-900 font-medium mb-2">Observaciones</label>
+                    <textarea
+                      id="observaciones"
+                      pInputTextarea
+                      formControlName="observaciones"
+                      placeholder="Observaciones adicionales"
+                      rows="3"
+                      class="w-full">
+                    </textarea>
+                  </div>
+
+                  <!-- Abona Visita -->
+                  <div>
+                    <div class="flex align-items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="abonaVisita"
+                        formControlName="abonaVisita"
+                        class="mr-2">
+                      <label for="abonaVisita" class="text-900 font-medium">¿Abona Visita?</label>
+                    </div>
+                  </div>
+
+                  <!-- Montos de Visita -->
+                  @if (servicioForm.value.abonaVisita) {
+                    <div class="grid">
+                      <div class="col-12 md:col-6">
+                        <label for="montoVisita" class="block text-900 font-medium mb-2">Monto Visita</label>
+                        <p-inputnumber
+                          id="montoVisita"
+                          formControlName="montoVisita"
+                          mode="currency"
+                          currency="ARS"
+                          locale="es-AR"
+                          placeholder="0.00"
+                          class="w-full">
+                        </p-inputnumber>
+                      </div>
+
+                      <div class="col-12 md:col-6">
+                        <label for="montoPagado" class="block text-900 font-medium mb-2">Monto Pagado</label>
+                        <p-inputnumber
+                          id="montoPagado"
+                          formControlName="montoPagado"
+                          mode="currency"
+                          currency="ARS"
+                          locale="es-AR"
+                          placeholder="0.00"
+                          class="w-full">
+                        </p-inputnumber>
+                      </div>
+                    </div>
+                  }
+                </div>
+              </form>
+
+              <div class="flex justify-content-between mt-4">
+                <p-button label="Anterior" severity="secondary" icon="pi pi-arrow-left" (onClick)="previousStep()" />
+                <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Panel 3: Componentes -->
+        <p-step-panel [value]="3">
+          <ng-template #content>
+            <div>
+              <div class="flex justify-content-between align-items-center mb-3">
+                <h4 class="text-lg font-semibold text-900 m-0">Componentes del Equipo</h4>
+                @if (!isAddingDetalle()) {
+                  <p-button
+                    label="Agregar Componente"
+                    icon="pi pi-plus"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="toggleAddingDetalle()">
+                  </p-button>
+                }
+              </div>
+
+              <!-- Add/Edit Component Form -->
+              @if (isAddingDetalle() || isEditingDetalle()) {
+                <div class="surface-50 border-round p-3 mb-3">
+                  <h5 class="text-900 mb-3">{{ isEditingDetalle() ? 'Editar Componente' : 'Agregar Componente' }}</h5>
+                  <div class="grid">
+                    <div class="col-12">
+                      <label for="componente" class="block text-900 font-medium mb-2">Componente *</label>
+                      <input
+                        id="componente"
+                        type="text"
+                        pInputText
+                        [ngModel]="currentDetalle().componente"
+                        (ngModelChange)="updateCurrentDetalle('componente', $event)"
+                        [ngModelOptions]="{standalone: true}"
+                        placeholder="Ej: Cargador, Mouse, Teclado"
+                        class="w-full">
+                    </div>
+
+                    <div class="col-12">
+                      <div class="flex align-items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="presente"
+                          [ngModel]="currentDetalle().presente ?? false"
+                          (ngModelChange)="updateCurrentDetalle('presente', $event)"
+                          [ngModelOptions]="{standalone: true}">
+                        <label for="presente" class="text-900 font-medium">Componente presente</label>
+                      </div>
+                    </div>
+
+                    <div class="col-12">
+                      <label for="comentario" class="block text-900 font-medium mb-2">Comentario</label>
+                      <input
+                        id="comentario"
+                        type="text"
+                        pInputText
+                        [ngModel]="currentDetalle().comentario"
+                        (ngModelChange)="updateCurrentDetalle('comentario', $event)"
+                        [ngModelOptions]="{standalone: true}"
+                        placeholder="Observaciones sobre el componente"
+                        class="w-full">
+                    </div>
+
+                    <div class="col-12">
+                      <div class="flex gap-2 justify-content-end">
+                        <p-button
+                          label="Cancelar"
+                          severity="secondary"
+                          [outlined]="true"
+                          size="small"
+                          (onClick)="cancelDetalle()">
+                        </p-button>
+                        <p-button
+                          [label]="isEditingDetalle() ? 'Guardar' : 'Agregar'"
+                          [icon]="isEditingDetalle() ? 'pi pi-check' : 'pi pi-plus'"
+                          size="small"
+                          (onClick)="isEditingDetalle() ? updateDetalle() : addDetalle()">
+                        </p-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Components List -->
+              @if (detalles().length > 0) {
+                <div class="flex flex-column gap-2 mb-3">
+                  @for (detalle of detalles(); track $index) {
+                    <div class="surface-50 border-round p-3">
+                      <div class="flex justify-content-between align-items-start">
+                        <div class="flex-1">
+                          <div class="flex align-items-center gap-2 mb-1">
+                            <i [class]="'pi ' + (detalle.presente ? 'pi-check-circle text-green-600' : 'pi-times-circle text-red-600')"></i>
+                            <span class="font-medium">{{ detalle.componente }}</span>
+                            <p-badge [value]="detalle.presente ? 'Presente' : 'No Presente'" [severity]="detalle.presente ? 'success' : 'danger'"></p-badge>
+                          </div>
+                          @if (detalle.comentario) {
+                            <div class="text-sm text-600 ml-4">
+                              {{ detalle.comentario }}
+                            </div>
+                          }
+                        </div>
+                        <div class="flex gap-1">
+                          <p-button
+                            icon="pi pi-pencil"
+                            severity="secondary"
+                            size="small"
+                            [text]="true"
+                            (onClick)="editDetalle($index)"
+                            title="Editar">
+                          </p-button>
+                          <p-button
+                            icon="pi pi-trash"
+                            severity="danger"
+                            size="small"
+                            [text]="true"
+                            (onClick)="removeDetalle($index)"
+                            title="Eliminar">
+                          </p-button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-center text-600 py-4 mb-3">
+                  <i class="pi pi-box text-3xl mb-2"></i>
+                  <p class="m-0">No hay componentes agregados (opcional)</p>
+                </div>
+              }
+
+              <div class="flex justify-content-between mt-4">
+                <p-button label="Anterior" severity="secondary" icon="pi pi-arrow-left" (onClick)="previousStep()" />
+                <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="nextStep()" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Panel 4: Confirmación -->
+        <p-step-panel [value]="4">
+          <ng-template #content>
+            <div>
+              <h4 class="text-xl font-bold text-900 mb-4">Resumen del Servicio</h4>
+
+              <!-- Información General -->
+              <div class="surface-border border-1 border-round p-4 mb-3">
+                <div class="flex align-items-center gap-2 mb-3">
+                  <i class="pi pi-info-circle text-primary text-xl"></i>
+                  <h5 class="m-0 text-primary font-semibold">Información General</h5>
+                </div>
+                <div class="grid">
+                  <div class="col-12 md:col-6">
+                    <label class="text-600 text-sm font-semibold block mb-1">Cliente:</label>
+                    <p class="text-900 font-medium m-0">
+                      {{ getSelectedCliente() }}
+                    </p>
+                  </div>
+                  <div class="col-12 md:col-6">
+                    <label class="text-600 text-sm font-semibold block mb-1">Empleado Recepción:</label>
+                    <p class="text-900 font-medium m-0">
+                      {{ getSelectedEmpleado() }}
+                    </p>
+                  </div>
+                  <div class="col-12 md:col-6">
+                    <label class="text-600 text-sm font-semibold block mb-1">Tipo de Ingreso:</label>
+                    <p class="m-0">
+                      <p-badge [value]="servicioForm.value.tipoIngreso === 'CLIENTE_TRAE' ? 'Cliente Trae Equipo' : 'Empresa Busca Equipo'" severity="info"></p-badge>
+                    </p>
+                  </div>
+                  <div class="col-12 md:col-6">
+                    <label class="text-600 text-sm font-semibold block mb-1">Es Garantía:</label>
+                    <p class="m-0">
+                      <p-badge [value]="servicioForm.value.esGarantia ? 'Sí' : 'No'" [severity]="servicioForm.value.esGarantia ? 'warn' : 'secondary'"></p-badge>
+                    </p>
+                  </div>
+                  <div class="col-12 md:col-6">
+                    <label class="text-600 text-sm font-semibold block mb-1">Fecha Recepción:</label>
+                    <p class="text-900 m-0">
+                      {{ servicioForm.value.fechaRecepcion | date:'dd/MM/yyyy' }}
+                    </p>
+                  </div>
+                  @if (servicioForm.value.fechaDevolucionPrevista) {
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm font-semibold block mb-1">Fecha Devolución Prevista:</label>
+                      <p class="text-900 m-0">
+                        {{ servicioForm.value.fechaDevolucionPrevista | date:'dd/MM/yyyy' }}
+                      </p>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Equipo y Falla -->
+              <div class="surface-border border-1 border-round p-4 mb-3">
+                <div class="flex align-items-center gap-2 mb-3">
+                  <i class="pi pi-desktop text-primary text-xl"></i>
+                  <h5 class="m-0 text-primary font-semibold">Equipo y Falla</h5>
+                </div>
+                <div class="grid">
+                  <div class="col-12">
+                    <label class="text-600 text-sm font-semibold block mb-1">Equipo:</label>
+                    <p class="text-900 font-medium m-0">
+                      {{ getSelectedEquipo() }}
+                    </p>
+                  </div>
+                  @if (servicioForm.value.fallaReportada) {
+                    <div class="col-12">
+                      <label class="text-600 text-sm font-semibold block mb-1">Falla Reportada:</label>
+                      <p class="text-900 m-0">{{ servicioForm.value.fallaReportada }}</p>
+                    </div>
+                  }
+                  @if (servicioForm.value.observaciones) {
+                    <div class="col-12">
+                      <label class="text-600 text-sm font-semibold block mb-1">Observaciones:</label>
+                      <p class="text-900 m-0">{{ servicioForm.value.observaciones }}</p>
+                    </div>
+                  }
+                  @if (servicioForm.value.abonaVisita) {
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm font-semibold block mb-1">Monto Visita:</label>
+                      <p class="text-900 m-0">{{ servicioForm.value.montoVisita | currency:'ARS':'symbol-narrow':'1.2-2' }}</p>
+                    </div>
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm font-semibold block mb-1">Monto Pagado:</label>
+                      <p class="text-900 m-0">{{ servicioForm.value.montoPagado | currency:'ARS':'symbol-narrow':'1.2-2' }}</p>
+                    </div>
+                  }
+                </div>
+              </div>
+
+              <!-- Componentes -->
+              <div class="surface-border border-1 border-round p-4 mb-3">
+                <div class="flex align-items-center gap-2 mb-3">
+                  <i class="pi pi-box text-primary text-xl"></i>
+                  <h5 class="m-0 text-primary font-semibold">Componentes ({{ detalles().length }})</h5>
+                </div>
+                @if (detalles().length > 0) {
+                  <div class="flex flex-column gap-2">
+                    @for (detalle of detalles(); track $index) {
+                      <div class="flex align-items-center gap-3 p-3 surface-50 border-round">
+                        <i [class]="'pi text-xl ' + (detalle.presente ? 'pi-check-circle text-green-600' : 'pi-times-circle text-red-600')"></i>
+                        <div class="flex-1">
+                          <div class="font-medium text-900">{{ detalle.componente }}</div>
+                          @if (detalle.comentario) {
+                            <div class="text-sm text-600 mt-1">{{ detalle.comentario }}</div>
+                          }
+                        </div>
+                        <p-badge [value]="detalle.presente ? 'Presente' : 'No Presente'" [severity]="detalle.presente ? 'success' : 'danger'"></p-badge>
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <div class="text-center py-3">
+                    <p class="text-600 m-0">Sin componentes agregados</p>
+                  </div>
+                }
+              </div>
+
+              <!-- Firma del Cliente -->
+              <div class="mt-4 mb-4">
+                <h5 class="text-900 mb-3">Firma del Cliente</h5>
+                <div class="border-2 border-300 border-round p-3">
+                  <canvas
+                    #signatureCanvas
+                    class="signature-canvas">
+                  </canvas>
+                  <div class="flex justify-content-between align-items-center mt-3">
+                    <small class="text-600">Firme aquí con el dedo o el mouse</small>
+                    <div class="flex gap-2 align-items-center">
+                      @if (hasSignature()) {
+                        <p-badge value="Firmado" severity="success"></p-badge>
+                      }
+                      <p-button
+                        label="Limpiar"
+                        icon="pi pi-times"
+                        size="small"
+                        [text]="true"
+                        severity="secondary"
+                        (onClick)="clearSignature()">
+                      </p-button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex justify-content-between mt-4">
+                <p-button label="Anterior" severity="secondary" icon="pi pi-arrow-left" (onClick)="previousStep()" />
+                <div class="flex gap-2">
+                  <p-button
+                    label="Cancelar"
+                    severity="secondary"
+                    [outlined]="true"
+                    (onClick)="onCancel()">
+                  </p-button>
+                  <p-button
+                    label="Crear Servicio"
+                    icon="pi pi-check"
+                    severity="success"
+                    [loading]="isSaving()"
+                    (onClick)="saveServicio()"
+                    [disabled]="!servicioForm.valid" />
+                </div>
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+      </p-step-panels>
+    </p-stepper>
+  </div>
+</div>
+
+<p-toast></p-toast>

@@ -17,16 +17,6 @@
         </p-button>
         <div class="flex-1 min-width-0">
           <h2 class="text-xl md:text-2xl font-bold text-900 m-0 overflow-hidden text-overflow-ellipsis">{{ employee()!.nombreCompleto }}</h2>
-          <div class="flex align-items-center gap-2 mt-2 flex-wrap">
-            <p-tag 
-              [value]="employeeService.getStatusDisplayName(employee()!.activo || employee()!.empleadoActivo || false)"
-              [severity]="employeeService.getStatusColor(employee()!.activo || employee()!.empleadoActivo || false)">
-            </p-tag>
-            <span class="text-sm md:text-base text-600">{{ employee()!.tipoEmpleado }}</span>
-            @if (employee()!.usuarioId) {
-              <p-badge value="Usuario Activo" severity="success"></p-badge>
-            }
-          </div>
         </div>
       </div>
       <p-button 

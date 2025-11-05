@@ -82,6 +82,9 @@ public class SecurityConfig {
                         .requestMatchers("/api/tipos-empleado/**").permitAll()
                         .requestMatchers("/api/tipos-contacto/**").permitAll()
 
+                        // WebSocket endpoint (la autenticación se maneja en el interceptor)
+                        .requestMatchers("/ws-servicios/**").permitAll()
+
                         // Endpoints específicos por rol
                         .requestMatchers("/api/admin/**").hasRole("PROPIETARIO")
                         .requestMatchers("/api/usuarios/**").hasAnyRole("PROPIETARIO", "ADMINISTRATIVO")

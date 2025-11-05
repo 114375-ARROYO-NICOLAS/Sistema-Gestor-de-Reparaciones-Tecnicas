@@ -58,7 +58,12 @@ public interface OrdenTrabajoService {
      * Cambiar estado de una orden de trabajo
      */
     OrdenTrabajoResponseDto cambiarEstadoOrdenTrabajo(Long id, EstadoOrdenTrabajo nuevoEstado);
-    
+
+    /**
+     * Asignar empleado a una orden de trabajo
+     */
+    OrdenTrabajoResponseDto asignarEmpleado(Long ordenTrabajoId, Long empleadoId);
+
     /**
      * Iniciar orden de trabajo
      */

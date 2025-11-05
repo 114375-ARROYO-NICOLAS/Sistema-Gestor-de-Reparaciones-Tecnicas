@@ -1,0 +1,129 @@
+<div class="container-fluid py-4">
+  <p-toast />
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h3 class="m-0">Modelos</h3>
+      <p-button
+        label="Nuevo Modelo"
+        icon="pi pi-plus"
+        (onClick)="openCreateDialog()">
+      </p-button>
+    </div>
+
+    <div class="card-body">
+      <p-table
+        [value]="modelos()"
+        [loading]="isLoading()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[5, 10, 20]"
+        [globalFilterFields]="['descripcion', 'marcaNombre']"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-sm">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th>ID</th>
+            <th>Marca</th>
+            <th>Descripción</th>
+            <th style="width: 100px">Acciones</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-modelo>
+          <tr>
+            <td>{{ modelo.id }}</td>
+            <td>{{ getMarcaNombre(modelo.marcaId) }}</td>
+            <td>{{ modelo.descripcion }}</td>
+            <td>
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                severity="warn"
+                (onClick)="openEditDialog(modelo)"
+                pTooltip="Editar"
+                tooltipPosition="top">
+              </p-button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="text-center">No se encontraron modelos</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- Dialog for Create/Edit -->
+  <p-dialog
+    [header]="isEditMode() ? 'Editar Modelo' : 'Nuevo Modelo'"
+    [(visible)]="showDialog"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{width: '500px'}">
+
+    <form [formGroup]="modeloForm" (ngSubmit)="saveModelo()">
+      <div class="mb-3">
+        <label for="marcaId" class="form-label">Marca <span class="text-danger">*</span></label>
+        <p-select
+          id="marcaId"
+          formControlName="marcaId"
+          [options]="marcas()"
+          optionLabel="descripcion"
+          optionValue="id"
+          placeholder="Seleccione una marca"
+          class="w-100"
+          styleClass="w-100">
+        </p-select>
+
+        @if (modeloForm.get('marcaId')?.invalid && modeloForm.get('marcaId')?.touched) {
+          <small class="text-danger d-block mt-1">
+            La marca es requerida
+          </small>
+        }
+      </div>
+
+      <div class="mb-3">
+        <label for="descripcion" class="form-label">Descripción <span class="text-danger">*</span></label>
+        <input
+          pInputText
+          id="descripcion"
+          formControlName="descripcion"
+          class="w-100"
+          placeholder="Ingrese descripción del modelo"
+          maxlength="100" />
+
+        @if (modeloForm.get('descripcion')?.invalid && modeloForm.get('descripcion')?.touched) {
+          <small class="text-danger d-block mt-1">
+            @if (modeloForm.get('descripcion')?.errors?.['required']) {
+              La descripción es requerida
+            }
+            @if (modeloForm.get('descripcion')?.errors?.['maxlength']) {
+              La descripción no puede exceder 100 caracteres
+            }
+          </small>
+        }
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        (onClick)="closeDialog()"
+        [disabled]="isSaving()">
+      </p-button>
+      <p-button
+        [label]="isEditMode() ? 'Actualizar' : 'Crear'"
+        (onClick)="saveModelo()"
+        [loading]="isSaving()">
+      </p-button>
+    </ng-template>
+  </p-dialog>
+</div>

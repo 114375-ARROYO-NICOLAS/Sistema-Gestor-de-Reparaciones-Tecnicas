@@ -13,5 +13,6 @@ public class ModeloListDto {
 
     private Long id;
     private String descripcion;
+    private Long marcaId;
     private String marcaDescripcion;
 }

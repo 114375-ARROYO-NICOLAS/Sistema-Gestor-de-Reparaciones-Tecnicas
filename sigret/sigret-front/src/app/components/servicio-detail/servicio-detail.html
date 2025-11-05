@@ -1,0 +1,716 @@
+<div class="servicio-detail-container p-4">
+  <!-- Header con botón de volver y editar -->
+  <div class="flex justify-content-between align-items-center mb-4">
+    <div class="flex align-items-center gap-3">
+      <p-button
+        icon="pi pi-arrow-left"
+        [text]="true"
+        [rounded]="true"
+        severity="secondary"
+        (onClick)="volver()">
+      </p-button>
+      <h2 class="text-3xl font-semibold m-0 text-color">
+        Detalle del Servicio
+        @if (servicio()) {
+          <span class="text-primary ml-2">{{ servicio()!.numeroServicio }}</span>
+        }
+      </h2>
+    </div>
+    @if (!modoEdicion() && servicio()) {
+      <p-button
+        label="Editar"
+        icon="pi pi-pencil"
+        severity="info"
+        (onClick)="activarModoEdicion()">
+      </p-button>
+    }
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex flex-column align-items-center justify-content-center py-8 gap-3">
+      <p-progressSpinner
+        [style]="{ width: '50px', height: '50px' }"
+        strokeWidth="4"
+        animationDuration="1s">
+      </p-progressSpinner>
+      <p class="text-lg text-color-secondary m-0">Cargando información del servicio...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="flex align-items-center gap-3 p-4 border-round bg-red-50 border-1 border-red-200 mb-3">
+      <i class="pi pi-exclamation-triangle text-red-600 text-2xl"></i>
+      <span class="flex-1 text-red-800">{{ error() }}</span>
+      <p-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        severity="danger"
+        [outlined]="true"
+        (onClick)="volver()">
+      </p-button>
+    </div>
+  }
+
+  <!-- Content -->
+  @if (!loading() && !error() && servicio()) {
+    <div class="grid" [formGroup]="formularioEdicion">
+      <!-- Información Principal del Servicio -->
+      <div class="col-12 lg:col-8">
+        <p-card class="mb-3">
+          <ng-template pTemplate="header">
+            <div class="p-3 pb-0">
+              <div class="flex justify-content-between align-items-center">
+                <h3 class="text-xl font-semibold m-0">Información del Servicio</h3>
+                @if (!modoEdicion()) {
+                  <p-tag
+                    [value]="servicio()!.estado"
+                    [severity]="getEstadoSeverity(servicio()!.estado)">
+                  </p-tag>
+                } @else {
+                  <p-select
+                    formControlName="estado"
+                    [options]="estadosOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Seleccionar estado">
+                  </p-select>
+                }
+              </div>
+            </div>
+          </ng-template>
+
+          <div class="grid">
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Cliente</label>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-user text-color-secondary"></i>
+                  <span class="text-lg">{{ servicio()!.clienteNombre }}</span>
+                </div>
+                <span class="text-sm text-color-secondary">{{ servicio()!.clienteDocumento }}</span>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Equipo</label>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-desktop text-color-secondary"></i>
+                  <span class="text-lg">{{ servicio()!.equipoDescripcion }}</span>
+                </div>
+                @if (servicio()!.equipoMarca || servicio()!.equipoModelo) {
+                  <span class="text-sm text-color-secondary">
+                    {{ servicio()!.equipoMarca }} {{ servicio()!.equipoModelo }}
+                  </span>
+                }
+              </div>
+            </div>
+
+            @if (servicio()!.equipoNumeroSerie) {
+              <div class="col-12 md:col-6">
+                <div class="mb-3">
+                  <label class="block text-sm font-medium text-color-secondary mb-1">Número de Serie</label>
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-tag text-color-secondary"></i>
+                    <span>{{ servicio()!.equipoNumeroSerie }}</span>
+                  </div>
+                </div>
+              </div>
+            }
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Empleado de Recepción</label>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-user-edit text-color-secondary"></i>
+                  <span>{{ servicio()!.empleadoRecepcionNombre }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Tipo de Ingreso</label>
+                @if (!modoEdicion()) {
+                  <p-tag [value]="servicio()!.tipoIngreso" severity="secondary"></p-tag>
+                } @else {
+                  <p-select
+                    formControlName="tipoIngreso"
+                    [options]="tiposIngresoOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Seleccionar tipo"
+                    class="w-full">
+                  </p-select>
+                }
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Garantía</label>
+                @if (!modoEdicion()) {
+                  <p-tag
+                    [value]="servicio()!.esGarantia ? 'Sí' : 'No'"
+                    [severity]="servicio()!.esGarantia ? 'warn' : 'secondary'">
+                  </p-tag>
+                } @else {
+                  <div class="flex align-items-center">
+                    <p-checkbox
+                      formControlName="esGarantia"
+                      [binary]="true"
+                      inputId="esGarantia">
+                    </p-checkbox>
+                    <label for="esGarantia" class="ml-2">Es Garantía</label>
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+
+          <p-divider></p-divider>
+
+          <div class="grid">
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Fecha de Recepción</label>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-calendar text-color-secondary"></i>
+                  <span>{{ formatFecha(servicio()!.fechaRecepcion) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Fecha de Creación</label>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-calendar-plus text-color-secondary"></i>
+                  <span>{{ formatFecha(servicio()!.fechaCreacion) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Fecha de Devolución Prevista</label>
+                @if (!modoEdicion()) {
+                  @if (servicio()!.fechaDevolucionPrevista) {
+                    <div class="flex align-items-center gap-2">
+                      <i class="pi pi-calendar-times text-color-secondary"></i>
+                      <span>{{ formatFecha(servicio()!.fechaDevolucionPrevista) }}</span>
+                    </div>
+                  } @else {
+                    <span class="text-color-secondary">No establecida</span>
+                  }
+                } @else {
+                  <p-datepicker
+                    formControlName="fechaDevolucionPrevista"
+                    dateFormat="dd/mm/yy"
+                    [showIcon]="true"
+                    placeholder="Seleccionar fecha"
+                    class="w-full">
+                  </p-datepicker>
+                }
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="block text-sm font-medium text-color-secondary mb-1">Fecha de Devolución Real</label>
+                @if (!modoEdicion()) {
+                  @if (servicio()!.fechaDevolucionReal) {
+                    <div class="flex align-items-center gap-2">
+                      <i class="pi pi-calendar-check text-color-secondary"></i>
+                      <span>{{ formatFecha(servicio()!.fechaDevolucionReal) }}</span>
+                    </div>
+                  } @else {
+                    <span class="text-color-secondary">No establecida</span>
+                  }
+                } @else {
+                  <p-datepicker
+                    formControlName="fechaDevolucionReal"
+                    dateFormat="dd/mm/yy"
+                    [showIcon]="true"
+                    placeholder="Seleccionar fecha"
+                    class="w-full">
+                  </p-datepicker>
+                }
+              </div>
+            </div>
+          </div>
+
+          @if (servicio()!.fallaReportada) {
+            <p-divider></p-divider>
+
+            <div class="mb-3">
+              <label class="block text-sm font-medium text-color-secondary mb-2">Falla Reportada</label>
+              <div class="p-3 border-round surface-border border-1 surface-ground">
+                <p class="m-0 white-space-pre-line">{{ servicio()!.fallaReportada }}</p>
+              </div>
+            </div>
+          }
+
+          @if (servicio()!.observaciones) {
+            <div class="mb-3">
+              <label class="block text-sm font-medium text-color-secondary mb-2">Observaciones</label>
+              <div class="p-3 border-round surface-border border-1 surface-ground">
+                <p class="m-0 white-space-pre-line">{{ servicio()!.observaciones }}</p>
+              </div>
+            </div>
+          }
+        </p-card>
+
+        <!-- Información de Garantía -->
+        @if (servicio()!.esGarantia) {
+          <p-card class="mb-3">
+            <ng-template pTemplate="header">
+              <div class="p-3 pb-0">
+                <div class="flex justify-content-between align-items-center">
+                  <h3 class="text-xl font-semibold m-0 flex align-items-center gap-2">
+                    <i class="pi pi-shield text-primary"></i>
+                    Información de Garantía
+                  </h3>
+                  <p-tag value="GARANTÍA" severity="warn" icon="pi pi-shield"></p-tag>
+                </div>
+              </div>
+            </ng-template>
+
+            <div class="flex flex-column gap-3">
+              <!-- Servicio Original -->
+              @if (servicio()!.servicioGarantiaId) {
+                <div class="p-3 border-round surface-100">
+                  <label class="block text-sm font-medium text-color-secondary mb-2">Servicio Original</label>
+
+                  @if (loadingServicioOriginal()) {
+                    <div class="flex align-items-center gap-2">
+                      <p-progressSpinner [style]="{ width: '20px', height: '20px' }" strokeWidth="4"></p-progressSpinner>
+                      <span class="text-sm text-color-secondary">Cargando información...</span>
+                    </div>
+                  }
+
+                  @if (servicioOriginal() && !loadingServicioOriginal()) {
+                    <div class="flex flex-column gap-2">
+                      <div class="flex align-items-center gap-2">
+                        <p-tag [value]="servicioOriginal()!.numeroServicio" severity="info"></p-tag>
+                        <span class="font-semibold">{{ servicioOriginal()!.equipoDescripcion }}</span>
+                      </div>
+
+                      <div class="flex flex-wrap gap-3 text-sm text-color-secondary">
+                        <span>
+                          <i class="pi pi-calendar mr-1"></i>
+                          {{ formatFecha(servicioOriginal()!.fechaRecepcion) }}
+                        </span>
+                        @if (servicioOriginal()!.equipoMarca) {
+                          <span>
+                            <i class="pi pi-box mr-1"></i>
+                            {{ servicioOriginal()!.equipoMarca }} {{ servicioOriginal()!.equipoModelo }}
+                          </span>
+                        }
+                        <span>
+                          <i class="pi pi-flag mr-1"></i>
+                          Estado: {{ servicioOriginal()!.estado }}
+                        </span>
+                      </div>
+
+                      <p-button
+                        label="Ver Servicio Original"
+                        icon="pi pi-external-link"
+                        [outlined]="true"
+                        size="small"
+                        severity="info"
+                        (onClick)="verServicioOriginal()">
+                      </p-button>
+                    </div>
+                  }
+                </div>
+              }
+
+              <!-- Estado de Garantía -->
+              <div class="grid">
+                @if (servicio()!.garantiaDentroPlazo !== undefined && servicio()!.garantiaDentroPlazo !== null) {
+                  <div class="col-12 md:col-6">
+                    <label class="block text-sm font-medium text-color-secondary mb-2">Dentro de Plazo</label>
+                    <div class="flex align-items-center gap-2">
+                      @if (servicio()!.garantiaDentroPlazo) {
+                        <i class="pi pi-check-circle text-green-600 text-xl"></i>
+                        <span class="text-green-700 font-semibold">Sí, dentro de plazo</span>
+                      } @else {
+                        <i class="pi pi-times-circle text-red-600 text-xl"></i>
+                        <span class="text-red-700 font-semibold">No, fuera de plazo</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                @if (servicio()!.garantiaCumpleCondiciones !== undefined && servicio()!.garantiaCumpleCondiciones !== null) {
+                  <div class="col-12 md:col-6">
+                    <label class="block text-sm font-medium text-color-secondary mb-2">Cumple Condiciones</label>
+                    <div class="flex align-items-center gap-2">
+                      @if (servicio()!.garantiaCumpleCondiciones) {
+                        <i class="pi pi-check-circle text-green-600 text-xl"></i>
+                        <span class="text-green-700 font-semibold">Sí, cumple condiciones</span>
+                      } @else {
+                        <i class="pi pi-times-circle text-red-600 text-xl"></i>
+                        <span class="text-red-700 font-semibold">No cumple condiciones</span>
+                      }
+                    </div>
+                  </div>
+                }
+              </div>
+
+              <!-- Observaciones de Garantía -->
+              @if (servicio()!.observacionesGarantia) {
+                <div>
+                  <label class="block text-sm font-medium text-color-secondary mb-2">Observaciones de Garantía</label>
+                  <p class="m-0 p-3 border-round surface-100 white-space-pre-line">{{ servicio()!.observacionesGarantia }}</p>
+                </div>
+              }
+
+              <!-- Evaluación de Garantía -->
+              @if (servicio()!.tecnicoEvaluacionNombre || servicio()!.fechaEvaluacionGarantia || servicio()!.observacionesEvaluacionGarantia) {
+                <p-divider></p-divider>
+
+                <h4 class="text-lg font-semibold mt-0 mb-3">Evaluación Técnica</h4>
+
+                <div class="grid">
+                  @if (servicio()!.tecnicoEvaluacionNombre) {
+                    <div class="col-12 md:col-6">
+                      <label class="block text-sm font-medium text-color-secondary mb-1">Técnico Evaluador</label>
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-user text-color-secondary"></i>
+                        <span>{{ servicio()!.tecnicoEvaluacionNombre }}</span>
+                      </div>
+                    </div>
+                  }
+
+                  @if (servicio()!.fechaEvaluacionGarantia) {
+                    <div class="col-12 md:col-6">
+                      <label class="block text-sm font-medium text-color-secondary mb-1">Fecha de Evaluación</label>
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-calendar text-color-secondary"></i>
+                        <span>{{ formatFecha(servicio()!.fechaEvaluacionGarantia) }}</span>
+                      </div>
+                    </div>
+                  }
+
+                  @if (servicio()!.observacionesEvaluacionGarantia) {
+                    <div class="col-12">
+                      <label class="block text-sm font-medium text-color-secondary mb-2">Observaciones de Evaluación</label>
+                      <p class="m-0 p-3 border-round surface-100 white-space-pre-line">{{ servicio()!.observacionesEvaluacionGarantia }}</p>
+                    </div>
+                  }
+                </div>
+              }
+            </div>
+          </p-card>
+        }
+
+        <!-- Detalles del Servicio (Componentes) -->
+        @if (servicio()!.detalles && servicio()!.detalles.length > 0) {
+          <p-card class="mb-3">
+            <ng-template pTemplate="header">
+              <div class="p-3 pb-0">
+                <h3 class="text-xl font-semibold m-0">Componentes del Equipo</h3>
+              </div>
+            </ng-template>
+
+            <div class="grid">
+              @for (detalle of servicio()!.detalles; track detalle.id) {
+                <div class="col-12">
+                  <div class="flex justify-content-between align-items-center p-3 border-round surface-border border-1 mb-2">
+                    <div class="flex flex-column gap-1 flex-1">
+                      <span class="font-semibold text-lg">{{ detalle.componente }}</span>
+                      @if (detalle.comentario) {
+                        <span class="text-sm text-color-secondary">{{ detalle.comentario }}</span>
+                      }
+                    </div>
+                    <p-tag
+                      [value]="detalle.presente ? 'Presente' : 'No presente'"
+                      [severity]="detalle.presente ? 'success' : 'danger'">
+                    </p-tag>
+                  </div>
+                </div>
+              }
+            </div>
+          </p-card>
+        }
+      </div>
+
+      <!-- Sidebar derecha con información adicional -->
+      <div class="col-12 lg:col-4">
+        <!-- Información de Pagos -->
+        <p-card class="mb-3">
+          <ng-template pTemplate="header">
+            <div class="p-3 pb-0">
+              <h3 class="text-lg font-semibold m-0">Información de Pagos</h3>
+            </div>
+          </ng-template>
+
+          <div class="flex flex-column gap-3">
+            <div>
+              <label class="block text-sm font-medium text-color-secondary mb-1">Abona Visita</label>
+              @if (!modoEdicion()) {
+                <p-tag
+                  [value]="servicio()!.abonaVisita ? 'Sí' : 'No'"
+                  [severity]="servicio()!.abonaVisita ? 'success' : 'secondary'">
+                </p-tag>
+              } @else {
+                <div class="flex align-items-center">
+                  <p-checkbox
+                    formControlName="abonaVisita"
+                    [binary]="true"
+                    inputId="abonaVisita">
+                  </p-checkbox>
+                  <label for="abonaVisita" class="ml-2">Sí, abona visita</label>
+                </div>
+              }
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-color-secondary mb-1">Monto de Visita</label>
+              @if (!modoEdicion()) {
+                <div class="text-xl font-semibold">{{ formatMonto(servicio()!.montoVisita) }}</div>
+              } @else {
+                <p-inputnumber
+                  formControlName="montoVisita"
+                  mode="currency"
+                  currency="ARS"
+                  locale="es-AR"
+                  [min]="0"
+                  class="w-full">
+                </p-inputnumber>
+              }
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-color-secondary mb-1">Monto Pagado</label>
+              @if (!modoEdicion()) {
+                <div class="text-xl font-semibold text-green-600">{{ formatMonto(servicio()!.montoPagado) }}</div>
+              } @else {
+                <p-inputnumber
+                  formControlName="montoPagado"
+                  mode="currency"
+                  currency="ARS"
+                  locale="es-AR"
+                  [min]="0"
+                  class="w-full">
+                </p-inputnumber>
+              }
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Firma del Cliente -->
+        @if (servicio()!.firmaIngreso) {
+          <p-card class="mb-3">
+            <ng-template pTemplate="header">
+              <div class="p-3 pb-0">
+                <h3 class="text-lg font-semibold m-0">Firma del Cliente</h3>
+              </div>
+            </ng-template>
+
+            <div class="flex justify-content-center">
+              <img
+                [src]="'data:image/png;base64,' + servicio()!.firmaIngreso"
+                alt="Firma del cliente"
+                class="border-round border-1 surface-border"
+                style="max-width: 100%; height: auto;">
+            </div>
+          </p-card>
+        }
+      </div>
+    </div>
+
+    <!-- Botones de Guardar y Cancelar (Solo en modo edición) -->
+    @if (modoEdicion()) {
+      <div class="flex justify-content-end gap-2 mt-4 mb-4">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancelarEdicion()"
+          [disabled]="guardando()">
+        </p-button>
+        <p-button
+          label="Guardar Cambios"
+          icon="pi pi-check"
+          severity="success"
+          (onClick)="guardarCambios()"
+          [loading]="guardando()"
+          [disabled]="formularioEdicion.invalid">
+        </p-button>
+      </div>
+    }
+
+    <!-- Tabs para Presupuestos y Órdenes de Trabajo -->
+    <div class="mt-4">
+      <p-tabs value="0">
+        <p-tablist>
+          <p-tab value="0">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-calculator"></i>
+              <span>Presupuestos</span>
+              @if (presupuestos().length > 0) {
+                <p-tag [value]="presupuestos().length.toString()" severity="info"></p-tag>
+              }
+            </div>
+          </p-tab>
+          <p-tab value="1">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-wrench"></i>
+              <span>Órdenes de Trabajo</span>
+              @if (ordenesTrabajo().length > 0) {
+                <p-tag [value]="ordenesTrabajo().length.toString()" severity="info"></p-tag>
+              }
+            </div>
+          </p-tab>
+        </p-tablist>
+
+        <p-tabpanels>
+          <p-tabpanel value="0">
+
+          @if (loadingPresupuestos()) {
+            <div class="flex justify-content-center py-4">
+              <p-progressSpinner [style]="{ width: '40px', height: '40px' }"></p-progressSpinner>
+            </div>
+          } @else if (presupuestos().length === 0) {
+            <div class="text-center py-6 text-color-secondary">
+              <i class="pi pi-calculator text-6xl mb-3" style="opacity: 0.3;"></i>
+              <p class="text-lg m-0">No hay presupuestos asociados a este servicio</p>
+            </div>
+          } @else {
+            <div class="grid">
+              @for (presupuesto of presupuestos(); track presupuesto.id) {
+                <div class="col-12 md:col-6">
+                  <p-card class="cursor-pointer hover:surface-100" (click)="verPresupuesto(presupuesto.id)">
+                    <div class="flex justify-content-between align-items-start mb-3">
+                      <div>
+                        <h4 class="text-lg font-semibold m-0 mb-1">{{ presupuesto.numeroPresupuesto }}</h4>
+                        <span class="text-sm text-color-secondary">{{ presupuesto.empleadoNombre || 'Sin asignar' }}</span>
+                      </div>
+                      <p-tag [value]="presupuesto.estado" [severity]="getEstadoSeverity(presupuesto.estado)"></p-tag>
+                    </div>
+
+                    <div class="flex flex-column gap-2">
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-dollar text-color-secondary"></i>
+                        <span class="text-xl font-bold text-green-600">{{ formatMonto(presupuesto.montoTotal) }}</span>
+                      </div>
+
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-calendar text-color-secondary text-sm"></i>
+                        <span class="text-sm text-color-secondary">{{ formatFecha(presupuesto.fechaCreacion) }}</span>
+                      </div>
+
+                      @if (presupuesto.fechaVencimiento) {
+                        <div class="flex align-items-center gap-2">
+                          <i class="pi pi-calendar-times text-color-secondary text-sm"></i>
+                          <span class="text-sm text-color-secondary">
+                            Vence: {{ formatFecha(presupuesto.fechaVencimiento) }}
+                          </span>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="mt-3">
+                      <p-button
+                        label="Ver Detalle"
+                        icon="pi pi-eye"
+                        [text]="true"
+                        size="small"
+                        (onClick)="verPresupuesto(presupuesto.id)">
+                      </p-button>
+                    </div>
+                  </p-card>
+                </div>
+              }
+            </div>
+          }
+          </p-tabpanel>
+
+          <p-tabpanel value="1">
+
+          @if (loadingOrdenes()) {
+            <div class="flex justify-content-center py-4">
+              <p-progressSpinner [style]="{ width: '40px', height: '40px' }"></p-progressSpinner>
+            </div>
+          } @else if (ordenesTrabajo().length === 0) {
+            <div class="text-center py-6 text-color-secondary">
+              <i class="pi pi-wrench text-6xl mb-3" style="opacity: 0.3;"></i>
+              <p class="text-lg m-0">No hay órdenes de trabajo asociadas a este servicio</p>
+            </div>
+          } @else {
+            <div class="grid">
+              @for (orden of ordenesTrabajo(); track orden.id) {
+                <div class="col-12 md:col-6">
+                  <p-card class="cursor-pointer hover:surface-100" (click)="verOrdenTrabajo(orden.id)">
+                    <div class="flex justify-content-between align-items-start mb-3">
+                      <div>
+                        <h4 class="text-lg font-semibold m-0 mb-1">OT #{{ orden.id }}</h4>
+                        <span class="text-sm text-color-secondary">{{ orden.empleadoNombre }}</span>
+                      </div>
+                      <p-tag [value]="orden.estado" [severity]="getEstadoSeverity(orden.estado)"></p-tag>
+                    </div>
+
+                    <div class="flex flex-column gap-2">
+                      @if (orden.esSinCosto) {
+                        <div class="flex align-items-center gap-2">
+                          <p-tag value="Sin Costo" severity="success"></p-tag>
+                        </div>
+                      } @else if (orden.montoTotalFinal) {
+                        <div class="flex align-items-center gap-2">
+                          <i class="pi pi-dollar text-color-secondary"></i>
+                          <span class="text-xl font-bold text-green-600">{{ formatMonto(orden.montoTotalFinal) }}</span>
+                        </div>
+                      }
+
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-calendar text-color-secondary text-sm"></i>
+                        <span class="text-sm text-color-secondary">
+                          Creada: {{ formatFecha(orden.fechaCreacion) }}
+                        </span>
+                      </div>
+
+                      @if (orden.fechaComienzo) {
+                        <div class="flex align-items-center gap-2">
+                          <i class="pi pi-play text-color-secondary text-sm"></i>
+                          <span class="text-sm text-color-secondary">
+                            Inicio: {{ formatFecha(orden.fechaComienzo) }}
+                          </span>
+                        </div>
+                      }
+
+                      @if (orden.fechaFin) {
+                        <div class="flex align-items-center gap-2">
+                          <i class="pi pi-check text-color-secondary text-sm"></i>
+                          <span class="text-sm text-color-secondary">
+                            Fin: {{ formatFecha(orden.fechaFin) }}
+                          </span>
+                        </div>
+                      }
+                    </div>
+
+                    <div class="mt-3">
+                      <p-button
+                        label="Ver Detalle"
+                        icon="pi pi-eye"
+                        [text]="true"
+                        size="small"
+                        (onClick)="verOrdenTrabajo(orden.id)">
+                      </p-button>
+                    </div>
+                  </p-card>
+                </div>
+              }
+            </div>
+          }
+          </p-tabpanel>
+        </p-tabpanels>
+      </p-tabs>
+    </div>
+  }
+</div>

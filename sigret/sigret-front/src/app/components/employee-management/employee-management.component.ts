@@ -7,7 +7,7 @@ import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { Select } from 'primeng/select';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -16,11 +16,12 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { BadgeModule } from 'primeng/badge';
+import { StepperModule } from 'primeng/stepper';
 
 import { EmployeeService } from '../../services/employee.service';
-import { 
-  EmployeeCreateRequest, 
-  EmployeeUpdateRequest, 
+import {
+  EmployeeCreateRequest,
+  EmployeeUpdateRequest,
   EmployeeListResponse,
   EmployeeType,
   PersonType,
@@ -30,6 +31,7 @@ import {
   Address,
   GooglePlacesData
 } from '../../models/employee.model';
+import { TipoContacto, ContactoCreateDto } from '../../models/contact.model';
 import { environment } from '../../../environments/environment';
 
 // Google Maps type declarations
@@ -45,7 +47,7 @@ declare const google: any;
     TableModule,
     DialogModule,
     InputTextModule,
-    SelectModule,
+    Select,
     TagModule,
     ToolbarModule,
     ConfirmDialogModule,
@@ -53,7 +55,8 @@ declare const google: any;
     ProgressSpinnerModule,
     CardModule,
     DividerModule,
-    BadgeModule
+    BadgeModule,
+    StepperModule
   ],
   templateUrl: './employee-management.component.html',
   styleUrls: ['./employee-management.component.scss'],
@@ -87,6 +90,12 @@ export class EmployeeManagementComponent implements OnInit {
   public readonly currentAddress = signal<Address>({});
   public readonly isAddingAddress = signal(false);
   private readonly initialAddresses = signal<Address[]>([]);
+
+  // Contact management signals
+  public readonly tiposContacto = signal<TipoContacto[]>([]);
+  public readonly contacts = signal<ContactoCreateDto[]>([]);
+  public readonly currentContact = signal<Partial<ContactoCreateDto>>({});
+  public readonly isAddingContact = signal(false);
   
   // Flag para evitar loop infinito en lazy load
   private isLoadingData = false;
@@ -152,11 +161,12 @@ export class EmployeeManagementComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // NO llamar a loadEmployees() aquí porque el p-table con [lazy]="true" 
+    // NO llamar a loadEmployees() aquí porque el p-table con [lazy]="true"
     // lo disparará automáticamente cuando se inicialice
     this.loadEmployeeTypes();
     this.loadPersonTypes();
     this.loadDocumentTypes();
+    this.loadTiposContacto();
     this.userRoles.set(this.employeeService.getUserRoles());
     this.loadGoogleMaps();
   }
@@ -323,36 +333,22 @@ export class EmployeeManagementComponent implements OnInit {
     });
   }
 
+  loadTiposContacto(): void {
+    this.employeeService.getTiposContacto().subscribe({
+      next: (tipos) => {
+        this.tiposContacto.set(tipos);
+      },
+      error: (error) => {
+        console.error('Error loading tipos contacto:', error);
+        // No mostrar error al usuario, estos son datos de catálogo opcionales
+        this.tiposContacto.set([]);
+      }
+    });
+  }
+
   openCreateDialog(): void {
-    this.isEditMode.set(false);
-    this.selectedEmployee.set(null);
-    this.addresses.set([]); // Reset addresses
-    this.initialAddresses.set([]); // Save initial state
-    
-    // Reset form with default values
-    this.employeeForm.reset({
-      tipoEmpleadoId: null,
-      tipoPersonaId: 1,
-      tipoDocumentoId: 1,
-      documento: '',
-      nombre: '',
-      apellido: '',
-      razonSocial: '',
-      sexo: '',
-      rolUsuario: 'TECNICO',
-      usernamePersonalizado: '',
-      passwordPersonalizada: '',
-      activo: true
-    });
-    
-    // Aplicar validaciones según el tipo de persona por defecto
-    setTimeout(() => {
-      this.onPersonTypeChange();
-      this.employeeForm.markAsUntouched();
-      this.employeeForm.markAsPristine();
-    });
-    
-    this.showEmployeeDialog.set(true);
+    // Navigate to the new employee creation page
+    this.router.navigate(['/empleados/nuevo']);
   }
 
   openEditDialog(employee: EmployeeListDto): void {
@@ -393,7 +389,10 @@ export class EmployeeManagementComponent implements OnInit {
     this.addresses.set([]);
     this.currentAddress.set({});
     this.isAddingAddress.set(false);
-    
+    this.contacts.set([]);
+    this.currentContact.set({});
+    this.isAddingContact.set(false);
+
     // Clean up autocomplete and pac-container
     this.cleanupGooglePlaces();
   }
@@ -717,13 +716,74 @@ export class EmployeeManagementComponent implements OnInit {
       });
       return;
     }
-    
+
     // Build Google Maps URL with coordinates
     // Format: https://www.google.com/maps/search/?api=1&query=LAT,LNG
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${address.latitud},${address.longitud}`;
-    
+
     // Open in new tab
     window.open(mapsUrl, '_blank');
+  }
+
+  // Contact management methods
+  toggleAddingContact(): void {
+    this.isAddingContact.set(!this.isAddingContact());
+    if (!this.isAddingContact()) {
+      this.currentContact.set({});
+    }
+  }
+
+  addContact(): void {
+    const contact = this.currentContact();
+
+    if (!contact.tipoContactoId || !contact.descripcion) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Por favor, completa todos los campos del contacto'
+      });
+      return;
+    }
+
+    const newContact: ContactoCreateDto = {
+      tipoContactoId: contact.tipoContactoId,
+      descripcion: contact.descripcion
+    };
+
+    this.contacts.update(contacts => [...contacts, newContact]);
+
+    this.currentContact.set({});
+    this.isAddingContact.set(false);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Contacto agregado correctamente'
+    });
+  }
+
+  removeContact(index: number): void {
+    this.contacts.update(contacts => contacts.filter((_, i) => i !== index));
+
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Información',
+      detail: 'Contacto eliminado'
+    });
+  }
+
+  getTipoContactoLabel(id: number): string {
+    const tipo = this.tiposContacto().find(t => t.id === id);
+    return tipo?.descripcion || 'Desconocido';
+  }
+
+  getContactIcon(tipoContactoId: number): string {
+    const tipo = this.getTipoContactoLabel(tipoContactoId).toLowerCase();
+    if (tipo.includes('email')) return 'pi-envelope';
+    if (tipo.includes('celular') || tipo.includes('móvil')) return 'pi-mobile';
+    if (tipo.includes('teléfono') || tipo.includes('telefono')) return 'pi-phone';
+    if (tipo.includes('whatsapp')) return 'pi-whatsapp';
+    return 'pi-info-circle';
   }
 
   onPersonTypeChange(): void {
@@ -800,7 +860,8 @@ export class EmployeeManagementComponent implements OnInit {
           rolUsuario: formValue.rolUsuario,
           usernamePersonalizado: formValue.usernamePersonalizado || undefined,
           passwordPersonalizada: formValue.passwordPersonalizada || undefined,
-          direcciones: this.addresses().length > 0 ? this.addresses() : undefined
+          direcciones: this.addresses().length > 0 ? this.addresses() : undefined,
+          contactos: this.contacts().length > 0 ? this.contacts() : undefined
         };
         
         this.employeeService.createEmployee(createData).subscribe({
@@ -924,5 +985,26 @@ export class EmployeeManagementComponent implements OnInit {
 
   isMobile(): boolean {
     return window.innerWidth < 768;
+  }
+
+  // Helper methods for summary display
+  getPersonTypeLabel(id: number): string {
+    const tipo = this.personTypes().find(t => t.id === id);
+    return tipo?.descripcion || '-';
+  }
+
+  getDocumentTypeLabel(id: number): string {
+    const tipo = this.documentTypes().find(t => t.id === id);
+    return tipo?.descripcion || '-';
+  }
+
+  getEmployeeTypeLabel(id: number): string {
+    const tipo = this.employeeTypes().find(t => t.id === id);
+    return tipo?.descripcion || '-';
+  }
+
+  getUserRoleLabel(value: string): string {
+    const role = this.userRoles().find(r => r.value === value);
+    return role?.label || '-';
   }
 }

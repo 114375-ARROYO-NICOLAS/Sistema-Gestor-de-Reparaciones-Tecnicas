@@ -1,0 +1,11 @@
+.equipo-management-container {
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .equipo-management-container {
+    padding: 0.5rem;
+  }
+}

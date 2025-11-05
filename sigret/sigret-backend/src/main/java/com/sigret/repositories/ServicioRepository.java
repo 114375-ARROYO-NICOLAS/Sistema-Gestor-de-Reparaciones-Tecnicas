@@ -28,6 +28,6 @@ public interface ServicioRepository extends JpaRepository<Servicio, Long> {
     @Query("SELECT s FROM Servicio s WHERE s.esGarantia = true")
     List<Servicio> findServiciosGarantia();
 
-    @Query("SELECT MAX(CAST(SUBSTRING(s.numeroServicio, 5) AS INTEGER)) FROM Servicio s WHERE s.numeroServicio LIKE :pattern")
+    @Query("SELECT MAX(CAST(SUBSTRING(s.numeroServicio, 6) AS INTEGER)) FROM Servicio s WHERE s.numeroServicio LIKE :pattern")
     Integer findMaxNumeroServicio(@Param("pattern") String pattern);
 }

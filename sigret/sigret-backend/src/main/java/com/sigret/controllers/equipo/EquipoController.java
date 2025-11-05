@@ -154,4 +154,46 @@ public class EquipoController {
         boolean existe = equipoService.existeEquipoConNumeroSerie(numeroSerie);
         return ResponseEntity.ok(existe);
     }
+
+    @GetMapping("/cliente/{clienteId}")
+    @Operation(summary = "Obtener equipos de un cliente", description = "Obtiene todos los equipos asociados a un cliente específico")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de equipos obtenida exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<List<EquipoListDto>> obtenerEquiposPorCliente(
+            @Parameter(description = "ID del cliente") @PathVariable Long clienteId) {
+        List<EquipoListDto> equipos = equipoService.obtenerEquiposPorCliente(clienteId);
+        return ResponseEntity.ok(equipos);
+    }
+
+    @PostMapping("/{equipoId}/cliente/{clienteId}")
+    @Operation(summary = "Asociar equipo a cliente", description = "Asocia un equipo existente a un cliente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Equipo asociado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Equipo o cliente no encontrado"),
+            @ApiResponse(responseCode = "409", description = "El equipo ya está asociado a este cliente")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<Void> asociarEquipoACliente(
+            @Parameter(description = "ID del equipo") @PathVariable Long equipoId,
+            @Parameter(description = "ID del cliente") @PathVariable Long clienteId) {
+        equipoService.asociarEquipoACliente(equipoId, clienteId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{equipoId}/cliente/{clienteId}")
+    @Operation(summary = "Desasociar equipo de cliente", description = "Desasocia un equipo de un cliente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Equipo desasociado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "No existe asociación entre el equipo y el cliente")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<Void> desasociarEquipoDeCliente(
+            @Parameter(description = "ID del equipo") @PathVariable Long equipoId,
+            @Parameter(description = "ID del cliente") @PathVariable Long clienteId) {
+        equipoService.desasociarEquipoDeCliente(equipoId, clienteId);
+        return ResponseEntity.ok().build();
+    }
 }

@@ -151,6 +151,7 @@ public class ModeloServiceImpl implements ModeloService {
         return new ModeloListDto(
                 modelo.getId(),
                 modelo.getDescripcion(),
+                modelo.getMarca().getId(),
                 modelo.getMarca().getDescripcion()
         );
     }

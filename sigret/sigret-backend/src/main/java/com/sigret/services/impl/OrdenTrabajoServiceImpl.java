@@ -1,6 +1,7 @@
 package com.sigret.services.impl;
 
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoCreateDto;
+import com.sigret.dtos.ordenTrabajo.OrdenTrabajoEventDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoListDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoResponseDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoUpdateDto;
@@ -9,12 +10,14 @@ import com.sigret.entities.OrdenTrabajo;
 import com.sigret.entities.Presupuesto;
 import com.sigret.entities.Servicio;
 import com.sigret.enums.EstadoOrdenTrabajo;
+import com.sigret.enums.EstadoServicio;
 import com.sigret.exception.OrdenTrabajoNotFoundException;
 import com.sigret.repositories.EmpleadoRepository;
 import com.sigret.repositories.OrdenTrabajoRepository;
 import com.sigret.repositories.PresupuestoRepository;
 import com.sigret.repositories.ServicioRepository;
 import com.sigret.services.OrdenTrabajoService;
+import com.sigret.services.WebSocketNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +43,9 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
 
     @Autowired
     private EmpleadoRepository empleadoRepository;
+
+    @Autowired
+    private WebSocketNotificationService notificationService;
 
     @Override
     public OrdenTrabajoResponseDto crearOrdenTrabajo(OrdenTrabajoCreateDto ordenTrabajoCreateDto) {
@@ -181,25 +187,91 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
     }
 
     @Override
+    public OrdenTrabajoResponseDto asignarEmpleado(Long ordenTrabajoId, Long empleadoId) {
+        // Validar orden de trabajo
+        OrdenTrabajo ordenTrabajo = ordenTrabajoRepository.findById(ordenTrabajoId)
+                .orElseThrow(() -> new OrdenTrabajoNotFoundException("Orden de trabajo no encontrada con ID: " + ordenTrabajoId));
+
+        // Validar empleado
+        Empleado empleado = empleadoRepository.findById(empleadoId)
+                .orElseThrow(() -> new RuntimeException("Empleado no encontrado con ID: " + empleadoId));
+
+        // Asignar empleado
+        ordenTrabajo.setEmpleado(empleado);
+        OrdenTrabajo ordenTrabajoActualizada = ordenTrabajoRepository.save(ordenTrabajo);
+
+        // Notificar via WebSocket
+        OrdenTrabajoEventDto evento = new OrdenTrabajoEventDto();
+        evento.setTipoEvento("ACTUALIZADO");
+        evento.setOrdenTrabajoId(ordenTrabajo.getId());
+        evento.setServicioId(ordenTrabajo.getServicio().getId());
+        evento.setNumeroServicio(ordenTrabajo.getServicio().getNumeroServicio());
+        evento.setOrdenTrabajo(convertirAOrdenTrabajoListDto(ordenTrabajoActualizada));
+        notificationService.notificarOrdenTrabajo(evento);
+
+        return convertirAOrdenTrabajoResponseDto(ordenTrabajoActualizada);
+    }
+
+    @Override
     public OrdenTrabajoResponseDto iniciarOrdenTrabajo(Long id) {
+        // Obtener la orden de trabajo
         OrdenTrabajo ordenTrabajo = ordenTrabajoRepository.findById(id)
                 .orElseThrow(() -> new OrdenTrabajoNotFoundException("Orden de trabajo no encontrada con ID: " + id));
 
+        EstadoOrdenTrabajo estadoAnterior = ordenTrabajo.getEstado();
+
+        // Cambiar estado a EN_PROGRESO
         ordenTrabajo.setEstado(EstadoOrdenTrabajo.EN_PROGRESO);
         ordenTrabajo.setFechaComienzo(LocalDate.now());
         OrdenTrabajo ordenTrabajoActualizada = ordenTrabajoRepository.save(ordenTrabajo);
+
+        // Cambiar estado del servicio a EN_REPARACION
+        Servicio servicio = ordenTrabajo.getServicio();
+        servicio.setEstado(EstadoServicio.EN_REPARACION);
+        servicioRepository.save(servicio);
+
+        // Notificar cambio de estado via WebSocket
+        OrdenTrabajoEventDto evento = new OrdenTrabajoEventDto();
+        evento.setTipoEvento("CAMBIO_ESTADO");
+        evento.setOrdenTrabajoId(ordenTrabajo.getId());
+        evento.setServicioId(servicio.getId());
+        evento.setNumeroServicio(servicio.getNumeroServicio());
+        evento.setEstadoAnterior(estadoAnterior);
+        evento.setEstadoNuevo(EstadoOrdenTrabajo.EN_PROGRESO);
+        evento.setOrdenTrabajo(convertirAOrdenTrabajoListDto(ordenTrabajoActualizada));
+        notificationService.notificarOrdenTrabajo(evento);
 
         return convertirAOrdenTrabajoResponseDto(ordenTrabajoActualizada);
     }
 
     @Override
     public OrdenTrabajoResponseDto finalizarOrdenTrabajo(Long id) {
+        // Obtener la orden de trabajo
         OrdenTrabajo ordenTrabajo = ordenTrabajoRepository.findById(id)
                 .orElseThrow(() -> new OrdenTrabajoNotFoundException("Orden de trabajo no encontrada con ID: " + id));
 
+        EstadoOrdenTrabajo estadoAnterior = ordenTrabajo.getEstado();
+
+        // Cambiar estado a TERMINADA
         ordenTrabajo.setEstado(EstadoOrdenTrabajo.TERMINADA);
         ordenTrabajo.setFechaFin(LocalDate.now());
         OrdenTrabajo ordenTrabajoActualizada = ordenTrabajoRepository.save(ordenTrabajo);
+
+        // Cambiar estado del servicio a TERMINADO
+        Servicio servicio = ordenTrabajo.getServicio();
+        servicio.setEstado(EstadoServicio.TERMINADO);
+        servicioRepository.save(servicio);
+
+        // Notificar cambio de estado via WebSocket
+        OrdenTrabajoEventDto evento = new OrdenTrabajoEventDto();
+        evento.setTipoEvento("CAMBIO_ESTADO");
+        evento.setOrdenTrabajoId(ordenTrabajo.getId());
+        evento.setServicioId(servicio.getId());
+        evento.setNumeroServicio(servicio.getNumeroServicio());
+        evento.setEstadoAnterior(estadoAnterior);
+        evento.setEstadoNuevo(EstadoOrdenTrabajo.TERMINADA);
+        evento.setOrdenTrabajo(convertirAOrdenTrabajoListDto(ordenTrabajoActualizada));
+        notificationService.notificarOrdenTrabajo(evento);
 
         return convertirAOrdenTrabajoResponseDto(ordenTrabajoActualizada);
     }

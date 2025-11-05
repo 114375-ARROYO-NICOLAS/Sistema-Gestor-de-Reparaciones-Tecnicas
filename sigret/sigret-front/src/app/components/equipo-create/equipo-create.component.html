@@ -1,0 +1,159 @@
+<div class="equipo-create-container">
+  <div class="surface-card p-4 shadow-2 border-round">
+    <!-- Header -->
+    <div class="mb-4">
+      <h2 class="text-900 font-bold text-4xl m-0 mb-2">
+        {{ isEditMode() ? 'Editar Equipo' : 'Nuevo Equipo' }}
+      </h2>
+      <p class="text-600 m-0">Complete la información del equipo</p>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="equipoForm" (ngSubmit)="saveEquipo()">
+      <div class="grid">
+        <!-- Tipo de Equipo -->
+        <div class="col-12 md:col-6">
+          <label for="tipoEquipo" class="block text-900 font-medium mb-2">Tipo de Equipo *</label>
+          <p-select
+            id="tipoEquipo"
+            formControlName="tipoEquipoId"
+            [options]="tiposEquipo()"
+            optionLabel="descripcion"
+            optionValue="id"
+            placeholder="Seleccionar tipo"
+            class="w-full"
+            [showClear]="true">
+          </p-select>
+          @if (equipoForm.get('tipoEquipoId')?.invalid && equipoForm.get('tipoEquipoId')?.touched) {
+            <small class="text-red-500">Tipo de equipo es requerido</small>
+          }
+        </div>
+
+        <!-- Marca -->
+        <div class="col-12 md:col-6">
+          <label for="marca" class="block text-900 font-medium mb-2">Marca *</label>
+          <p-select
+            id="marca"
+            formControlName="marcaId"
+            [options]="marcas()"
+            optionLabel="descripcion"
+            optionValue="id"
+            placeholder="Seleccionar marca"
+            class="w-full"
+            [showClear]="true">
+          </p-select>
+          @if (equipoForm.get('marcaId')?.invalid && equipoForm.get('marcaId')?.touched) {
+            <small class="text-red-500">Marca es requerida</small>
+          }
+        </div>
+
+        <!-- Modelo -->
+        <div class="col-12 md:col-6">
+          <label for="modelo" class="block text-900 font-medium mb-2">Modelo</label>
+          <p-select
+            id="modelo"
+            formControlName="modeloId"
+            [options]="modelos()"
+            optionLabel="descripcion"
+            optionValue="id"
+            placeholder="Seleccionar modelo (opcional)"
+            class="w-full"
+            [showClear]="true"
+            [disabled]="!equipoForm.get('marcaId')?.value">
+          </p-select>
+          @if (equipoForm.get('marcaId')?.value && modelos().length === 0) {
+            <small class="text-500">No hay modelos disponibles para esta marca</small>
+          }
+        </div>
+
+        <!-- Número de Serie -->
+        <div class="col-12 md:col-6">
+          <label for="numeroSerie" class="block text-900 font-medium mb-2">Número de Serie</label>
+          <input
+            id="numeroSerie"
+            type="text"
+            pInputText
+            formControlName="numeroSerie"
+            placeholder="Ingrese el número de serie"
+            class="w-full" />
+        </div>
+
+        <!-- Color -->
+        <div class="col-12 md:col-6">
+          <label for="color" class="block text-900 font-medium mb-2">Color</label>
+          <input
+            id="color"
+            type="text"
+            pInputText
+            formControlName="color"
+            placeholder="Ingrese el color"
+            class="w-full" />
+        </div>
+
+        <!-- Cliente (opcional) -->
+        <div class="col-12 md:col-6">
+          <label for="cliente" class="block text-900 font-medium mb-2">Asociar a Cliente (opcional)</label>
+          <p-autocomplete
+            id="cliente"
+            [(ngModel)]="selectedCliente"
+            [ngModelOptions]="{standalone: true}"
+            [suggestions]="clientes()"
+            (completeMethod)="buscarClientes($event)"
+            (onSelect)="onClienteSelected($event)"
+            (onClear)="onClienteCleared()"
+            optionLabel="nombreCompleto"
+            [dataKey]="'id'"
+            placeholder="Buscar cliente..."
+            [showEmptyMessage]="true"
+            emptyMessage="No se encontraron clientes"
+            class="w-full"
+            [style]="{'width': '100%'}">
+            <ng-template let-cliente pTemplate="item">
+              <div class="flex align-items-center gap-2">
+                <i class="pi pi-user"></i>
+                <div class="flex flex-column">
+                  <span class="font-medium">{{ cliente.nombreCompleto }}</span>
+                  <span class="text-sm text-color-secondary">{{ cliente.documento }}</span>
+                </div>
+              </div>
+            </ng-template>
+          </p-autocomplete>
+          <small class="text-500">Puede asociar el equipo a un cliente ahora o más tarde</small>
+        </div>
+
+        <!-- Observaciones -->
+        <div class="col-12">
+          <label for="observaciones" class="block text-900 font-medium mb-2">Observaciones</label>
+          <textarea
+            id="observaciones"
+            pInputTextarea
+            formControlName="observaciones"
+            placeholder="Observaciones adicionales"
+            rows="3"
+            class="w-full">
+          </textarea>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex justify-content-end gap-2 mt-4">
+        <p-button
+          label="Cancelar"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="cancel()"
+          type="button">
+        </p-button>
+        <p-button
+          [label]="isEditMode() ? 'Actualizar' : 'Crear Equipo'"
+          icon="pi pi-check"
+          [loading]="isSaving()"
+          [disabled]="!equipoForm.valid"
+          type="submit">
+        </p-button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<p-toast />

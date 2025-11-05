@@ -1,0 +1,233 @@
+<div class="tablero-container p-3">
+  <!-- Header -->
+  <div class="flex justify-content-between align-items-center mb-4 pb-3 border-bottom-1 surface-border">
+    <div class="flex flex-column gap-2">
+      <h2 class="text-3xl font-semibold m-0 text-color">Tablero de Servicios</h2>
+      <span class="text-sm text-color-secondary">{{ getTotalServicios() }} servicios totales</span>
+    </div>
+
+    <div class="flex gap-3 align-items-center">
+      <p-button
+        label="Nuevo Servicio"
+        icon="pi pi-plus"
+        severity="success"
+        (onClick)="openCreateDialog()">
+      </p-button>
+
+      <p-button
+        label="Actualizar"
+        icon="pi pi-refresh"
+        [iconPos]="'left'"
+        [loading]="loading()"
+        (onClick)="cargarServicios()"
+        [disabled]="loading()">
+      </p-button>
+
+      <div class="flex align-items-center gap-2 px-3 py-2 border-round"
+           [ngClass]="isConnected() ? 'bg-green-100' : 'bg-red-100'">
+        <i class="pi"
+           [ngClass]="isConnected() ? 'pi-wifi text-green-700' : 'pi-wifi-slash text-red-700'"></i>
+        <span class="text-sm font-medium"
+              [ngClass]="isConnected() ? 'text-green-700' : 'text-red-700'">
+          {{ isConnected() ? 'Conectado' : 'Desconectado' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex flex-column align-items-center justify-content-center py-8 gap-3">
+      <p-progressSpinner
+        [style]="{ width: '50px', height: '50px' }"
+        strokeWidth="4"
+        animationDuration="1s">
+      </p-progressSpinner>
+      <p class="text-lg text-color-secondary m-0">Cargando servicios...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="flex align-items-center gap-3 p-4 border-round bg-red-50 border-1 border-red-200 mb-3">
+      <i class="pi pi-exclamation-triangle text-red-600 text-2xl"></i>
+      <span class="flex-1 text-red-800">{{ error() }}</span>
+      <p-button
+        label="Reintentar"
+        icon="pi pi-refresh"
+        severity="danger"
+        [outlined]="true"
+        (onClick)="cargarServicios()">
+      </p-button>
+    </div>
+  }
+
+  <!-- Sección Superior: Servicios Recibidos (scrolleable horizontal) -->
+  @if (!loading() && !error()) {
+    <div class="servicios-recibidos-container mb-4">
+      <div class="flex justify-content-between align-items-center mb-3">
+        <h3 class="text-lg font-semibold text-900 m-0">
+          <i class="pi pi-inbox mr-2"></i>Servicios Recibidos
+        </h3>
+        <p-badge [value]="serviciosRecibidos.length.toString()" severity="info"></p-badge>
+      </div>
+
+      <div
+        cdkDropList
+        [cdkDropListData]="serviciosRecibidos"
+        [cdkDropListConnectedTo]="getConnectedDropLists()"
+        id="servicios-recibidos"
+        (cdkDropListDropped)="dropServicio($event)"
+        class="servicios-recibidos-scroll"
+        cdkDropListOrientation="horizontal">
+        @if (serviciosRecibidos.length > 0) {
+          @for (servicio of serviciosRecibidos; track servicio.id) {
+            <p-card
+              cdkDrag
+              [cdkDragData]="servicio"
+              class="servicio-card-horizontal servicio-clickeable"
+              (click)="verDetalleServicio(servicio.id, $event)">
+
+              <ng-template pTemplate="header">
+                <div class="flex justify-content-between align-items-center p-3 pb-0">
+                  <strong class="text-primary text-lg">{{ servicio.numeroServicio }}</strong>
+                  @if (servicio.esGarantia) {
+                    <p-badge value="Garantía" severity="warn"></p-badge>
+                  }
+                </div>
+              </ng-template>
+
+              <div class="flex flex-column gap-2">
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-user text-color-secondary"></i>
+                  <span class="text-sm">{{ servicio.clienteNombre }}</span>
+                </div>
+
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-desktop text-color-secondary"></i>
+                  <span class="text-sm">{{ servicio.equipoDescripcion }}</span>
+                </div>
+
+                @if (servicio.equipoNumeroSerie) {
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-tag text-color-secondary"></i>
+                    <span class="text-xs text-color-secondary">S/N: {{ servicio.equipoNumeroSerie }}</span>
+                  </div>
+                }
+
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-calendar text-color-secondary"></i>
+                  <span class="text-xs text-color-secondary">{{ formatFecha(servicio.fechaRecepcion) }}</span>
+                </div>
+              </div>
+
+              <ng-template pTemplate="footer">
+                <div class="flex justify-content-between align-items-center">
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-user-edit text-color-secondary text-sm"></i>
+                    <span class="text-xs text-color-secondary">{{ servicio.empleadoRecepcionNombre }}</span>
+                  </div>
+                  <p-badge [value]="servicio.tipoIngreso" severity="secondary"></p-badge>
+                </div>
+              </ng-template>
+            </p-card>
+          }
+        } @else {
+          <div class="text-center text-600 py-6">
+            <i class="pi pi-inbox text-6xl mb-3" style="opacity: 0.3;"></i>
+            <p class="text-sm m-0">No hay servicios recibidos pendientes</p>
+            <p class="text-xs text-color-secondary m-0 mt-1">Los nuevos servicios aparecerán aquí</p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Kanban Board -->
+    <div cdkDropListGroup class="flex gap-3 overflow-x-auto pb-3" style="max-height: calc(100vh - 28rem);">
+      @for (columna of columnas; track columna.estado) {
+        <div
+          cdkDropList
+          [cdkDropListData]="columna.servicios"
+          [id]="'columna-' + columna.estado"
+          (cdkDropListDropped)="dropServicio($event, columna)"
+          class="flex flex-column border-round surface-card shadow-2"
+          style="flex: 0 0 340px; border-top: 4px solid"
+          [style.border-top-color]="columna.color">
+
+          <!-- Columna Header -->
+          <div class="flex justify-content-between align-items-center p-3 border-round-top text-white"
+               [style.background-color]="columna.color">
+            <h5 class="m-0 font-semibold">{{ columna.nombre }}</h5>
+            <p-badge [value]="columna.servicios.length.toString()"
+                     [style]="{ 'background-color': 'rgba(255, 255, 255, 0.25)' }">
+            </p-badge>
+          </div>
+
+          <!-- Columna Body -->
+          <div class="flex-1 overflow-y-auto p-2" style="min-height: 200px;">
+            @for (servicio of columna.servicios; track servicio.id) {
+              <p-card
+                cdkDrag
+                [cdkDragData]="servicio"
+                class="mb-2 servicio-card servicio-clickeable"
+                (click)="verDetalleServicio(servicio.id, $event)">
+
+                <ng-template pTemplate="header">
+                  <div class="flex justify-content-between align-items-center p-3 pb-0">
+                    <strong class="text-primary text-lg">{{ servicio.numeroServicio }}</strong>
+                    @if (servicio.esGarantia) {
+                      <p-badge value="Garantía" severity="warn"></p-badge>
+                    }
+                  </div>
+                </ng-template>
+
+                <div class="flex flex-column gap-2">
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-user text-color-secondary"></i>
+                    <span class="text-sm">{{ servicio.clienteNombre }}</span>
+                  </div>
+
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-desktop text-color-secondary"></i>
+                    <span class="text-sm">{{ servicio.equipoDescripcion }}</span>
+                  </div>
+
+                  @if (servicio.equipoNumeroSerie) {
+                    <div class="flex align-items-center gap-2">
+                      <i class="pi pi-tag text-color-secondary"></i>
+                      <span class="text-xs text-color-secondary">S/N: {{ servicio.equipoNumeroSerie }}</span>
+                    </div>
+                  }
+
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-calendar text-color-secondary"></i>
+                    <span class="text-xs text-color-secondary">{{ formatFecha(servicio.fechaRecepcion) }}</span>
+                  </div>
+                </div>
+
+                <ng-template pTemplate="footer">
+                  <div class="flex justify-content-between align-items-center">
+                    <div class="flex align-items-center gap-2">
+                      <i class="pi pi-user-edit text-color-secondary text-sm"></i>
+                      <span class="text-xs text-color-secondary">{{ servicio.empleadoRecepcionNombre }}</span>
+                    </div>
+                    <p-badge [value]="servicio.tipoIngreso" severity="secondary"></p-badge>
+                  </div>
+                </ng-template>
+              </p-card>
+            }
+
+            <!-- Empty State -->
+            @if (columna.servicios.length === 0) {
+              <div class="flex flex-column align-items-center justify-content-center py-6 text-color-secondary">
+                <i class="pi pi-inbox text-6xl mb-3" style="opacity: 0.3;"></i>
+                <p class="text-sm m-0">No hay servicios</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>
+

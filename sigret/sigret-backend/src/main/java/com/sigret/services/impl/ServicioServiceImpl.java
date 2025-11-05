@@ -1,21 +1,26 @@
 package com.sigret.services.impl;
 
+import com.sigret.dtos.detalleservicio.DetalleServicioDto;
 import com.sigret.dtos.servicio.ServicioCreateDto;
 import com.sigret.dtos.servicio.ServicioListDto;
 import com.sigret.dtos.servicio.ServicioResponseDto;
 import com.sigret.dtos.servicio.ServicioUpdateDto;
 import com.sigret.entities.Cliente;
 import com.sigret.entities.ClienteEquipo;
+import com.sigret.entities.DetalleServicio;
 import com.sigret.entities.Empleado;
 import com.sigret.entities.Equipo;
 import com.sigret.entities.Servicio;
 import com.sigret.enums.EstadoServicio;
 import com.sigret.exception.ServicioNotFoundException;
+import com.sigret.entities.Presupuesto;
 import com.sigret.repositories.ClienteRepository;
 import com.sigret.repositories.EmpleadoRepository;
 import com.sigret.repositories.EquipoRepository;
+import com.sigret.repositories.PresupuestoRepository;
 import com.sigret.repositories.ServicioRepository;
 import com.sigret.services.ServicioService;
+import com.sigret.services.WebSocketNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -43,6 +48,12 @@ public class ServicioServiceImpl implements ServicioService {
 
     @Autowired
     private EmpleadoRepository empleadoRepository;
+
+    @Autowired
+    private PresupuestoRepository presupuestoRepository;
+
+    @Autowired
+    private WebSocketNotificationService notificationService;
 
     @Override
     public ServicioResponseDto crearServicio(ServicioCreateDto servicioCreateDto) {
@@ -82,6 +93,33 @@ public class ServicioServiceImpl implements ServicioService {
         asociarEquipoACliente(cliente, equipo);
 
         Servicio servicioGuardado = servicioRepository.save(servicio);
+
+        // Crear detalles del servicio si se proporcionan
+        if (servicioCreateDto.getDetalles() != null && !servicioCreateDto.getDetalles().isEmpty()) {
+            for (DetalleServicioDto detalleDto : servicioCreateDto.getDetalles()) {
+                DetalleServicio detalle = new DetalleServicio();
+                detalle.setServicio(servicioGuardado);
+                detalle.setComponente(detalleDto.getComponente());
+                detalle.setPresente(detalleDto.getPresente());
+                detalle.setComentario(detalleDto.getComentario());
+                servicioGuardado.getDetalleServicios().add(detalle);
+            }
+            servicioGuardado = servicioRepository.save(servicioGuardado);
+        }
+
+        // Notificar creación del servicio via WebSocket
+        notificationService.notificarServicioCreado(convertirAServicioListDto(servicioGuardado));
+
+        // CREAR AUTOMÁTICAMENTE EL PRESUPUESTO EN ESTADO PENDIENTE
+        Presupuesto presupuesto = new Presupuesto();
+        presupuesto.setServicio(servicioGuardado);
+        presupuesto.setEmpleado(empleadoRecepcion); // Asignar al mismo empleado que recibe el servicio
+        presupuesto.setProblema(""); // Vacío inicialmente
+        presupuesto.setDiagnostico(""); // Vacío inicialmente
+        presupuesto.setEstado(com.sigret.enums.EstadoPresupuesto.PENDIENTE);
+        presupuesto.setFechaCreacion(LocalDateTime.now());
+        presupuesto.setFechaSolicitud(LocalDate.now());
+        presupuestoRepository.save(presupuesto);
 
         return convertirAServicioResponseDto(servicioGuardado);
     }
@@ -186,6 +224,9 @@ public class ServicioServiceImpl implements ServicioService {
 
         Servicio servicioActualizado = servicioRepository.save(servicio);
 
+        // Notificar actualización del servicio via WebSocket
+        notificationService.notificarServicioActualizado(convertirAServicioListDto(servicioActualizado));
+
         return convertirAServicioResponseDto(servicioActualizado);
     }
 
@@ -194,8 +235,12 @@ public class ServicioServiceImpl implements ServicioService {
         Servicio servicio = servicioRepository.findById(id)
                 .orElseThrow(() -> new ServicioNotFoundException("Servicio no encontrado con ID: " + id));
 
+        EstadoServicio estadoAnterior = servicio.getEstado();
         servicio.setEstado(nuevoEstado);
         Servicio servicioActualizado = servicioRepository.save(servicio);
+
+        // Notificar cambio de estado via WebSocket
+        notificationService.notificarCambioEstado(convertirAServicioListDto(servicioActualizado), estadoAnterior);
 
         return convertirAServicioResponseDto(servicioActualizado);
     }
@@ -206,6 +251,9 @@ public class ServicioServiceImpl implements ServicioService {
             throw new ServicioNotFoundException("Servicio no encontrado con ID: " + id);
         }
         servicioRepository.deleteById(id);
+
+        // Notificar eliminación del servicio via WebSocket
+        notificationService.notificarServicioEliminado(id);
     }
 
     @Override
@@ -266,40 +314,52 @@ public class ServicioServiceImpl implements ServicioService {
     }
 
     private ServicioResponseDto convertirAServicioResponseDto(Servicio servicio) {
-        return new ServicioResponseDto(
-                servicio.getId(),
-                servicio.getNumeroServicio(),
-                servicio.getCliente().getId(),
-                servicio.getCliente().getNombreCompleto(),
-                servicio.getCliente().getDocumento(),
-                servicio.getEquipo().getId(),
-                servicio.getEquipo().getDescripcionCompleta(),
-                servicio.getEquipo().getNumeroSerie(),
-                servicio.getEmpleadoRecepcion().getId(),
-                servicio.getEmpleadoRecepcion().getNombreCompleto(),
-                servicio.getTipoIngreso(),
-                servicio.getFirmaIngreso(),
-                servicio.getFirmaConformidad(),
-                servicio.getEsGarantia(),
-                servicio.getServicioGarantia() != null ? servicio.getServicioGarantia().getId() : null,
-                servicio.getServicioGarantia() != null ? servicio.getServicioGarantia().getNumeroServicio() : null,
-                servicio.getGarantiaDentroPlazo(),
-                servicio.getGarantiaCumpleCondiciones(),
-                servicio.getObservacionesGarantia(),
-                servicio.getTecnicoEvaluacion() != null ? servicio.getTecnicoEvaluacion().getId() : null,
-                servicio.getTecnicoEvaluacion() != null ? servicio.getTecnicoEvaluacion().getNombreCompleto() : null,
-                servicio.getFechaEvaluacionGarantia(),
-                servicio.getObservacionesEvaluacionGarantia(),
-                servicio.getAbonaVisita(),
-                servicio.getMontoVisita(),
-                servicio.getMontoPagado(),
-                servicio.getEstado(),
-                servicio.getFechaCreacion(),
-                servicio.getFechaRecepcion(),
-                servicio.getFechaDevolucionPrevista(),
-                servicio.getFechaDevolucionReal(),
-                servicio.getDescripcionCompleta()
-        );
+        ServicioResponseDto dto = new ServicioResponseDto();
+        dto.setId(servicio.getId());
+        dto.setNumeroServicio(servicio.getNumeroServicio());
+        dto.setClienteId(servicio.getCliente().getId());
+        dto.setClienteNombre(servicio.getCliente().getNombreCompleto());
+        dto.setClienteDocumento(servicio.getCliente().getDocumento());
+        dto.setEquipoId(servicio.getEquipo().getId());
+        dto.setEquipoDescripcion(servicio.getEquipo().getDescripcionCompleta());
+        dto.setEquipoNumeroSerie(servicio.getEquipo().getNumeroSerie());
+        dto.setEmpleadoRecepcionId(servicio.getEmpleadoRecepcion().getId());
+        dto.setEmpleadoRecepcionNombre(servicio.getEmpleadoRecepcion().getNombreCompleto());
+        dto.setTipoIngreso(servicio.getTipoIngreso());
+        dto.setFirmaIngreso(servicio.getFirmaIngreso());
+        dto.setFirmaConformidad(servicio.getFirmaConformidad());
+        dto.setEsGarantia(servicio.getEsGarantia());
+        dto.setServicioGarantiaId(servicio.getServicioGarantia() != null ? servicio.getServicioGarantia().getId() : null);
+        dto.setServicioGarantiaNumero(servicio.getServicioGarantia() != null ? servicio.getServicioGarantia().getNumeroServicio() : null);
+        dto.setGarantiaDentroPlazo(servicio.getGarantiaDentroPlazo());
+        dto.setGarantiaCumpleCondiciones(servicio.getGarantiaCumpleCondiciones());
+        dto.setObservacionesGarantia(servicio.getObservacionesGarantia());
+        dto.setTecnicoEvaluacionId(servicio.getTecnicoEvaluacion() != null ? servicio.getTecnicoEvaluacion().getId() : null);
+        dto.setTecnicoEvaluacionNombre(servicio.getTecnicoEvaluacion() != null ? servicio.getTecnicoEvaluacion().getNombreCompleto() : null);
+        dto.setFechaEvaluacionGarantia(servicio.getFechaEvaluacionGarantia());
+        dto.setObservacionesEvaluacionGarantia(servicio.getObservacionesEvaluacionGarantia());
+        dto.setAbonaVisita(servicio.getAbonaVisita());
+        dto.setMontoVisita(servicio.getMontoVisita());
+        dto.setMontoPagado(servicio.getMontoPagado());
+        dto.setEstado(servicio.getEstado());
+        dto.setFechaCreacion(servicio.getFechaCreacion());
+        dto.setFechaRecepcion(servicio.getFechaRecepcion());
+        dto.setFechaDevolucionPrevista(servicio.getFechaDevolucionPrevista());
+        dto.setFechaDevolucionReal(servicio.getFechaDevolucionReal());
+        dto.setDescripcionCompleta(servicio.getDescripcionCompleta());
+
+        // Convertir detalles
+        List<DetalleServicioDto> detallesDto = servicio.getDetalleServicios().stream()
+                .map(detalle -> new DetalleServicioDto(
+                        detalle.getId(),
+                        detalle.getComponente(),
+                        detalle.getPresente(),
+                        detalle.getComentario()
+                ))
+                .collect(Collectors.toList());
+        dto.setDetalles(detallesDto);
+
+        return dto;
     }
 
     private ServicioListDto convertirAServicioListDto(Servicio servicio) {

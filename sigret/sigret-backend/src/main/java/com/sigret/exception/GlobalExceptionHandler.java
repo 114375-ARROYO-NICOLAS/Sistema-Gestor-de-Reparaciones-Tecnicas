@@ -190,6 +190,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler(UsuarioSinEmpleadoException.class)
+    public ResponseEntity<Map<String, String>> handleUsuarioSinEmpleado(UsuarioSinEmpleadoException e) {
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Usuario sin empleado asociado");
+        error.put("message", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException e) {
         Map<String, String> error = new HashMap<>();

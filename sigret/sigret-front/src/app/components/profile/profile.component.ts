@@ -142,10 +142,10 @@ export class ProfileComponent implements OnInit {
     return roles[rol] || rol;
   }
 
-  getRoleSeverity(rol: string): string {
-    const severities: Record<string, string> = {
+  getRoleSeverity(rol: string): 'danger' | 'warn' | 'info' | 'secondary' {
+    const severities: Record<string, 'danger' | 'warn' | 'info'> = {
       'PROPIETARIO': 'danger',
-      'ADMINISTRATIVO': 'warning',
+      'ADMINISTRATIVO': 'warn',
       'TECNICO': 'info'
     };
     return severities[rol] || 'secondary';

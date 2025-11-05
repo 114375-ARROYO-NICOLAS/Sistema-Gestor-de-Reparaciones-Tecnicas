@@ -1,0 +1,11 @@
+.equipo-create-container {
+  padding: 1rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+  .equipo-create-container {
+    padding: 0.5rem;
+  }
+}

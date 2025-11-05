@@ -1,0 +1,71 @@
+.servicio-create-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 1.5rem;
+
+  // Asegurar que el stepper no corte los calendarios
+  ::ng-deep {
+    .p-stepper-panels {
+      overflow: visible !important;
+    }
+
+    .p-stepper-panel {
+      overflow: visible !important;
+    }
+
+    // Agregar espacio extra en el contenedor del stepper
+    .p-stepper {
+      overflow: visible !important;
+    }
+  }
+}
+
+// Canvas de firma
+.signature-canvas {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  cursor: crosshair;
+  display: block;
+  width: 100% !important;
+  height: 200px !important;
+  touch-action: none;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background: white;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .servicio-create-container {
+    padding: 1rem;
+    max-width: 100%;
+
+    ::ng-deep {
+      // Ajustar padding en móviles
+      .p-stepper-panel {
+        .p-4 {
+          padding: 1rem !important;
+        }
+      }
+
+      // Hacer el stepper vertical en móviles si es necesario
+      .p-stepper-header {
+        font-size: 0.875rem;
+      }
+    }
+  }
+
+  .signature-canvas {
+    height: 150px !important;
+  }
+}
+
+// Para tablets
+@media (min-width: 769px) and (max-width: 1024px) {
+  .servicio-create-container {
+    max-width: 100%;
+    padding: 1.25rem;
+  }
+}

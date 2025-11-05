@@ -1,0 +1,8 @@
+.employee-create-container {
+  max-width: 1200px;
+  margin: 0 auto;
+
+  @media (max-width: 768px) {
+    padding: 1rem !important;
+  }
+}

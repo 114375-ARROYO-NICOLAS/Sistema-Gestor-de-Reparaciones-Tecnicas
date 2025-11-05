@@ -1,0 +1,155 @@
+<div class="board-container p-3">
+  <!-- Header -->
+  <div class="flex justify-content-between align-items-center mb-4 pb-3 border-bottom-1 surface-border">
+    <div class="flex flex-column gap-2">
+      <h2 class="text-3xl font-semibold m-0 text-color">Tablero de Órdenes de Trabajo</h2>
+      <span class="text-sm text-color-secondary">Gestión de órdenes de trabajo del sistema</span>
+    </div>
+
+    <div class="flex gap-3 align-items-center">
+      <p-button
+        label="Actualizar"
+        icon="pi pi-refresh"
+        [iconPos]="'left'"
+        [loading]="loading()"
+        (onClick)="refresh()"
+        [disabled]="loading()">
+      </p-button>
+
+      <div class="flex align-items-center gap-2 px-3 py-2 border-round"
+           [ngClass]="isConnected() ? 'bg-green-100' : 'bg-red-100'">
+        <i class="pi"
+           [ngClass]="isConnected() ? 'pi-wifi text-green-700' : 'pi-wifi-slash text-red-700'"></i>
+        <span class="text-sm font-medium"
+              [ngClass]="isConnected() ? 'text-green-700' : 'text-red-700'">
+          {{ isConnected() ? 'Conectado' : 'Desconectado' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex flex-column align-items-center justify-content-center py-8 gap-3">
+      <p-progressSpinner
+        [style]="{ width: '50px', height: '50px' }"
+        strokeWidth="4"
+        animationDuration="1s">
+      </p-progressSpinner>
+      <p class="text-lg text-color-secondary m-0">Cargando órdenes de trabajo...</p>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="flex align-items-center gap-3 p-4 border-round bg-red-50 border-1 border-red-200 mb-3">
+      <i class="pi pi-exclamation-triangle text-red-600 text-2xl"></i>
+      <span class="flex-1 text-red-800">{{ error() }}</span>
+      <p-button
+        label="Reintentar"
+        icon="pi pi-refresh"
+        severity="danger"
+        [outlined]="true"
+        (onClick)="refresh()">
+      </p-button>
+    </div>
+  }
+
+  <!-- Kanban Board -->
+  @if (!loading() && !error()) {
+    <div cdkDropListGroup class="flex gap-3 overflow-x-auto pb-3" style="min-height: calc(100vh - 16rem);">
+      @for (column of columns; track column.state) {
+        <div
+          cdkDropList
+          [cdkDropListData]="column.orders"
+          [id]="'column-' + column.state"
+          (cdkDropListDropped)="dropOrder($event, column)"
+          class="flex flex-column border-round surface-card shadow-2"
+          style="flex: 0 0 380px; border-top: 4px solid"
+          [style.border-top-color]="column.color">
+
+          <!-- Column Header -->
+          <div class="flex justify-content-between align-items-center p-3 border-round-top text-white"
+               [style.background-color]="column.color">
+            <h5 class="m-0 font-semibold">{{ column.name }}</h5>
+            <p-badge [value]="column.orders.length.toString()"
+                     [style]="{ 'background-color': 'rgba(255, 255, 255, 0.25)' }">
+            </p-badge>
+          </div>
+
+          <!-- Column Body -->
+          <div class="flex-1 overflow-y-auto p-2" style="min-height: 200px; max-height: calc(100vh - 20rem);">
+            @for (order of column.orders; track order.id) {
+              <p-card
+                cdkDrag
+                [cdkDragData]="order"
+                class="mb-2 order-card">
+
+                <ng-template pTemplate="header">
+                  <div class="flex justify-content-between align-items-center p-3 pb-0">
+                    <strong class="text-primary text-lg">{{ order.numeroServicio }}</strong>
+                    @if (order.esSinCosto) {
+                      <p-badge value="Sin Costo" severity="success"></p-badge>
+                    }
+                  </div>
+                </ng-template>
+
+                <div class="flex flex-column gap-2">
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-user text-color-secondary"></i>
+                    <span class="text-sm font-medium">{{ order.clienteNombre }}</span>
+                  </div>
+
+                  @if (order.equipoDescripcion) {
+                    <div class="flex align-items-center gap-2">
+                      <i class="pi pi-desktop text-color-secondary"></i>
+                      <span class="text-sm">{{ order.equipoDescripcion }}</span>
+                    </div>
+                  }
+
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-user-edit text-color-secondary text-sm"></i>
+                    <span class="text-xs font-medium text-900">{{ order.empleadoNombre }}</span>
+                  </div>
+
+                  @if (order.montoTotalFinal) {
+                    <div class="flex align-items-center gap-2">
+                      <i class="pi pi-dollar text-color-secondary"></i>
+                      <span class="text-sm font-semibold text-900">{{ formatCurrency(order.montoTotalFinal) }}</span>
+                    </div>
+                  }
+
+                  <div class="flex align-items-center gap-2">
+                    <i class="pi pi-calendar text-color-secondary"></i>
+                    <span class="text-xs text-color-secondary">Creada: {{ order.fechaCreacion | date: 'dd/MM/yyyy' }}</span>
+                  </div>
+
+                  @if (order.fechaComienzo) {
+                    <div class="flex align-items-center gap-2">
+                      <i class="pi pi-play text-color-secondary"></i>
+                      <span class="text-xs text-color-secondary">Inicio: {{ order.fechaComienzo | date: 'dd/MM/yyyy' }}</span>
+                    </div>
+                  }
+
+                  @if (order.fechaFin) {
+                    <div class="flex align-items-center gap-2">
+                      <i class="pi pi-check text-color-secondary"></i>
+                      <span class="text-xs text-green-600">Fin: {{ order.fechaFin | date: 'dd/MM/yyyy' }}</span>
+                    </div>
+                  }
+                </div>
+              </p-card>
+            }
+
+            @if (column.orders.length === 0) {
+              <div class="text-center text-600 py-6">
+                <i class="pi pi-inbox text-4xl mb-2" style="opacity: 0.3;"></i>
+                <p class="text-sm m-0">No hay órdenes</p>
+              </div>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

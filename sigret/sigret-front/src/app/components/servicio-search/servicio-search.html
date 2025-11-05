@@ -1,0 +1,257 @@
+<div class="servicio-search-container p-4">
+  <!-- Header -->
+  <div class="flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="text-3xl font-semibold m-0 text-color">Búsqueda de Servicios</h2>
+      <p class="text-color-secondary mt-2 mb-0">
+        {{ serviciosFiltrados().length }} de {{ servicios().length }} servicios
+      </p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Panel de Filtros (Izquierda) -->
+    <div class="col-12 lg:col-3">
+      <p-card class="filtros-card">
+        <ng-template pTemplate="header">
+          <div class="p-3">
+            <h3 class="text-xl font-semibold m-0">Filtros</h3>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-column gap-4">
+          <!-- Búsqueda rápida -->
+          <div>
+            <label class="block text-sm font-medium mb-2">Buscar por Nº de Servicio</label>
+            <input
+              pInputText
+              type="text"
+              [ngModel]="busqueda()"
+              (ngModelChange)="busqueda.set($event)"
+              placeholder="Ingrese número de servicio..."
+              class="w-full"
+            />
+          </div>
+
+          <p-divider></p-divider>
+
+          <!-- Accordion de filtros -->
+          <p-accordion [multiple]="true">
+            <!-- Estado -->
+            <p-accordionpanel header="Estado" [value]="'0'">
+              <p-multiselect
+                [ngModel]="estadosFiltro()"
+                (ngModelChange)="estadosFiltro.set($event)"
+                [options]="estadosOptions()"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Seleccionar estados"
+                [showClear]="true"
+                class="w-full"
+                display="chip">
+              </p-multiselect>
+            </p-accordionpanel>
+
+            <!-- Garantía -->
+            <p-accordionpanel header="Garantía" [value]="'1'">
+              <div class="flex flex-column gap-2">
+                @for (option of garantiaOptions(); track option.value) {
+                  <div class="flex align-items-center">
+                    <input
+                      type="radio"
+                      [id]="'garantia-' + option.value"
+                      [value]="option.value"
+                      [ngModel]="garantiaFiltro()"
+                      (ngModelChange)="garantiaFiltro.set($event)"
+                      class="mr-2"
+                    />
+                    <label [for]="'garantia-' + option.value" class="cursor-pointer">
+                      {{ option.label }}
+                    </label>
+                  </div>
+                }
+              </div>
+            </p-accordionpanel>
+
+            <!-- Clientes -->
+            <p-accordionpanel header="Clientes" [value]="'2'">
+              <p-autocomplete
+                [ngModel]="clienteFiltro()"
+                (ngModelChange)="clienteFiltro.set($event)"
+                [suggestions]="clientesSugerencias()"
+                (completeMethod)="buscarClientes($event)"
+                placeholder="Buscar cliente..."
+                [minLength]="2"
+                [showClear]="true"
+                appendTo="body"
+                class="w-full">
+              </p-autocomplete>
+              <small class="text-color-secondary mt-1 block">Escribe al menos 2 caracteres para buscar</small>
+            </p-accordionpanel>
+
+            <!-- Empleados -->
+            <p-accordionpanel header="Empleado de Recepción" [value]="'3'">
+              <p-multiselect
+                [ngModel]="empleadosFiltro()"
+                (ngModelChange)="empleadosFiltro.set($event)"
+                [options]="empleados()"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Seleccionar empleados"
+                [filter]="true"
+                [showClear]="true"
+                class="w-full"
+                display="chip"
+                [virtualScroll]="true"
+                [virtualScrollItemSize]="34">
+              </p-multiselect>
+            </p-accordionpanel>
+
+            <!-- Tipo de Equipo -->
+            <p-accordionpanel header="Tipo de Equipo" [value]="'4'">
+              <p-multiselect
+                [ngModel]="tiposEquipoFiltro()"
+                (ngModelChange)="tiposEquipoFiltro.set($event)"
+                [options]="tiposEquipo()"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Seleccionar tipos"
+                [filter]="true"
+                [showClear]="true"
+                class="w-full"
+                display="chip">
+              </p-multiselect>
+            </p-accordionpanel>
+          </p-accordion>
+        </div>
+
+        <ng-template pTemplate="footer">
+          <div class="flex gap-2">
+            <p-button
+              label="Aplicar"
+              icon="pi pi-check"
+              class="flex-1"
+              (onClick)="aplicarFiltros()">
+            </p-button>
+            <p-button
+              label="Limpiar"
+              icon="pi pi-times"
+              severity="secondary"
+              [outlined]="true"
+              class="flex-1"
+              (onClick)="limpiarFiltros()">
+            </p-button>
+          </div>
+        </ng-template>
+      </p-card>
+    </div>
+
+    <!-- Tabla de Servicios (Derecha) -->
+    <div class="col-12 lg:col-9">
+      @if (loading()) {
+        <div class="flex flex-column align-items-center justify-content-center py-8">
+          <p-progressSpinner
+            [style]="{ width: '50px', height: '50px' }"
+            strokeWidth="4">
+          </p-progressSpinner>
+          <p class="text-lg text-color-secondary mt-3">Cargando servicios...</p>
+        </div>
+      } @else {
+        <div class="border-round-lg shadow-2 overflow-hidden">
+          <p-table
+            [value]="serviciosFiltrados()"
+            [paginator]="true"
+            [rows]="10"
+            [rowsPerPageOptions]="[10, 25, 50]"
+            [showCurrentPageReport]="true"
+            currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} servicios"
+            [stripedRows]="true"
+            [rowHover]="true"
+            [tableStyle]="{ 'min-width': '60rem' }">
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="numeroServicio">
+                Nº Servicio <p-sortIcon field="numeroServicio"></p-sortIcon>
+              </th>
+              <th pSortableColumn="clienteNombre">
+                Cliente <p-sortIcon field="clienteNombre"></p-sortIcon>
+              </th>
+              <th pSortableColumn="equipoDescripcion">
+                Equipo <p-sortIcon field="equipoDescripcion"></p-sortIcon>
+              </th>
+              <th pSortableColumn="estado">
+                Estado <p-sortIcon field="estado"></p-sortIcon>
+              </th>
+              <th pSortableColumn="fechaRecepcion">
+                Fecha Recepción <p-sortIcon field="fechaRecepcion"></p-sortIcon>
+              </th>
+              <th style="width: 8rem">Acciones</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-servicio>
+            <tr>
+              <td>
+                <span class="font-semibold text-primary">{{ servicio.numeroServicio }}</span>
+              </td>
+              <td>{{ servicio.clienteNombre }}</td>
+              <td>
+                <div class="flex flex-column gap-1">
+                  <span>{{ servicio.equipoDescripcion }}</span>
+                  @if (servicio.equipoNumeroSerie) {
+                    <span class="text-xs text-color-secondary">S/N: {{ servicio.equipoNumeroSerie }}</span>
+                  }
+                </div>
+              </td>
+              <td>
+                <p-tag
+                  [value]="servicio.estado"
+                  [severity]="getEstadoSeverity(servicio.estado)">
+                </p-tag>
+              </td>
+              <td>{{ formatFecha(servicio.fechaRecepcion) }}</td>
+              <td>
+                <div class="flex gap-1">
+                  <p-button
+                    icon="pi pi-pencil"
+                    [text]="true"
+                    [rounded]="true"
+                    severity="warn"
+                    pTooltip="Editar"
+                    tooltipPosition="top"
+                    (onClick)="verDetalle(servicio.id)">
+                  </p-button>
+                  <p-button
+                    icon="pi pi-eye"
+                    [text]="true"
+                    [rounded]="true"
+                    severity="info"
+                    pTooltip="Ver detalle"
+                    tooltipPosition="top"
+                    (onClick)="verDetalle(servicio.id)">
+                  </p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6">
+                <div class="text-center py-6">
+                  <i class="pi pi-search text-6xl text-color-secondary mb-3" style="opacity: 0.3;"></i>
+                  <p class="text-lg m-0">No se encontraron servicios</p>
+                  <p class="text-sm text-color-secondary mt-2">
+                    Intenta ajustar los filtros o realizar una nueva búsqueda
+                  </p>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+          </p-table>
+        </div>
+      }
+    </div>
+  </div>
+</div>

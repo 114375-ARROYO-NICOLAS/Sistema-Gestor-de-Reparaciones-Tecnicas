@@ -140,7 +140,7 @@ export class ClientService {
   /**
    * Get client status color for UI
    */
-  getStatusColor(activo: boolean): string {
+  getStatusColor(activo: boolean): 'success' | 'danger' {
     return activo ? 'success' : 'danger';
   }
 

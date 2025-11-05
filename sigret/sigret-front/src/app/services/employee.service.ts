@@ -166,7 +166,7 @@ export class EmployeeService {
   /**
    * Get employee status color for UI
    */
-  getStatusColor(activo: boolean): string {
+  getStatusColor(activo: boolean): 'success' | 'danger' {
     return activo ? 'success' : 'danger';
   }
 

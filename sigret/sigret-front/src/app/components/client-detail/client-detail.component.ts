@@ -10,7 +10,7 @@ import { DividerModule } from 'primeng/divider';
 import { BadgeModule } from 'primeng/badge';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { Select } from 'primeng/select';
 
 import { ClientService } from '../../services/client.service';
 import { ClientResponse, ClientUpdateRequest } from '../../models/client.model';
@@ -33,7 +33,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
     BadgeModule,
     DialogModule,
     InputTextModule,
-    SelectModule,
+    Select,
     ToastModule,
     ConfirmDialogModule
   ],

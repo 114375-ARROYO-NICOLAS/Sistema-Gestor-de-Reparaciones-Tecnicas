@@ -52,16 +52,13 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   // Reactive state
   protected readonly currentRoute = signal('Dashboard');
-  protected readonly screenWidth = signal(window.innerWidth);
   protected readonly openSubmenus = signal<Set<string>>(new Set());
-  protected readonly notificationCount = signal(3);
   protected isSidebarVisible = signal(false);
 
   // Computed properties
   protected readonly user = computed(() => this.authService.user());
   protected readonly isAuthenticated = computed(() => this.authService.isAuthenticated());
   protected readonly isDarkMode = computed(() => this.themeService.isDarkMode());
-  protected readonly isMobile = computed(() => this.screenWidth() < 992);
 
   // Subscriptions
   private routerSubscription?: Subscription;
@@ -80,6 +77,37 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       ]
     },
     {
+      label: 'Operaciones',
+      icon: 'pi pi-wrench',
+      items: [
+        {
+          label: 'Servicios',
+          icon: 'pi pi-list',
+          routerLink: '/servicios'
+        },
+        {
+          label: 'Garantías',
+          icon: 'pi pi-shield',
+          routerLink: '/garantias'
+        },
+        {
+          label: 'Buscar Servicios',
+          icon: 'pi pi-search',
+          routerLink: '/servicios/buscar'
+        },
+        {
+          label: 'Presupuestos',
+          icon: 'pi pi-dollar',
+          routerLink: '/presupuestos'
+        },
+        {
+          label: 'Órdenes de Trabajo',
+          icon: 'pi pi-wrench',
+          routerLink: '/ordenes-trabajo'
+        }
+      ]
+    },
+    {
       label: 'Gestión',
       icon: 'pi pi-cog',
       items: [
@@ -94,9 +122,35 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
           routerLink: '/empleados'
         },
         {
+          label: 'Equipos',
+          icon: 'pi pi-desktop',
+          routerLink: '/equipos'
+        },
+        {
           label: 'Usuarios',
-          icon: 'pi pi-user-check',
+          icon: 'pi pi-user',
           routerLink: '/usuarios'
+        }
+      ]
+    },
+    {
+      label: 'Configuración',
+      icon: 'pi pi-sliders-h',
+      items: [
+        {
+          label: 'Tipos de Equipo',
+          icon: 'pi pi-tag',
+          routerLink: '/configuracion/tipos-equipo'
+        },
+        {
+          label: 'Marcas',
+          icon: 'pi pi-bookmark',
+          routerLink: '/configuracion/marcas'
+        },
+        {
+          label: 'Modelos',
+          icon: 'pi pi-database',
+          routerLink: '/configuracion/modelos'
         }
       ]
     }
@@ -120,11 +174,10 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   constructor() {
     this.initializeRouteTracking();
-    this.initializeResizeListener();
   }
 
   ngOnInit(): void {
-    this.screenWidth.set(window.innerWidth);
+    // Component initialization
   }
 
   ngOnDestroy(): void {
@@ -139,21 +192,9 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       )
       .subscribe(url => {
         this.updateCurrentRoute(url);
-        // Auto-close drawer on navigation in mobile
-        if (this.isMobile()) {
-          this.isSidebarVisible.set(false);
-        }
-      });
-  }
-
-  private initializeResizeListener(): void {
-    window.addEventListener('resize', () => {
-      this.screenWidth.set(window.innerWidth);
-      // Close sidebar when resizing to mobile
-      if (this.isMobile() && this.isSidebarVisible()) {
+        // Auto-close drawer on navigation (works for all screen sizes)
         this.isSidebarVisible.set(false);
-      }
-    });
+      });
   }
 
   private updateCurrentRoute(url: string): void {
@@ -191,17 +232,19 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   private formatRouteName(route: string): string {
     const routeNames: { [key: string]: string } = {
       'dashboard': 'Dashboard',
+      'servicios': 'Servicios',
       'clientes': 'Clientes',
       'empleados': 'Empleados',
+      'equipos': 'Equipos',
       'usuarios': 'Usuarios',
+      'configuracion': 'Configuración',
+      'tipos-equipo': 'Tipos de Equipo',
+      'marcas': 'Marcas',
+      'modelos': 'Modelos',
       'profile': 'Perfil'
     };
-    
-    return routeNames[route] || route.charAt(0).toUpperCase() + route.slice(1);
-  }
 
-  protected getBreadcrumb(): string {
-    return this.currentRoute();
+    return routeNames[route] || route.charAt(0).toUpperCase() + route.slice(1);
   }
 
   protected onMenuToggle(): void {
@@ -226,10 +269,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   protected onMenuItemClick(): void {
-    // Close sidebar when clicking a menu item
-    if (this.isMobile()) {
-      this.isSidebarVisible.set(false);
-    }
+    // Close sidebar when clicking a menu item (handled by dismissable=true and navigation)
+    // No need for manual logic here
   }
 
   protected toggleTheme(): void {

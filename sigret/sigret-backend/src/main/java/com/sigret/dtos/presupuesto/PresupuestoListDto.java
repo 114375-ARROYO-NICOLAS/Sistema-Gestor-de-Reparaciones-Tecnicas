@@ -20,6 +20,8 @@ public class PresupuestoListDto {
     private String numeroPresupuesto;
     private String numeroServicio;
     private String clienteNombre;
+    private String empleadoNombre;  // El empleado que hace el presupuesto
+    private String equipoDescripcion;  // Para mostrar qué equipo es
     private BigDecimal montoTotal;
     private LocalDate fechaVencimiento;
     private EstadoPresupuesto estado;

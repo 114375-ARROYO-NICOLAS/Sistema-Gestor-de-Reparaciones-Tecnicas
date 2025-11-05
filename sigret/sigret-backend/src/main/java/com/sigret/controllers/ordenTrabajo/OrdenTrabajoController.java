@@ -159,6 +159,20 @@ public class OrdenTrabajoController {
         return ResponseEntity.ok(ordenActualizada);
     }
 
+    @PatchMapping("/{id}/asignar-empleado")
+    @Operation(summary = "Asignar empleado", description = "Asigna un empleado a una orden de trabajo")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Empleado asignado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Orden de trabajo o empleado no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<OrdenTrabajoResponseDto> asignarEmpleado(
+            @Parameter(description = "ID de la orden de trabajo") @PathVariable Long id,
+            @Parameter(description = "ID del empleado") @RequestParam Long empleadoId) {
+        OrdenTrabajoResponseDto ordenActualizada = ordenTrabajoService.asignarEmpleado(id, empleadoId);
+        return ResponseEntity.ok(ordenActualizada);
+    }
+
     @PatchMapping("/{id}/iniciar")
     @Operation(summary = "Iniciar orden de trabajo", description = "Inicia una orden de trabajo")
     @ApiResponses(value = {

@@ -1,0 +1,748 @@
+<div class="employee-create-container p-4">
+  <!-- Header -->
+  <div class="flex justify-content-between align-items-center mb-4">
+    <div class="flex align-items-center gap-3">
+      <p-button
+        icon="pi pi-arrow-left"
+        [text]="true"
+        severity="secondary"
+        (onClick)="goBack()"
+        title="Volver">
+      </p-button>
+      <div>
+        <h2 class="text-2xl font-bold text-900 m-0">Crear Nuevo Empleado</h2>
+        <p class="text-600 mt-1 m-0">Complete el formulario paso a paso</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Progress Indicator -->
+  <div class="mb-4 surface-card border-round p-3 shadow-1">
+    <div class="flex justify-content-between align-items-center mb-2">
+      <span class="font-semibold text-900">Paso {{ currentStep() + 1 }} de 6</span>
+      <span class="text-600">
+        @switch (currentStep()) {
+          @case (0) { Información Personal }
+          @case (1) { Información Laboral }
+          @case (2) { Contactos }
+          @case (3) { Direcciones }
+          @case (4) { Credenciales }
+          @case (5) { Confirmación }
+        }
+      </span>
+    </div>
+    <div class="w-full surface-300 border-round" style="height: 8px;">
+      <div
+        class="bg-primary border-round transition-all transition-duration-300"
+        [style.width.%]="((currentStep() + 1) / 6) * 100"
+        style="height: 8px;">
+      </div>
+    </div>
+  </div>
+
+  <!-- Stepper -->
+  <div class="surface-card border-round shadow-2 p-4">
+    <p-stepper [value]="1" (activeStepChange)="onStepChange($any($event) - 1)">
+      <!-- Step Headers -->
+      <p-step-list>
+        <p-step [value]="1">Información Personal</p-step>
+        <p-step [value]="2">Información Laboral</p-step>
+        <p-step [value]="3">Contactos</p-step>
+        <p-step [value]="4">Direcciones</p-step>
+        <p-step [value]="5">Credenciales</p-step>
+        <p-step [value]="6">Confirmación</p-step>
+      </p-step-list>
+
+      <!-- Step Panels -->
+      <p-step-panels>
+        <!-- Panel 1: Información Personal -->
+        <p-step-panel [value]="1">
+          <ng-template #content let-activateCallback="activateCallback">
+            <div class="p-4">
+              <form [formGroup]="employeeForm">
+                <div class="grid">
+                  <!-- Person Type -->
+                  <div class="col-12">
+                    <label for="tipoPersona" class="block text-900 font-medium mb-2">Tipo de Persona *</label>
+                    <p-select
+                      id="tipoPersona"
+                      formControlName="tipoPersonaId"
+                      [options]="personTypes()"
+                      optionLabel="descripcion"
+                      optionValue="id"
+                      placeholder="Seleccionar tipo"
+                      (onChange)="onPersonTypeChange()"
+                      class="w-full">
+                    </p-select>
+                  </div>
+
+                  <!-- Document Type -->
+                  <div class="col-12 md:col-6">
+                    <label for="tipoDocumento" class="block text-900 font-medium mb-2">Tipo de Documento *</label>
+                    <p-select
+                      id="tipoDocumento"
+                      formControlName="tipoDocumentoId"
+                      [options]="documentTypes()"
+                      optionLabel="descripcion"
+                      optionValue="id"
+                      placeholder="Seleccionar tipo"
+                      class="w-full">
+                    </p-select>
+                  </div>
+
+                  <!-- Document Number -->
+                  <div class="col-12 md:col-6">
+                    <label for="documento" class="block text-900 font-medium mb-2">Número de Documento *</label>
+                    <input
+                      id="documento"
+                      type="text"
+                      pInputText
+                      formControlName="documento"
+                      placeholder="Ingrese el número de documento"
+                      class="w-full">
+                  </div>
+
+                  <!-- Name fields (for natural person) -->
+                  @if (isNaturalPerson()) {
+                    <div class="col-12 md:col-6">
+                      <label for="nombre" class="block text-900 font-medium mb-2">Nombre *</label>
+                      <input
+                        id="nombre"
+                        type="text"
+                        pInputText
+                        formControlName="nombre"
+                        placeholder="Ingrese el nombre"
+                        class="w-full">
+                    </div>
+
+                    <div class="col-12 md:col-6">
+                      <label for="apellido" class="block text-900 font-medium mb-2">Apellido *</label>
+                      <input
+                        id="apellido"
+                        type="text"
+                        pInputText
+                        formControlName="apellido"
+                        placeholder="Ingrese el apellido"
+                        class="w-full">
+                    </div>
+
+                    <div class="col-12 md:col-6">
+                      <label for="sexo" class="block text-900 font-medium mb-2">Sexo (Opcional)</label>
+                      <p-select
+                        id="sexo"
+                        formControlName="sexo"
+                        [options]="sexOptions"
+                        placeholder="Seleccionar sexo"
+                        class="w-full">
+                      </p-select>
+                    </div>
+                  }
+
+                  <!-- Company name (for legal person) -->
+                  @if (!isNaturalPerson()) {
+                    <div class="col-12">
+                      <label for="razonSocial" class="block text-900 font-medium mb-2">Razón Social *</label>
+                      <input
+                        id="razonSocial"
+                        type="text"
+                        pInputText
+                        formControlName="razonSocial"
+                        placeholder="Ingrese la razón social"
+                        class="w-full">
+                    </div>
+                  }
+                </div>
+              </form>
+
+              <div class="flex justify-content-end mt-4">
+                <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="activateCallback(2)" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Panel 2: Información Laboral -->
+        <p-step-panel [value]="2">
+          <ng-template #content let-activateCallback="activateCallback" let-prevCallback="prevCallback">
+            <div class="p-4">
+              <form [formGroup]="employeeForm">
+                <div class="grid">
+                  <!-- Employee Type -->
+                  <div class="col-12">
+                    <label for="tipoEmpleado" class="block text-900 font-medium mb-2">Tipo de Empleado *</label>
+                    <p-select
+                      id="tipoEmpleado"
+                      formControlName="tipoEmpleadoId"
+                      [options]="employeeTypes()"
+                      optionLabel="descripcion"
+                      optionValue="id"
+                      placeholder="Seleccionar tipo"
+                      class="w-full">
+                    </p-select>
+                  </div>
+
+                  <!-- Active status -->
+                  <div class="col-12">
+                    <div class="flex align-items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="activo"
+                        formControlName="activo"
+                        class="mr-2">
+                      <label for="activo" class="text-900 font-medium">Empleado activo</label>
+                    </div>
+                  </div>
+                </div>
+              </form>
+
+              <div class="flex justify-content-between mt-4">
+                <p-button label="Anterior" severity="secondary" icon="pi pi-arrow-left" (onClick)="prevCallback(1)" />
+                <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="activateCallback(3)" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Panel 3: Contactos -->
+        <p-step-panel [value]="3">
+          <ng-template #content let-activateCallback="activateCallback" let-prevCallback="prevCallback">
+            <div class="p-4">
+              <div class="flex justify-content-between align-items-center mb-3">
+                <h4 class="text-lg font-semibold text-900 m-0">Información de Contacto</h4>
+                @if (!isAddingContact()) {
+                  <p-button
+                    label="Agregar Contacto"
+                    icon="pi pi-plus"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="toggleAddingContact()">
+                  </p-button>
+                }
+              </div>
+
+              <!-- Add Contact Form -->
+              @if (isAddingContact()) {
+                <div class="surface-50 border-round p-3 mb-3">
+                  <div class="grid">
+                    <div class="col-12">
+                      <label for="tipoContacto" class="block text-900 font-medium mb-2">Tipo de Contacto *</label>
+                      <p-select
+                        id="tipoContacto"
+                        [(ngModel)]="currentContact().tipoContactoId"
+                        [options]="tiposContacto()"
+                        optionLabel="descripcion"
+                        optionValue="id"
+                        placeholder="Seleccionar tipo"
+                        class="w-full">
+                      </p-select>
+                    </div>
+
+                    <div class="col-12">
+                      <label for="descripcionContacto" class="block text-900 font-medium mb-2">Descripción *</label>
+                      <input
+                        id="descripcionContacto"
+                        type="text"
+                        pInputText
+                        [(ngModel)]="currentContact().descripcion"
+                        placeholder="Email, teléfono, etc."
+                        class="w-full">
+                      <small class="text-600 block mt-1">
+                        Máximo 200 caracteres
+                      </small>
+                    </div>
+
+                    <div class="col-12">
+                      <div class="flex gap-2 justify-content-end">
+                        <p-button
+                          label="Cancelar"
+                          severity="secondary"
+                          [outlined]="true"
+                          size="small"
+                          (onClick)="toggleAddingContact()">
+                        </p-button>
+                        <p-button
+                          label="Agregar"
+                          icon="pi pi-plus"
+                          size="small"
+                          (onClick)="addContact()">
+                        </p-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Contacts List -->
+              @if (contacts().length > 0) {
+                <div class="flex flex-column gap-2 mb-3">
+                  @for (contacto of contacts(); track $index) {
+                    <div class="surface-50 border-round p-3">
+                      <div class="flex justify-content-between align-items-center">
+                        <div class="flex align-items-center gap-3">
+                          <i [class]="'pi ' + getContactIcon(contacto.tipoContactoId) + ' text-primary text-xl'"></i>
+                          <div>
+                            <div class="text-sm text-600">{{ getTipoContactoLabel(contacto.tipoContactoId) }}</div>
+                            <div class="font-medium text-900">{{ contacto.descripcion }}</div>
+                          </div>
+                        </div>
+                        <p-button
+                          icon="pi pi-trash"
+                          severity="danger"
+                          size="small"
+                          [text]="true"
+                          (onClick)="removeContact($index)"
+                          title="Eliminar">
+                        </p-button>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-center text-600 py-4 mb-3">
+                  <i class="pi pi-phone text-3xl mb-2"></i>
+                  <p class="m-0">No hay contactos agregados (opcional)</p>
+                </div>
+              }
+
+              <div class="flex justify-content-between mt-4">
+                <p-button label="Anterior" severity="secondary" icon="pi pi-arrow-left" (onClick)="prevCallback(2)" />
+                <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="activateCallback(4)" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Panel 4: Direcciones -->
+        <p-step-panel [value]="4">
+          <ng-template #content let-activateCallback="activateCallback" let-prevCallback="prevCallback">
+            <div class="p-4">
+              <div class="flex justify-content-between align-items-center mb-3">
+                <h4 class="text-lg font-semibold text-900 m-0">Direcciones</h4>
+                @if (!isAddingAddress()) {
+                  <p-button
+                    label="Agregar Dirección"
+                    icon="pi pi-plus"
+                    size="small"
+                    [outlined]="true"
+                    (onClick)="toggleAddingAddress()">
+                  </p-button>
+                }
+              </div>
+
+              <!-- Add Address Form -->
+              @if (isAddingAddress()) {
+                <div class="surface-50 border-round p-3 mb-3">
+                  <div class="grid">
+                    <div class="col-12">
+                      <label for="addressAutocomplete" class="block text-900 font-medium mb-2">
+                        Buscar dirección
+                      </label>
+                      <input
+                        #addressInput
+                        id="addressAutocomplete"
+                        type="text"
+                        class="w-full p-3 border-1 surface-border border-round"
+                        placeholder="Ingresa una dirección..."
+                        autocomplete="off"
+                      />
+                      <small class="text-600 block mt-2">
+                        <i class="pi pi-info-circle mr-1"></i>
+                        <strong>IMPORTANTE:</strong> Escribe y luego <strong>selecciona una opción</strong> del desplegable.
+                      </small>
+                    </div>
+                    <div class="col-12 md:col-6">
+                      <label for="piso" class="block text-900 font-medium mb-2">Piso (Opcional)</label>
+                      <input
+                        id="piso"
+                        type="text"
+                        pInputText
+                        placeholder="Ej: 3"
+                        [(ngModel)]="currentAddress().piso"
+                        [ngModelOptions]="{standalone: true}"
+                        class="w-full">
+                    </div>
+
+                    <div class="col-12 md:col-6">
+                      <label for="departamento" class="block text-900 font-medium mb-2">Departamento (Opcional)</label>
+                      <input
+                        id="departamento"
+                        type="text"
+                        pInputText
+                        placeholder="Ej: A"
+                        [(ngModel)]="currentAddress().departamento"
+                        [ngModelOptions]="{standalone: true}"
+                        class="w-full">
+                    </div>
+
+                    <div class="col-12">
+                      <label for="observaciones" class="block text-900 font-medium mb-2">Observaciones (Opcional)</label>
+                      <input
+                        id="observaciones"
+                        type="text"
+                        pInputText
+                        placeholder="Información adicional sobre la dirección"
+                        [(ngModel)]="currentAddress().observaciones"
+                        [ngModelOptions]="{standalone: true}"
+                        class="w-full">
+                    </div>
+
+                    <div class="col-12">
+                      <div class="flex align-items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="esPrincipal"
+                          [(ngModel)]="currentAddress().esPrincipal"
+                          [ngModelOptions]="{standalone: true}">
+                        <label for="esPrincipal" class="text-900 font-medium">Dirección Principal</label>
+                      </div>
+                    </div>
+
+                    <div class="col-12">
+                      <div class="flex gap-2 justify-content-end">
+                        <p-button
+                          label="Cancelar"
+                          severity="secondary"
+                          [outlined]="true"
+                          size="small"
+                          (onClick)="toggleAddingAddress()">
+                        </p-button>
+                        <p-button
+                          label="Agregar"
+                          icon="pi pi-plus"
+                          size="small"
+                          (onClick)="addAddress()">
+                        </p-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              }
+
+              <!-- Addresses List -->
+              @if (addresses().length > 0) {
+                <div class="flex flex-column gap-2 mb-3">
+                  @for (address of addresses(); track $index) {
+                    <div class="surface-50 border-round p-3">
+                      <div class="flex justify-content-between align-items-start">
+                        <div class="flex-1">
+                          <div class="flex align-items-center gap-2 mb-2">
+                            <i class="pi pi-map-marker text-primary"></i>
+                            <span class="font-medium">{{ getAddressDisplay(address) }}</span>
+                            @if (address.esPrincipal) {
+                              <p-badge value="Principal" severity="success"></p-badge>
+                            }
+                          </div>
+
+                          @if (address.piso || address.departamento) {
+                            <div class="text-sm text-600 ml-4">
+                              @if (address.piso) {
+                                <span>Piso: {{ address.piso }}</span>
+                              }
+                              @if (address.departamento) {
+                                <span class="ml-2">Depto: {{ address.departamento }}</span>
+                              }
+                            </div>
+                          }
+
+                          @if (address.observaciones) {
+                            <div class="text-sm text-700 font-medium ml-4 mt-1">
+                              <i class="pi pi-info-circle mr-1 text-primary"></i>
+                              {{ address.observaciones }}
+                            </div>
+                          }
+                        </div>
+
+                        <div class="flex gap-1">
+                          @if (address.latitud && address.longitud) {
+                            <p-button
+                              icon="pi pi-map-marker"
+                              severity="info"
+                              size="small"
+                              [text]="true"
+                              (onClick)="openInGoogleMaps(address)"
+                              title="Ver en Google Maps">
+                            </p-button>
+                          }
+                          @if (!address.esPrincipal) {
+                            <p-button
+                              icon="pi pi-star"
+                              severity="secondary"
+                              size="small"
+                              [text]="true"
+                              (onClick)="setPrimaryAddress($index)"
+                              title="Marcar como principal">
+                            </p-button>
+                          }
+                          <p-button
+                            icon="pi pi-trash"
+                            severity="danger"
+                            size="small"
+                            [text]="true"
+                            (onClick)="removeAddress($index)"
+                            title="Eliminar">
+                          </p-button>
+                        </div>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-center text-600 py-4 mb-3">
+                  <i class="pi pi-map-marker text-3xl mb-2"></i>
+                  <p class="m-0">No hay direcciones agregadas (opcional)</p>
+                </div>
+              }
+
+              <div class="flex justify-content-between mt-4">
+                <p-button label="Anterior" severity="secondary" icon="pi pi-arrow-left" (onClick)="prevCallback(3)" />
+                <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="activateCallback(5)" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Panel 5: Credenciales -->
+        <p-step-panel [value]="5">
+          <ng-template #content let-activateCallback="activateCallback" let-prevCallback="prevCallback">
+            <div class="p-4">
+              <form [formGroup]="employeeForm">
+                <div class="grid">
+                  <div class="col-12">
+                    <h4 class="text-lg font-semibold text-900 mb-3">Datos de Usuario del Sistema</h4>
+                  </div>
+
+                  <div class="col-12">
+                    <label for="rolUsuario" class="block text-900 font-medium mb-2">Rol de Usuario *</label>
+                    <p-select
+                      id="rolUsuario"
+                      formControlName="rolUsuario"
+                      [options]="userRoles()"
+                      optionLabel="label"
+                      optionValue="value"
+                      placeholder="Seleccionar rol"
+                      class="w-full">
+                    </p-select>
+                  </div>
+
+                  <div class="col-12">
+                    <p class="text-sm text-600 mb-3 surface-100 border-round p-3">
+                      <i class="pi pi-info-circle mr-2 text-primary"></i>
+                      Si no especificas usuario y contraseña, se usará el número de documento para ambos.
+                    </p>
+                  </div>
+
+                  <div class="col-12 md:col-6">
+                    <label for="username" class="block text-900 font-medium mb-2">Usuario (Opcional)</label>
+                    <input
+                      id="username"
+                      type="text"
+                      pInputText
+                      formControlName="usernamePersonalizado"
+                      placeholder="Usuario personalizado"
+                      class="w-full">
+                  </div>
+
+                  <div class="col-12 md:col-6">
+                    <label for="password" class="block text-900 font-medium mb-2">Contraseña (Opcional)</label>
+                    <input
+                      id="password"
+                      type="password"
+                      pInputText
+                      formControlName="passwordPersonalizada"
+                      placeholder="Contraseña personalizada"
+                      class="w-full">
+                  </div>
+                </div>
+              </form>
+
+              <div class="flex justify-content-between mt-4">
+                <p-button label="Anterior" severity="secondary" icon="pi pi-arrow-left" (onClick)="prevCallback(4)" />
+                <p-button label="Siguiente" icon="pi pi-arrow-right" iconPos="right" (onClick)="activateCallback(6)" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+
+        <!-- Panel 6: Resumen -->
+        <p-step-panel [value]="6">
+          <ng-template #content let-prevCallback="prevCallback">
+            <div class="p-4">
+              <h4 class="text-lg font-semibold text-900 mb-4">Resumen de la Información</h4>
+
+              <!-- Información Personal -->
+              <p-card class="mb-3">
+                <ng-template pTemplate="header">
+                  <div class="p-3">
+                    <h5 class="m-0 text-primary"><i class="pi pi-user mr-2"></i>Información Personal</h5>
+                  </div>
+                </ng-template>
+                <ng-template pTemplate="content">
+                  <div class="grid">
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm">Tipo de Persona:</label>
+                      <p class="font-medium m-0 mt-1">{{ getPersonTypeLabel(employeeForm.value.tipoPersonaId) }}</p>
+                    </div>
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm">Documento:</label>
+                      <p class="font-medium m-0 mt-1">{{ getDocumentTypeLabel(employeeForm.value.tipoDocumentoId) }} {{ employeeForm.value.documento }}</p>
+                    </div>
+                    @if (isNaturalPerson()) {
+                      <div class="col-12 md:col-6">
+                        <label class="text-600 text-sm">Nombre:</label>
+                        <p class="font-medium m-0 mt-1">{{ employeeForm.value.nombre }}</p>
+                      </div>
+                      <div class="col-12 md:col-6">
+                        <label class="text-600 text-sm">Apellido:</label>
+                        <p class="font-medium m-0 mt-1">{{ employeeForm.value.apellido }}</p>
+                      </div>
+                      @if (employeeForm.value.sexo) {
+                        <div class="col-12 md:col-6">
+                          <label class="text-600 text-sm">Sexo:</label>
+                          <p class="font-medium m-0 mt-1">{{ employeeForm.value.sexo === 'M' ? 'Masculino' : 'Femenino' }}</p>
+                        </div>
+                      }
+                    } @else {
+                      <div class="col-12">
+                        <label class="text-600 text-sm">Razón Social:</label>
+                        <p class="font-medium m-0 mt-1">{{ employeeForm.value.razonSocial }}</p>
+                      </div>
+                    }
+                  </div>
+                </ng-template>
+              </p-card>
+
+              <!-- Información Laboral -->
+              <p-card class="mb-3">
+                <ng-template pTemplate="header">
+                  <div class="p-3">
+                    <h5 class="m-0 text-primary"><i class="pi pi-briefcase mr-2"></i>Información Laboral</h5>
+                  </div>
+                </ng-template>
+                <ng-template pTemplate="content">
+                  <div class="grid">
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm">Tipo de Empleado:</label>
+                      <p class="font-medium m-0 mt-1">{{ getEmployeeTypeLabel(employeeForm.value.tipoEmpleadoId) }}</p>
+                    </div>
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm">Estado:</label>
+                      <p class="m-0 mt-1">
+                        <p-tag [value]="employeeForm.value.activo ? 'Activo' : 'Inactivo'" [severity]="employeeForm.value.activo ? 'success' : 'danger'"></p-tag>
+                      </p>
+                    </div>
+                  </div>
+                </ng-template>
+              </p-card>
+
+              <!-- Contactos -->
+              <p-card class="mb-3">
+                <ng-template pTemplate="header">
+                  <div class="p-3">
+                    <h5 class="m-0 text-primary"><i class="pi pi-phone mr-2"></i>Contactos ({{ contacts().length }})</h5>
+                  </div>
+                </ng-template>
+                <ng-template pTemplate="content">
+                  @if (contacts().length > 0) {
+                    <div class="flex flex-column gap-2">
+                      @for (contacto of contacts(); track $index) {
+                        <div class="flex align-items-center gap-3 p-2 surface-50 border-round">
+                          <i [class]="'pi ' + getContactIcon(contacto.tipoContactoId) + ' text-primary'"></i>
+                          <div>
+                            <div class="text-sm text-600">{{ getTipoContactoLabel(contacto.tipoContactoId) }}</div>
+                            <div class="font-medium">{{ contacto.descripcion }}</div>
+                          </div>
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <p class="text-600 m-0">Sin contactos agregados</p>
+                  }
+                </ng-template>
+              </p-card>
+
+              <!-- Direcciones -->
+              <p-card class="mb-3">
+                <ng-template pTemplate="header">
+                  <div class="p-3">
+                    <h5 class="m-0 text-primary"><i class="pi pi-map-marker mr-2"></i>Direcciones ({{ addresses().length }})</h5>
+                  </div>
+                </ng-template>
+                <ng-template pTemplate="content">
+                  @if (addresses().length > 0) {
+                    <div class="flex flex-column gap-2">
+                      @for (address of addresses(); track $index) {
+                        <div class="p-2 surface-50 border-round">
+                          <div class="flex align-items-center gap-2 mb-1">
+                            <i class="pi pi-map-marker text-primary"></i>
+                            <span class="font-medium">{{ getAddressDisplay(address) }}</span>
+                            @if (address.esPrincipal) {
+                              <p-badge value="Principal" severity="success"></p-badge>
+                            }
+                          </div>
+                          @if (address.piso || address.departamento) {
+                            <div class="text-sm text-600 ml-4">
+                              @if (address.piso) {
+                                <span>Piso: {{ address.piso }}</span>
+                              }
+                              @if (address.departamento) {
+                                <span class="ml-2">Depto: {{ address.departamento }}</span>
+                              }
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  } @else {
+                    <p class="text-600 m-0">Sin direcciones agregadas</p>
+                  }
+                </ng-template>
+              </p-card>
+
+              <!-- Credenciales -->
+              <p-card>
+                <ng-template pTemplate="header">
+                  <div class="p-3">
+                    <h5 class="m-0 text-primary"><i class="pi pi-shield mr-2"></i>Credenciales de Usuario</h5>
+                  </div>
+                </ng-template>
+                <ng-template pTemplate="content">
+                  <div class="grid">
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm">Rol de Usuario:</label>
+                      <p class="m-0 mt-1">
+                        <p-tag [value]="getUserRoleLabel(employeeForm.value.rolUsuario)" severity="info"></p-tag>
+                      </p>
+                    </div>
+                    <div class="col-12 md:col-6">
+                      <label class="text-600 text-sm">Nombre de Usuario:</label>
+                      <p class="font-medium m-0 mt-1">{{ employeeForm.value.usernamePersonalizado || employeeForm.value.documento }}</p>
+                    </div>
+                    <div class="col-12">
+                      <p class="text-sm text-600 m-0 surface-100 border-round p-2">
+                        <i class="pi pi-info-circle mr-2"></i>
+                        Contraseña: {{ employeeForm.value.passwordPersonalizada ? '******* (personalizada)' : employeeForm.value.documento + ' (por defecto)' }}
+                      </p>
+                    </div>
+                  </div>
+                </ng-template>
+              </p-card>
+
+              <div class="flex justify-content-between mt-4">
+                <p-button label="Anterior" severity="secondary" icon="pi pi-arrow-left" (onClick)="prevCallback(5)" />
+                <p-button
+                  label="Crear Empleado"
+                  icon="pi pi-check"
+                  severity="success"
+                  [loading]="isSaving()"
+                  (onClick)="saveEmployee()"
+                  [disabled]="!employeeForm.valid" />
+              </div>
+            </div>
+          </ng-template>
+        </p-step-panel>
+      </p-step-panels>
+    </p-stepper>
+  </div>
+</div>
+
+<p-toast></p-toast>

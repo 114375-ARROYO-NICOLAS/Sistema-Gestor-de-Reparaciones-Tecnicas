@@ -1,0 +1,157 @@
+<div class="equipo-management-container">
+  <div class="surface-card p-4 shadow-2 border-round">
+    <!-- Header -->
+    <div class="flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="text-900 font-bold text-4xl m-0 mb-2">Gestión de Equipos</h2>
+        <p class="text-600 m-0">Administra los equipos del sistema</p>
+      </div>
+      <p-button
+        label="Nuevo Equipo"
+        icon="pi pi-plus"
+        (onClick)="createEquipo()"
+        styleClass="p-button-primary">
+      </p-button>
+    </div>
+
+    <!-- Search bar -->
+    <div class="mb-4">
+      <p-iconfield iconPosition="left" class="w-full md:w-30rem">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          type="text"
+          pInputText
+          placeholder="Buscar por descripción o número de serie..."
+          class="w-full"
+          [value]="searchTerm()"
+          (input)="onSearch($event)" />
+      </p-iconfield>
+      @if (searchTerm().length > 0) {
+        <p-button
+          icon="pi pi-times"
+          [text]="true"
+          (onClick)="clearSearch()"
+          class="ml-2">
+        </p-button>
+      }
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="equipos()"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [tableStyle]="{ 'min-width': '60rem' }"
+      [globalFilterFields]="['descripcionCompleta', 'numeroSerie', 'marca', 'modelo']"
+      styleClass="p-datatable-sm p-datatable-gridlines">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="descripcionCompleta">
+            Descripción
+            <p-sortIcon field="descripcionCompleta" />
+          </th>
+          <th pSortableColumn="marca">
+            Marca
+            <p-sortIcon field="marca" />
+          </th>
+          <th pSortableColumn="modelo">
+            Modelo
+            <p-sortIcon field="modelo" />
+          </th>
+          <th pSortableColumn="numeroSerie">
+            Número de Serie
+            <p-sortIcon field="numeroSerie" />
+          </th>
+          <th pSortableColumn="color">
+            Color
+            <p-sortIcon field="color" />
+          </th>
+          <th style="width: 12rem">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-equipo>
+        <tr>
+          <td>
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-desktop text-primary"></i>
+              <span class="font-medium">{{ equipo.descripcionCompleta }}</span>
+            </div>
+          </td>
+          <td>{{ equipo.marca }}</td>
+          <td>{{ equipo.modelo || '-' }}</td>
+          <td>
+            @if (equipo.numeroSerie) {
+              <p-badge [value]="equipo.numeroSerie" severity="info"></p-badge>
+            } @else {
+              <span class="text-500">-</span>
+            }
+          </td>
+          <td>{{ equipo.color || '-' }}</td>
+          <td>
+            <div class="flex gap-2">
+              <p-button
+                icon="pi pi-eye"
+                [text]="true"
+                [rounded]="true"
+                severity="info"
+                (onClick)="viewEquipo(equipo)"
+                pTooltip="Ver detalle"
+                tooltipPosition="top">
+              </p-button>
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                severity="warn"
+                (onClick)="editEquipo(equipo)"
+                pTooltip="Editar"
+                tooltipPosition="top">
+              </p-button>
+              <p-button
+                icon="pi pi-trash"
+                [text]="true"
+                [rounded]="true"
+                severity="danger"
+                (onClick)="deleteEquipo(equipo)"
+                pTooltip="Eliminar"
+                tooltipPosition="top">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center py-5">
+            <div class="flex flex-column align-items-center gap-3">
+              <i class="pi pi-inbox text-6xl text-400"></i>
+              <span class="text-600 text-xl">No se encontraron equipos</span>
+              @if (searchTerm().length > 0) {
+                <p-button
+                  label="Limpiar búsqueda"
+                  icon="pi pi-filter-slash"
+                  [outlined]="true"
+                  (onClick)="clearSearch()">
+                </p-button>
+              } @else {
+                <p-button
+                  label="Crear primer equipo"
+                  icon="pi pi-plus"
+                  (onClick)="createEquipo()">
+                </p-button>
+              }
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+
+<p-toast />
+<p-confirmDialog />

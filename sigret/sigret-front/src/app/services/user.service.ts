@@ -197,10 +197,10 @@ export class UserService {
   /**
    * Get user role color for UI
    */
-  getRoleColor(role: UserRole): string {
-    const roleColors: Record<UserRole, string> = {
+  getRoleColor(role: UserRole): 'danger' | 'warn' | 'info' | 'secondary' {
+    const roleColors: Record<UserRole, 'danger' | 'warn' | 'info'> = {
       [UserRole.PROPIETARIO]: 'danger',
-      [UserRole.ADMINISTRATIVO]: 'warning',
+      [UserRole.ADMINISTRATIVO]: 'warn',
       [UserRole.TECNICO]: 'info'
     };
     return roleColors[role] || 'secondary';

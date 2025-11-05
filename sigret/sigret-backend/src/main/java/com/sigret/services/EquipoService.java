@@ -60,4 +60,19 @@ public interface EquipoService {
      * Verificar si un número de serie ya existe
      */
     boolean existeEquipoConNumeroSerie(String numeroSerie);
+
+    /**
+     * Obtener equipos de un cliente específico
+     */
+    List<EquipoListDto> obtenerEquiposPorCliente(Long clienteId);
+
+    /**
+     * Asociar un equipo a un cliente
+     */
+    void asociarEquipoACliente(Long equipoId, Long clienteId);
+
+    /**
+     * Desasociar un equipo de un cliente
+     */
+    void desasociarEquipoDeCliente(Long equipoId, Long clienteId);
 }
