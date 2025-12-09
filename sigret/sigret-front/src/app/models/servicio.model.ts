@@ -33,6 +33,10 @@ export interface ServicioList {
   esGarantia: boolean;
   servicioGarantiaId?: number;
   servicioGarantiaNumero?: string;
+  tecnicoEvaluacionId?: number;
+  tecnicoEvaluacionNombre?: string;
+  tecnicoAsignadoId?: number;
+  tecnicoAsignadoNombre?: string;
   abonaVisita: boolean;
   montoVisita: number;
   montoPagado: number;

@@ -33,6 +33,8 @@ public class ServicioResponseDto {
     private TipoIngreso tipoIngreso;
     private String firmaIngreso;
     private String firmaConformidad;
+    private String fallaReportada;
+    private String observaciones;
 
     // Campos de garantía
     private Boolean esGarantia;

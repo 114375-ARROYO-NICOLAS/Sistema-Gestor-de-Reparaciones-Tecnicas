@@ -9,7 +9,9 @@
       "Bash(dir /s /b \"d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\repositories\\*Presupuesto*.java\")",
       "Bash(npx ng generate component:*)",
       "Bash(dir:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []

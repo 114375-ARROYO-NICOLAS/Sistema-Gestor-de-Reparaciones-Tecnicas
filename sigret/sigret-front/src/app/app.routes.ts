@@ -116,7 +116,16 @@ export const routes: Routes = [
       },
       {
         path: 'ordenes-trabajo',
-        loadComponent: () => import('./components/work-order-board/work-order-board').then(m => m.WorkOrderBoardComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./components/work-order-board/work-order-board').then(m => m.WorkOrderBoardComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./components/orden-trabajo-detail/orden-trabajo-detail').then(m => m.OrdenTrabajoDetailComponent)
+          }
+        ]
       },
       {
         path: 'configuracion',
@@ -140,6 +149,10 @@ export const routes: Routes = [
         loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent)
       }
     ]
+  },
+  {
+    path: 'p/:token/:accion',
+    loadComponent: () => import('./components/presupuesto-publico/presupuesto-publico.component').then(m => m.PresupuestoPublicoComponent)
   },
   {
     path: '**',

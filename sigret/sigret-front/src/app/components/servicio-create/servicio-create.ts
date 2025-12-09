@@ -89,6 +89,9 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
   // Firma digital
   readonly hasSignature = signal(false);
 
+  // Términos y condiciones
+  readonly aceptaTerminos = signal(false);
+
   // Form
   servicioForm: FormGroup;
 
@@ -540,6 +543,11 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
 
     // Detectar cuando el usuario empieza a firmar
     this.signaturePad.addEventListener('beginStroke', () => {
+      // Solo permitir firmar si se aceptaron los términos
+      if (!this.aceptaTerminos()) {
+        this.signaturePad.clear();
+        return;
+      }
       this.hasSignature.set(true);
     });
 

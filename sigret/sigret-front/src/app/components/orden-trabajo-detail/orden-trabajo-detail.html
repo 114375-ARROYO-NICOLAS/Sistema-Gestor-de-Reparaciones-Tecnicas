@@ -1,0 +1,360 @@
+<div class="orden-trabajo-detail-container p-4">
+  <!-- Header with Back Button -->
+  <div class="flex justify-content-between align-items-center mb-4">
+    <h2 class="text-3xl font-semibold m-0">Detalle de Orden de Trabajo</h2>
+    <p-button
+      label="Volver"
+      icon="pi pi-arrow-left"
+      [outlined]="true"
+      (onClick)="goBack()">
+    </p-button>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+    <div class="flex justify-content-center align-items-center py-8">
+      <p-progressSpinner
+        [style]="{ width: '50px', height: '50px' }"
+        strokeWidth="4"
+        animationDuration="1s">
+      </p-progressSpinner>
+    </div>
+  }
+
+  <!-- Error State -->
+  @if (error()) {
+    <div class="flex align-items-center gap-3 p-4 border-round bg-red-50 border-1 border-red-200">
+      <i class="pi pi-exclamation-triangle text-red-600 text-2xl"></i>
+      <span class="flex-1 text-red-800">{{ error() }}</span>
+      <p-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        severity="danger"
+        [outlined]="true"
+        (onClick)="goBack()">
+      </p-button>
+    </div>
+  }
+
+  <!-- Content -->
+  @if (!loading() && !error() && ordenTrabajo()) {
+    <div class="grid">
+      <!-- Main Content -->
+      <div class="col-12 lg:col-8">
+
+        <!-- Información General -->
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="flex justify-content-between align-items-center p-3">
+              <h3 class="m-0 font-semibold">Información General</h3>
+              <p-tag
+                [value]="getEstadoLabel(ordenTrabajo()!.estado)"
+                [severity]="getEstadoSeverity(ordenTrabajo()!.estado)">
+              </p-tag>
+            </div>
+          </ng-template>
+
+          <div class="grid">
+            <div class="col-12 md:col-6">
+              <div class="flex flex-column gap-2 mb-3">
+                <label class="text-sm font-semibold text-color-secondary">Número de Orden</label>
+                <span class="text-lg font-bold text-primary">{{ ordenTrabajo()!.numeroOrdenTrabajo }}</span>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="flex flex-column gap-2 mb-3">
+                <label class="text-sm font-semibold text-color-secondary">Número de Servicio</label>
+                <div class="flex align-items-center gap-2">
+                  <span class="text-lg">{{ ordenTrabajo()!.numeroServicio }}</span>
+                  <p-button
+                    icon="pi pi-external-link"
+                    [text]="true"
+                    [rounded]="true"
+                    size="small"
+                    severity="secondary"
+                    (onClick)="navegarAServicio()">
+                  </p-button>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="flex flex-column gap-2 mb-3">
+                <label class="text-sm font-semibold text-color-secondary">Cliente</label>
+                <span class="text-lg">{{ ordenTrabajo()!.clienteNombre }}</span>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="flex flex-column gap-2 mb-3">
+                <label class="text-sm font-semibold text-color-secondary">Equipo</label>
+                <span class="text-lg">{{ ordenTrabajo()!.equipoDescripcion }}</span>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="flex flex-column gap-2 mb-3">
+                <label class="text-sm font-semibold text-color-secondary">Técnico Asignado</label>
+                <span class="text-lg">{{ ordenTrabajo()!.empleadoNombre }}</span>
+              </div>
+            </div>
+
+            @if (ordenTrabajo()!.presupuestoId) {
+              <div class="col-12 md:col-6">
+                <div class="flex flex-column gap-2 mb-3">
+                  <label class="text-sm font-semibold text-color-secondary">Presupuesto Asociado</label>
+                  <div class="flex align-items-center gap-2">
+                    <span class="text-lg">{{ ordenTrabajo()!.numeroPresupuesto }}</span>
+                    <p-button
+                      icon="pi pi-external-link"
+                      [text]="true"
+                      [rounded]="true"
+                      size="small"
+                      severity="secondary"
+                      (onClick)="navegarAPresupuesto()">
+                    </p-button>
+                  </div>
+                </div>
+              </div>
+            }
+
+            @if (ordenTrabajo()!.esSinCosto) {
+              <div class="col-12">
+                <div class="flex align-items-center gap-2 p-3 border-round bg-green-50 border-1 border-green-200">
+                  <i class="pi pi-check-circle text-green-600 text-xl"></i>
+                  <span class="text-green-800 font-semibold">Orden de Trabajo Sin Costo (Garantía)</span>
+                </div>
+              </div>
+            }
+          </div>
+        </p-card>
+
+        <!-- Fechas -->
+        <p-card class="mt-3">
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="m-0 font-semibold">Fechas y Tiempos</h3>
+            </div>
+          </ng-template>
+
+          <div class="grid">
+            <div class="col-12 md:col-4">
+              <div class="flex flex-column gap-2">
+                <label class="text-sm font-semibold text-color-secondary">
+                  <i class="pi pi-calendar mr-2"></i>Fecha de Creación
+                </label>
+                <span class="text-lg">{{ ordenTrabajo()!.fechaCreacion | date: 'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+            </div>
+
+            @if (ordenTrabajo()!.fechaComienzo) {
+              <div class="col-12 md:col-4">
+                <div class="flex flex-column gap-2">
+                  <label class="text-sm font-semibold text-color-secondary">
+                    <i class="pi pi-play mr-2"></i>Fecha de Inicio
+                  </label>
+                  <span class="text-lg">{{ ordenTrabajo()!.fechaComienzo | date: 'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+            }
+
+            @if (ordenTrabajo()!.fechaFin) {
+              <div class="col-12 md:col-4">
+                <div class="flex flex-column gap-2">
+                  <label class="text-sm font-semibold text-color-secondary">
+                    <i class="pi pi-check mr-2"></i>Fecha de Finalización
+                  </label>
+                  <span class="text-lg">{{ ordenTrabajo()!.fechaFin | date: 'dd/MM/yyyy' }}</span>
+                </div>
+              </div>
+            }
+
+            @if (ordenTrabajo()!.diasReparacion && ordenTrabajo()!.diasReparacion! > 0) {
+              <div class="col-12">
+                <p-divider></p-divider>
+                <div class="flex flex-column gap-2">
+                  <label class="text-sm font-semibold text-color-secondary">
+                    <i class="pi pi-clock mr-2"></i>Tiempo de Reparación
+                  </label>
+                  <span class="text-2xl font-bold text-primary">
+                    {{ ordenTrabajo()!.diasReparacion }} día{{ ordenTrabajo()!.diasReparacion! > 1 ? 's' : '' }}
+                  </span>
+                </div>
+              </div>
+            }
+          </div>
+        </p-card>
+
+        <!-- Observaciones -->
+        @if (ordenTrabajo()!.observacionesExtras) {
+          <p-card class="mt-3">
+            <ng-template pTemplate="header">
+              <div class="p-3">
+                <h3 class="m-0 font-semibold">Observaciones</h3>
+              </div>
+            </ng-template>
+
+            <div class="text-base white-space-pre-line">
+              {{ ordenTrabajo()!.observacionesExtras }}
+            </div>
+          </p-card>
+        }
+
+        <!-- Lista de Repuestos/Trabajos -->
+        @if (ordenTrabajo()!.detalles && ordenTrabajo()!.detalles.length > 0) {
+          <p-card class="mt-3">
+            <ng-template pTemplate="header">
+              <div class="flex justify-content-between align-items-center p-3">
+                <h3 class="m-0 font-semibold">Items a Realizar</h3>
+                @if (todosLosDetallesCompletados()) {
+                  <p-tag value="Todos Completados" severity="success" icon="pi pi-check"></p-tag>
+                } @else {
+                  <p-tag [value]="contadorItemsCompletados()" severity="info"></p-tag>
+                }
+              </div>
+            </ng-template>
+
+            <p-table [value]="ordenTrabajo()!.detalles" [tableStyle]="{ 'min-width': '100%' }">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width: 60px">Estado</th>
+                  <th>Item</th>
+                  <th style="width: 100px">Cantidad</th>
+                  <th>Comentarios del Técnico</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-detalle>
+                <tr [ngClass]="{'bg-green-50': detalle.completado}">
+                  <td class="text-center">
+                    <p-checkbox
+                      [(ngModel)]="detalle.completado"
+                      [binary]="true"
+                      (onChange)="toggleDetalleCompletado(detalle)"
+                      [disabled]="actualizandoDetalle() === detalle.id || ordenTrabajo()!.estado === EstadoOrdenTrabajo.TERMINADA">
+                    </p-checkbox>
+                  </td>
+                  <td>
+                    <span class="font-semibold">{{ detalle.item }}</span>
+                  </td>
+                  <td class="text-center">
+                    <p-tag [value]="'x' + detalle.cantidad" severity="secondary"></p-tag>
+                  </td>
+                  <td>
+                    <textarea
+                      pTextarea
+                      [(ngModel)]="detalle.comentario"
+                      (blur)="actualizarComentarioDetalle(detalle, detalle.comentario || '')"
+                      [disabled]="actualizandoDetalle() === detalle.id || ordenTrabajo()!.estado === EstadoOrdenTrabajo.TERMINADA"
+                      placeholder="Agregar comentario..."
+                      [rows]="2"
+                      class="w-full">
+                    </textarea>
+                  </td>
+                </tr>
+              </ng-template>
+            </p-table>
+
+            @if (!todosLosDetallesCompletados() && ordenTrabajo()!.estado === EstadoOrdenTrabajo.EN_PROGRESO) {
+              <ng-template pTemplate="footer">
+                <div class="flex align-items-center gap-2 p-3 border-round bg-orange-50 border-1 border-orange-200">
+                  <i class="pi pi-info-circle text-orange-600"></i>
+                  <span class="text-orange-800 text-sm">Debes completar todos los items antes de poder finalizar la orden</span>
+                </div>
+              </ng-template>
+            }
+          </p-card>
+        }
+      </div>
+
+      <!-- Sidebar with Actions -->
+      <div class="col-12 lg:col-4">
+        <p-card>
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="m-0 font-semibold">Acciones</h3>
+            </div>
+          </ng-template>
+
+          <div class="flex flex-column gap-3">
+            @if (ordenTrabajo()!.estado === EstadoOrdenTrabajo.PENDIENTE) {
+              <p-button
+                label="Iniciar Orden"
+                icon="pi pi-play"
+                [loading]="procesando()"
+                (onClick)="iniciarOrden()"
+                class="w-full">
+              </p-button>
+            }
+
+            @if (ordenTrabajo()!.estado === EstadoOrdenTrabajo.EN_PROGRESO) {
+              <p-button
+                label="Finalizar Orden"
+                icon="pi pi-check"
+                severity="success"
+                [loading]="procesando()"
+                [disabled]="!puedeFinalizar()"
+                (onClick)="finalizarOrden()"
+                class="w-full">
+              </p-button>
+              @if (!todosLosDetallesCompletados()) {
+                <small class="text-orange-600 mt-2 block text-center">
+                  <i class="pi pi-info-circle"></i> Completa todos los items
+                </small>
+              }
+            }
+
+            <p-divider></p-divider>
+
+            <p-button
+              label="Ver Servicio"
+              icon="pi pi-folder-open"
+              [outlined]="true"
+              (onClick)="navegarAServicio()"
+              class="w-full">
+            </p-button>
+
+            @if (ordenTrabajo()!.presupuestoId) {
+              <p-button
+                label="Ver Presupuesto"
+                icon="pi pi-file"
+                [outlined]="true"
+                (onClick)="navegarAPresupuesto()"
+                class="w-full">
+              </p-button>
+            }
+          </div>
+        </p-card>
+
+        <!-- Estado Card -->
+        <p-card class="mt-3">
+          <ng-template pTemplate="header">
+            <div class="p-3">
+              <h3 class="m-0 font-semibold">Estado Actual</h3>
+            </div>
+          </ng-template>
+
+          <div class="flex flex-column align-items-center gap-3 py-3">
+            <div class="flex align-items-center justify-content-center border-circle"
+                 [ngClass]="{
+                   'bg-orange-100': ordenTrabajo()!.estado === EstadoOrdenTrabajo.PENDIENTE,
+                   'bg-blue-100': ordenTrabajo()!.estado === EstadoOrdenTrabajo.EN_PROGRESO,
+                   'bg-green-100': ordenTrabajo()!.estado === EstadoOrdenTrabajo.TERMINADA,
+                   'bg-red-100': ordenTrabajo()!.estado === EstadoOrdenTrabajo.CANCELADA
+                 }"
+                 style="width: 80px; height: 80px;">
+              <i class="pi text-4xl"
+                 [ngClass]="{
+                   'pi-clock text-orange-600': ordenTrabajo()!.estado === EstadoOrdenTrabajo.PENDIENTE,
+                   'pi-spin pi-spinner text-blue-600': ordenTrabajo()!.estado === EstadoOrdenTrabajo.EN_PROGRESO,
+                   'pi-check-circle text-green-600': ordenTrabajo()!.estado === EstadoOrdenTrabajo.TERMINADA,
+                   'pi-times-circle text-red-600': ordenTrabajo()!.estado === EstadoOrdenTrabajo.CANCELADA
+                 }"></i>
+            </div>
+            <span class="text-2xl font-bold">{{ getEstadoLabel(ordenTrabajo()!.estado) }}</span>
+          </div>
+        </p-card>
+      </div>
+    </div>
+  }
+</div>

@@ -9,6 +9,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -21,6 +22,10 @@ public class ServicioUpdateDto {
     private String firmaIngreso; // Base64 de la firma
 
     private String firmaConformidad; // Base64 de la firma
+
+    private String fallaReportada; // Problema/falla reportada por el cliente
+
+    private String observaciones; // Observaciones del técnico/empleado
 
     // Campos de garantía
     private Boolean esGarantia;
@@ -36,6 +41,10 @@ public class ServicioUpdateDto {
     private Long tecnicoEvaluacionId;
 
     private String observacionesEvaluacionGarantia;
+
+    // Lista de items (repuestos) seleccionados en la evaluación de garantía
+    // Solo se usa cuando garantiaCumpleCondiciones = true
+    private List<ItemEvaluacionGarantiaDto> itemsEvaluacionGarantia;
 
     // Campos existentes
     private Boolean abonaVisita;

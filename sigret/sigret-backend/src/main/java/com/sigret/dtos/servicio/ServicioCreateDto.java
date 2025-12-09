@@ -35,6 +35,10 @@ public class ServicioCreateDto {
 
     private String firmaConformidad; // Base64 de la firma
 
+    private String fallaReportada; // Problema/falla reportada por el cliente
+
+    private String observaciones; // Observaciones del técnico/empleado
+
     // Campos de garantía (para futuros sprints)
     private Boolean esGarantia = false;
 

@@ -570,16 +570,43 @@
                 }
               </div>
 
+              <!-- Términos y Condiciones -->
+              <div class="mt-4 mb-3">
+                <div class="surface-border border-1 border-round p-4">
+                  <div class="flex align-items-start gap-3">
+                    <input
+                      type="checkbox"
+                      id="aceptaTerminos"
+                      [checked]="aceptaTerminos()"
+                      (change)="aceptaTerminos.set($any($event.target).checked)"
+                      class="mt-1">
+                    <label for="aceptaTerminos" class="text-900 flex-1 cursor-pointer">
+                      <span class="font-semibold">Acepto los Términos y Condiciones</span>
+                      <p class="text-600 text-sm mt-1 mb-0">
+                        Al marcar esta casilla, confirmo que he leído y acepto los términos y condiciones del servicio.
+                      </p>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               <!-- Firma del Cliente -->
               <div class="mt-4 mb-4">
                 <h5 class="text-900 mb-3">Firma del Cliente</h5>
-                <div class="border-2 border-300 border-round p-3">
+                <div class="border-2 border-300 border-round p-3" [class.opacity-50]="!aceptaTerminos()">
                   <canvas
                     #signatureCanvas
-                    class="signature-canvas">
+                    class="signature-canvas"
+                    [class.pointer-events-none]="!aceptaTerminos()">
                   </canvas>
                   <div class="flex justify-content-between align-items-center mt-3">
-                    <small class="text-600">Firme aquí con el dedo o el mouse</small>
+                    <small class="text-600">
+                      @if (aceptaTerminos()) {
+                        Firme aquí con el dedo o el mouse
+                      } @else {
+                        Debe aceptar los términos y condiciones para firmar
+                      }
+                    </small>
                     <div class="flex gap-2 align-items-center">
                       @if (hasSignature()) {
                         <p-badge value="Firmado" severity="success"></p-badge>
@@ -590,6 +617,7 @@
                         size="small"
                         [text]="true"
                         severity="secondary"
+                        [disabled]="!aceptaTerminos()"
                         (onClick)="clearSignature()">
                       </p-button>
                     </div>
@@ -612,7 +640,7 @@
                     severity="success"
                     [loading]="isSaving()"
                     (onClick)="saveServicio()"
-                    [disabled]="!servicioForm.valid" />
+                    [disabled]="!servicioForm.valid || !aceptaTerminos()" />
                 </div>
               </div>
             </div>

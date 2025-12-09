@@ -27,6 +27,9 @@ public class OrdenTrabajo {
     @Column(name = "id_orden_trabajo")
     private Long id;
 
+    @Column(name = "numero_orden_trabajo", unique = true, nullable = false, length = 20)
+    private String numeroOrdenTrabajo;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_servicio", nullable = false)
     private Servicio servicio;

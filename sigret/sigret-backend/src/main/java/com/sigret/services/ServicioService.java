@@ -1,5 +1,6 @@
 package com.sigret.services;
 
+import com.sigret.dtos.servicio.ItemServicioOriginalDto;
 import com.sigret.dtos.servicio.ServicioCreateDto;
 import com.sigret.dtos.servicio.ServicioListDto;
 import com.sigret.dtos.servicio.ServicioResponseDto;
@@ -77,4 +78,10 @@ public interface ServicioService {
      * Crear servicio de garantía
      */
     ServicioResponseDto crearServicioGarantia(Long servicioOriginalId, ServicioCreateDto servicioGarantiaDto);
+
+    /**
+     * Obtener items (repuestos) de la orden de trabajo del servicio original
+     * Se usa para mostrar en la evaluación de garantía
+     */
+    List<ItemServicioOriginalDto> obtenerItemsServicioOriginal(Long servicioGarantiaId);
 }

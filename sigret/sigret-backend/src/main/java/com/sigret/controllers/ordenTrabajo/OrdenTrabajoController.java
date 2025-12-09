@@ -4,6 +4,7 @@ import com.sigret.dtos.ordenTrabajo.OrdenTrabajoCreateDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoListDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoResponseDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoUpdateDto;
+import com.sigret.dtos.servicio.ItemEvaluacionGarantiaDto;
 import com.sigret.enums.EstadoOrdenTrabajo;
 import com.sigret.services.OrdenTrabajoService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -210,5 +211,51 @@ public class OrdenTrabajoController {
             @Parameter(description = "ID de la orden de trabajo") @PathVariable Long id) {
         ordenTrabajoService.eliminarOrdenTrabajo(id);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/garantia")
+    @Operation(summary = "Crear orden de trabajo para garantía", description = "Crea una orden de trabajo sin costo para un servicio de garantía que cumple condiciones")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Orden de trabajo de garantía creada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos"),
+            @ApiResponse(responseCode = "404", description = "Servicio o empleado no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<OrdenTrabajoResponseDto> crearOrdenTrabajoGarantia(
+            @Parameter(description = "ID del servicio de garantía") @RequestParam Long servicioId,
+            @Parameter(description = "ID del empleado que evaluó") @RequestParam Long empleadoId,
+            @Parameter(description = "Observaciones de la evaluación") @RequestParam(required = false) String observaciones,
+            @Parameter(description = "Items seleccionados en la evaluación") @RequestBody(required = false) List<ItemEvaluacionGarantiaDto> itemsEvaluacion) {
+        OrdenTrabajoResponseDto ordenCreada = ordenTrabajoService.crearOrdenTrabajoGarantia(servicioId, empleadoId, observaciones, itemsEvaluacion);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ordenCreada);
+    }
+
+    @PatchMapping("/{ordenTrabajoId}/detalles/{detalleId}")
+    @Operation(summary = "Actualizar detalle de orden", description = "Marca un detalle como completado y/o agrega comentario")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Detalle actualizado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Orden o detalle no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<OrdenTrabajoResponseDto> actualizarDetalleOrdenTrabajo(
+            @Parameter(description = "ID de la orden de trabajo") @PathVariable Long ordenTrabajoId,
+            @Parameter(description = "ID del detalle") @PathVariable Long detalleId,
+            @Parameter(description = "Comentario opcional") @RequestParam(required = false) String comentario,
+            @Parameter(description = "Estado de completado") @RequestParam(required = false) Boolean completado) {
+        OrdenTrabajoResponseDto ordenActualizada = ordenTrabajoService.actualizarDetalleOrdenTrabajo(ordenTrabajoId, detalleId, comentario, completado);
+        return ResponseEntity.ok(ordenActualizada);
+    }
+
+    @GetMapping("/{ordenTrabajoId}/detalles-completados")
+    @Operation(summary = "Verificar detalles completados", description = "Verifica si todos los detalles están completados")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Verificación exitosa"),
+            @ApiResponse(responseCode = "404", description = "Orden no encontrada")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<Boolean> todosLosDetallesCompletados(
+            @Parameter(description = "ID de la orden de trabajo") @PathVariable Long ordenTrabajoId) {
+        boolean completados = ordenTrabajoService.todosLosDetallesCompletados(ordenTrabajoId);
+        return ResponseEntity.ok(completados);
     }
 }

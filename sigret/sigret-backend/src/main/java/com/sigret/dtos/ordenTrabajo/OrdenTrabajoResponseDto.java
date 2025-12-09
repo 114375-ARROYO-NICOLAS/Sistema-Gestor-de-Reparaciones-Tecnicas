@@ -1,5 +1,6 @@
 package com.sigret.dtos.ordenTrabajo;
 
+import com.sigret.dtos.detalleOrdenTrabajo.DetalleOrdenTrabajoDto;
 import com.sigret.enums.EstadoOrdenTrabajo;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,6 +10,8 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,6 +20,7 @@ import java.time.LocalDateTime;
 public class OrdenTrabajoResponseDto {
 
     private Long id;
+    private String numeroOrdenTrabajo;
     private Long servicioId;
     private String numeroServicio;
     private String clienteNombre;
@@ -35,4 +39,5 @@ public class OrdenTrabajoResponseDto {
     private LocalDate fechaFin;
     private BigDecimal montoTotalFinal;
     private Long diasReparacion;
+    private List<DetalleOrdenTrabajoDto> detalles = new ArrayList<>();
 }

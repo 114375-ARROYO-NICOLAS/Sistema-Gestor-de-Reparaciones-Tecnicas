@@ -65,71 +65,19 @@
   </ng-template>
 
   <!-- Menu Content -->
-  <div class="flex flex-column gap-2 pt-2">
-    @for (section of menuItems; track section.label) {
-    <div>
-      <!-- Section Header -->
-      <div class="flex align-items-center gap-2 px-3 py-2 text-xs uppercase font-bold text-600">
-        <i [class]="section.icon" class="text-sm"></i>
-        <span>{{ section.label }}</span>
-      </div>
-
-      <!-- Menu Items -->
-      @if (section.items) {
-      <div class="flex flex-column gap-1">
-        @for (item of section.items; track item.label) { @if (item.children) {
-        <!-- Menu Item with Children -->
-        <div>
-          <a (click)="toggleSubmenu(item.label)"
-            class="flex align-items-center cursor-pointer no-underline text-color p-3 border-round-lg hover:surface-hover transition-colors transition-duration-200">
-            <i [class]="item.icon" class="mr-2 text-lg"></i>
-            <span class="flex-1 font-medium">{{ item.label }}</span>
-            @if (item.badge) {
-            <span
-              class="inline-flex align-items-center justify-content-center bg-primary text-white border-round px-2 py-1 text-xs font-semibold ml-2">
-              {{ item.badge }}
-            </span>
-            }
-            <i class="pi pi-chevron-down text-xs ml-2 transition-transform transition-duration-200"
-              [class.rotate-180]="isSubmenuOpen(item.label)">
-            </i>
-          </a>
-
-          <!-- Submenu -->
-          <div class="overflow-hidden transition-all transition-duration-300"
-            [style.max-height]="isSubmenuOpen(item.label) ? '500px' : '0'">
-            @for (child of item.children; track child.label) {
-            <a [routerLink]="child.routerLink" routerLinkActive="surface-100 text-primary font-semibold"
-              class="flex align-items-center no-underline text-color p-3 pl-5 border-round-lg hover:surface-hover transition-colors transition-duration-200">
-              <i [class]="child.icon" class="mr-2 text-base"></i>
-              <span class="flex-1">{{ child.label }}</span>
-              @if (child.badge) {
-              <span
-                class="inline-flex align-items-center justify-content-center bg-primary text-white border-round px-2 py-1 text-xs font-semibold ml-2">
-                {{ child.badge }}
-              </span>
-              }
-            </a>
-            }
-          </div>
-        </div>
-        } @else {
-        <!-- Simple Menu Item -->
-        <a [routerLink]="item.routerLink" routerLinkActive="surface-100 text-primary font-semibold"
-          class="flex align-items-center no-underline text-color p-3 border-round-lg hover:surface-50 transition-colors transition-duration-200">
-          <i [class]="item.icon" class="mr-2 text-lg"></i>
-          <span class="flex-1 font-medium">{{ item.label }}</span>
-          @if (item.badge) {
-          <span
-            class="inline-flex align-items-center justify-content-center bg-primary text-white border-round px-2 py-1 text-xs font-semibold ml-2">
+  <div class="flex flex-column gap-1 pt-2">
+    @for (item of menuItems; track item.label) {
+      <a [routerLink]="item.routerLink"
+         routerLinkActive="surface-200 text-primary font-semibold"
+         class="flex align-items-center no-underline text-color p-3 border-round-lg hover:surface-50 transition-colors transition-duration-200">
+        <i [class]="item.icon" class="mr-3 text-lg text-primary"></i>
+        <span class="flex-1 font-medium">{{ item.label }}</span>
+        @if (item.badge) {
+          <span class="inline-flex align-items-center justify-content-center bg-primary text-white border-round px-2 py-1 text-xs font-semibold ml-2">
             {{ item.badge }}
           </span>
-          }
-        </a>
-        } }
-      </div>
-      }
-    </div>
+        }
+      </a>
     }
   </div>
 </p-drawer>

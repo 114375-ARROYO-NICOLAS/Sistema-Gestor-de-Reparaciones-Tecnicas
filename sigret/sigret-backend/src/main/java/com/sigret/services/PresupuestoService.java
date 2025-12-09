@@ -67,12 +67,22 @@ public interface PresupuestoService {
      * Aprobar presupuesto
      */
     PresupuestoResponseDto aprobarPresupuesto(Long id);
+
+    /**
+     * Aprobar presupuesto con tipo de precio específico
+     */
+    PresupuestoResponseDto aprobarPresupuesto(Long id, String tipoPrecio);
     
     /**
      * Rechazar presupuesto
      */
     PresupuestoResponseDto rechazarPresupuesto(Long id);
-    
+
+    /**
+     * Crear orden de trabajo desde un presupuesto aprobado
+     */
+    Long crearOrdenDeTrabajo(Long presupuestoId);
+
     /**
      * Eliminar un presupuesto
      */

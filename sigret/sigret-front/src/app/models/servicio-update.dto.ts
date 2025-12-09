@@ -1,4 +1,5 @@
 import { EstadoServicio } from './servicio.model';
+import { ItemEvaluacionGarantia } from './item-evaluacion-garantia.model';
 
 export interface ServicioUpdateDto {
   // Estado
@@ -28,4 +29,7 @@ export interface ServicioUpdateDto {
   observacionesGarantia?: string;
   tecnicoEvaluacionId?: number;
   observacionesEvaluacionGarantia?: string;
+
+  // Items de evaluación de garantía (solo cuando cumple condiciones)
+  itemsEvaluacionGarantia?: ItemEvaluacionGarantia[];
 }

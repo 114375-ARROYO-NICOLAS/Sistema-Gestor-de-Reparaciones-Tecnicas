@@ -27,4 +27,7 @@ public interface OrdenTrabajoRepository extends JpaRepository<OrdenTrabajo, Long
 
     @Query("SELECT ot FROM OrdenTrabajo ot JOIN FETCH ot.servicio s JOIN FETCH ot.empleado e WHERE ot.id = :id")
     OrdenTrabajo findByIdWithDetails(@Param("id") Long id);
+
+    @Query("SELECT MAX(CAST(SUBSTRING(ot.numeroOrdenTrabajo, 8) AS int)) FROM OrdenTrabajo ot WHERE ot.numeroOrdenTrabajo LIKE :pattern")
+    Integer findMaxNumeroOrdenTrabajo(@Param("pattern") String pattern);
 }

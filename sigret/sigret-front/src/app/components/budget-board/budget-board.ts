@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
+import { Tag } from 'primeng/tag';
 
 interface Column {
   name: string;
@@ -27,6 +28,7 @@ interface Column {
     ProgressSpinnerModule,
     BadgeModule,
     CardModule,
+    Tag,
     CdkDrag,
     CdkDropList,
     CdkDropListGroup
@@ -59,6 +61,18 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
       name: 'En Curso',
       state: EstadoPresupuesto.EN_CURSO,
       color: '#17a2b8',
+      budgets: []
+    },
+    {
+      name: 'Listo',
+      state: EstadoPresupuesto.LISTO,
+      color: '#6f42c1',
+      budgets: []
+    },
+    {
+      name: 'Enviado',
+      state: EstadoPresupuesto.ENVIADO,
+      color: '#fd7e14',
       budgets: []
     },
     {

@@ -1,12 +1,19 @@
 package com.sigret.config;
 
 import com.sigret.entities.*;
-import com.sigret.enums.RolUsuario;
+import com.sigret.enums.*;
 import com.sigret.repositories.*;
+import com.sigret.services.OrdenTrabajoService;
+import com.sigret.services.PresupuestoService;
+import com.sigret.services.ServicioService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Component
 public class DataLoader implements CommandLineRunner {
@@ -55,6 +62,27 @@ public class DataLoader implements CommandLineRunner {
 
     @Autowired
     private ContactoRepository contactoRepository;
+
+    @Autowired
+    private ServicioRepository servicioRepository;
+
+    @Autowired
+    private PresupuestoRepository presupuestoRepository;
+
+    @Autowired
+    private OrdenTrabajoRepository ordenTrabajoRepository;
+
+    @Autowired
+    private RepuestoRepository repuestoRepository;
+
+    @Autowired
+    private ServicioService servicioService;
+
+    @Autowired
+    private PresupuestoService presupuestoService;
+
+    @Autowired
+    private OrdenTrabajoService ordenTrabajoService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -184,16 +212,28 @@ public class DataLoader implements CommandLineRunner {
         // Crear tipos de equipos (electrodomésticos)
         TipoEquipo lavarropas = crearTipoEquipo("Lavarropas");
         TipoEquipo heladera = crearTipoEquipo("Heladera");
-        TipoEquipo freezer = crearTipoEquipo("Freezer");
+        crearTipoEquipo("Freezer");
         TipoEquipo cocina = crearTipoEquipo("Cocina");
         TipoEquipo microondas = crearTipoEquipo("Microondas");
-        TipoEquipo lavavajillas = crearTipoEquipo("Lavavajillas");
+        crearTipoEquipo("Lavavajillas");
         TipoEquipo secarropas = crearTipoEquipo("Secarropas");
         TipoEquipo aireAcondicionado = crearTipoEquipo("Aire Acondicionado");
-        TipoEquipo calefactor = crearTipoEquipo("Calefactor");
-        TipoEquipo horno = crearTipoEquipo("Horno");
-        TipoEquipo anafe = crearTipoEquipo("Anafe");
-        TipoEquipo campana = crearTipoEquipo("Campana");
+        crearTipoEquipo("Calefactor");
+        crearTipoEquipo("Horno");
+        crearTipoEquipo("Anafe");
+        crearTipoEquipo("Campana");
+
+        // Crear repuestos para lavarropas
+        Repuesto placaElectronicaLava = crearRepuesto(lavarropas, "Placa electrónica de control");
+        crearRepuesto(lavarropas, "Motor de lavado");
+        Repuesto bombaAguaLava = crearRepuesto(lavarropas, "Bomba de agua");
+        crearRepuesto(lavarropas, "Correa de transmisión");
+
+        // Crear repuestos para heladera
+        crearRepuesto(heladera, "Compresor");
+        crearRepuesto(heladera, "Termostato");
+        crearRepuesto(heladera, "Ventilador");
+        crearRepuesto(heladera, "Gas refrigerante");
 
         // Crear marcas
         Marca whirlpool = crearMarca("Whirlpool");
@@ -212,8 +252,8 @@ public class DataLoader implements CommandLineRunner {
         // Crear modelos para Whirlpool
         Modelo whirlpoolWLF80AB = crearModelo(whirlpool, "WLF80AB");
         Modelo whirlpoolWRM45A = crearModelo(whirlpool, "WRM45A");
-        Modelo whirlpoolWCF80A = crearModelo(whirlpool, "WCF80A");
-        Modelo whirlpoolWRM54D = crearModelo(whirlpool, "WRM54D");
+        crearModelo(whirlpool, "WCF80A");
+        crearModelo(whirlpool, "WRM54D");
 
         // Crear modelos para Samsung
         Modelo samsungWW90T = crearModelo(samsung, "WW90T");
@@ -230,19 +270,19 @@ public class DataLoader implements CommandLineRunner {
         // Crear modelos para Drean
         Modelo dreanNext812 = crearModelo(drean, "Next 8.12 Eco");
         Modelo dreanNext1006 = crearModelo(drean, "Next 10.06 Eco");
-        Modelo dreanConcept505 = crearModelo(drean, "Concept 5.05G");
-        Modelo dreanUniBlue = crearModelo(drean, "UniBlue 8.6");
+        crearModelo(drean, "Concept 5.05G");
+        crearModelo(drean, "UniBlue 8.6");
 
         // Crear modelos para Gafa
         Modelo gafaExcellent = crearModelo(gafa, "Excellent S 8500");
         Modelo gafaMaxia = crearModelo(gafa, "Maxia Plus 8510");
-        Modelo gafaPlatinium = crearModelo(gafa, "Platinium S 8550");
-        Modelo gafaG1755 = crearModelo(gafa, "G1755AFC");
+        crearModelo(gafa, "Platinium S 8550");
+        crearModelo(gafa, "G1755AFC");
 
         // Crear modelos para Philco
         Modelo philcoWMPH10 = crearModelo(philco, "WM-PH10");
         Modelo philcoPHCT25 = crearModelo(philco, "PHCT25");
-        Modelo philcoFRPHCE200 = crearModelo(philco, "FR-PHCE200");
+        crearModelo(philco, "FR-PHCE200");
         Modelo philcoPHCD250 = crearModelo(philco, "PHCD250");
 
         // Crear modelos para Electrolux
@@ -289,34 +329,37 @@ public class DataLoader implements CommandLineRunner {
                             lgGRB429, dreanNext1006, lgF1403RD, philcoPHCT25, lgF1403RD,
                             philcoPHCD250, whirlpoolWLF80AB, lgGCL247);
 
-        System.out.println("===========================================");
-        System.out.println("DATOS INICIALES CREADOS EXITOSAMENTE");
-        System.out.println("===========================================");
-        System.out.println("Tipos de Documento: DNI, CUIT, CUIL, Pasaporte");
-        System.out.println("Tipos de Persona: Física, Jurídica");
-        System.out.println("Tipos de Empleado: Propietario, Administrativo, Técnico");
-        System.out.println("Tipos de Contacto: Email, Teléfono, Celular, WhatsApp, Telegram, Fax");
-        System.out.println("-------------------------------------------");
-        System.out.println("Tipos de Equipos: Lavarropas, Heladera, Freezer, Cocina, Microondas,");
-        System.out.println("  Lavavajillas, Secarropas, Aire Acondicionado, Calefactor, Horno, Anafe, Campana");
-        System.out.println("-------------------------------------------");
-        System.out.println("Marcas: Whirlpool, Samsung, LG, Drean, Gafa, Philco,");
-        System.out.println("  Electrolux, Bosch, Ariston, Patrick, Carrier, Surrey");
-        System.out.println("  (Total: " + marcaRepository.count() + " marcas con " + modeloRepository.count() + " modelos)");
-        System.out.println("-------------------------------------------");
-        System.out.println("Clientes creados: " + clienteRepository.count());
-        System.out.println("Equipos creados: " + equipoRepository.count());
-        System.out.println("===========================================");
-        System.out.println("Usuario admin creado:");
-        System.out.println("  Username: admin");
-        System.out.println("  Password: admin123");
-        System.out.println("  Rol: PROPIETARIO");
-        System.out.println("-------------------------------------------");
-        System.out.println("Usuario tecnico creado:");
-        System.out.println("  Username: tecnico");
-        System.out.println("  Password: tecnico123");
-        System.out.println("  Rol: TECNICO");
-        System.out.println("===========================================");
+        // Crear servicios, presupuestos, órdenes de trabajo y garantías
+        crearServiciosCompletos(empleadoAdmin, empleadoTecnico, placaElectronicaLava, bombaAguaLava);
+
+        // System.out.println("===========================================");
+        // System.out.println("DATOS INICIALES CREADOS EXITOSAMENTE");
+        // System.out.println("===========================================");
+        // System.out.println("Tipos de Documento: DNI, CUIT, CUIL, Pasaporte");
+        // System.out.println("Tipos de Persona: Física, Jurídica");
+        // System.out.println("Tipos de Empleado: Propietario, Administrativo, Técnico");
+        // System.out.println("Tipos de Contacto: Email, Teléfono, Celular, WhatsApp, Telegram, Fax");
+        // System.out.println("-------------------------------------------");
+        // System.out.println("Tipos de Equipos: Lavarropas, Heladera, Freezer, Cocina, Microondas,");
+        // System.out.println("  Lavavajillas, Secarropas, Aire Acondicionado, Calefactor, Horno, Anafe, Campana");
+        // System.out.println("-------------------------------------------");
+        // System.out.println("Marcas: Whirlpool, Samsung, LG, Drean, Gafa, Philco,");
+        // System.out.println("  Electrolux, Bosch, Ariston, Patrick, Carrier, Surrey");
+        // System.out.println("  (Total: " + marcaRepository.count() + " marcas con " + modeloRepository.count() + " modelos)");
+        // System.out.println("-------------------------------------------");
+        // System.out.println("Clientes creados: " + clienteRepository.count());
+        // System.out.println("Equipos creados: " + equipoRepository.count());
+        // System.out.println("===========================================");
+        // System.out.println("Usuario admin creado:");
+        // System.out.println("  Username: admin");
+        // System.out.println("  Password: admin123");
+        // System.out.println("  Rol: PROPIETARIO");
+        // System.out.println("-------------------------------------------");
+        // System.out.println("Usuario tecnico creado:");
+        // System.out.println("  Username: tecnico");
+        // System.out.println("  Password: tecnico123");
+        // System.out.println("  Rol: TECNICO");
+        // System.out.println("===========================================");
 
     }
 
@@ -513,5 +556,343 @@ public class DataLoader implements CommandLineRunner {
         clienteEquipo.setEquipo(equipo);
         clienteEquipo.setActivo(true);
         clienteEquipoRepository.save(clienteEquipo);
+    }
+
+    private void crearServiciosCompletos(Empleado empleadoAdmin, Empleado empleadoTecnico, Repuesto placaElectronicaLava, Repuesto bombaAguaLava) {
+        // Obtener clientes y equipos para crear servicios
+        Cliente maria = clienteRepository.findById(1L).orElseThrow();
+        Cliente juan = clienteRepository.findById(2L).orElseThrow();
+        Cliente ana = clienteRepository.findById(3L).orElseThrow();
+        Cliente roberto = clienteRepository.findById(4L).orElseThrow();
+        Cliente laura = clienteRepository.findById(5L).orElseThrow();
+        Cliente carlos = clienteRepository.findById(6L).orElseThrow();
+
+        Equipo equipoMariaLava = equipoRepository.findById(1L).orElseThrow(); // Drean Next 8.12
+        Equipo equipoMariaHela = equipoRepository.findById(2L).orElseThrow(); // Whirlpool heladera
+        Equipo equipoJuanAire = equipoRepository.findById(3L).orElseThrow(); // Samsung aire
+        Equipo equipoAnaLava = equipoRepository.findById(5L).orElseThrow(); // Samsung lavarropas
+        Equipo equipoRobertoHela = equipoRepository.findById(6L).orElseThrow(); // Gafa heladera
+        Equipo equipoLauraLava = equipoRepository.findById(9L).orElseThrow(); // Philco lavarropas
+
+        // ========== SERVICIO 1: TERMINADO hace 30 días (para generar garantía válida) ==========
+        Servicio servicio1 = crearServicio(maria, equipoMariaLava, empleadoAdmin,
+                                          TipoIngreso.CLIENTE_TRAE, EstadoServicio.TERMINADO,
+                                          LocalDate.now().minusDays(45), false,
+                                          "El lavarropas no enciende. Cuando conecto el enchufe no da ninguna señal de vida.",
+                                          "Verificar en taller");
+        servicio1.setFechaDevolucionReal(LocalDate.now().minusDays(30)); // Devuelto hace 30 días
+        servicioRepository.save(servicio1);
+
+        Presupuesto pres1 = crearPresupuesto(servicio1, empleadoTecnico,
+                                            "Placa electrónica dañada",
+                                            new BigDecimal("15000"), new BigDecimal("12000"),
+                                            new BigDecimal("8000"), EstadoPresupuesto.APROBADO,
+                                            TipoConfirmacion.ALTERNATIVO, CanalConfirmacion.WHATSAPP);
+
+        OrdenTrabajo ot1 = crearOrdenTrabajo(servicio1, pres1, empleadoTecnico,
+                                            new BigDecimal("12000"), BigDecimal.ZERO, false,
+                                            EstadoOrdenTrabajo.TERMINADA,
+                                            LocalDate.now().minusDays(35), LocalDate.now().minusDays(31));
+
+        // Agregar detalles a la orden de trabajo 1 (items usados en la reparación original)
+        agregarDetalleOrdenTrabajo(ot1, placaElectronicaLava, 1, "Placa original reemplazada por falla");
+        agregarDetalleOrdenTrabajo(ot1, bombaAguaLava, 1, "Bomba auxiliar reemplazada por desgaste");
+        ordenTrabajoRepository.save(ot1);
+
+        // ========== SERVICIO 2: TERMINADO hace 60 días (para generar garantía válida) ==========
+        Servicio servicio2 = crearServicio(juan, equipoJuanAire, empleadoAdmin,
+                                          TipoIngreso.EMPRESA_BUSCA, EstadoServicio.TERMINADO,
+                                          LocalDate.now().minusDays(75), false,
+                                          "El aire acondicionado no enfría correctamente. Tira aire pero no está frío.",
+                                          "Cliente solicita que vayamos a domicilio");
+        servicio2.setFechaDevolucionReal(LocalDate.now().minusDays(60));
+        servicio2.setAbonaVisita(true);
+        servicio2.setMontoVisita(new BigDecimal("3000"));
+        servicioRepository.save(servicio2);
+
+        Presupuesto pres2 = crearPresupuesto(servicio2, empleadoTecnico,
+                                            "Gas refrigerante bajo y filtro sucio",
+                                            new BigDecimal("25000"), null,
+                                            new BigDecimal("15000"), EstadoPresupuesto.APROBADO,
+                                            TipoConfirmacion.ORIGINAL, CanalConfirmacion.TELEFONO);
+
+        OrdenTrabajo ot2 = crearOrdenTrabajo(servicio2, pres2, empleadoTecnico,
+                                            new BigDecimal("22000"), new BigDecimal("3000"),
+                                            false, EstadoOrdenTrabajo.TERMINADA,
+                                            LocalDate.now().minusDays(68), LocalDate.now().minusDays(61));
+        ot2.setObservacionesExtras("Se agregó limpieza profunda del equipo");
+        ordenTrabajoRepository.save(ot2);
+
+        // ========== SERVICIO 3: GARANTÍA VÁLIDA del Servicio 1 - ESTADO LISTO ==========
+        Servicio servicio3 = crearServicio(maria, equipoMariaLava, empleadoAdmin,
+                                          TipoIngreso.CLIENTE_TRAE, EstadoServicio.PRESUPUESTADO,
+                                          LocalDate.now().minusDays(5), true,
+                                          "El lavarropas vuelve a no encender, igual que la primera vez",
+                                          null);
+        servicio3.setServicioGarantia(servicio1);
+        servicio3.setGarantiaDentroPlazo(true);
+        servicio3.setGarantiaCumpleCondiciones(true);
+        servicio3.setObservacionesGarantia("Cliente reporta mismo problema que reparación anterior");
+        servicio3.setTecnicoEvaluacion(empleadoTecnico);
+        servicio3.setFechaEvaluacionGarantia(LocalDateTime.now().minusDays(4));
+        servicio3.setObservacionesEvaluacionGarantia("Se verifica falla recurrente en placa. Garantía aprobada.");
+        servicioRepository.save(servicio3);
+
+        crearPresupuesto(servicio3, empleadoTecnico,
+                        "Falla en componente de la placa reparada",
+                        BigDecimal.ZERO, null, // Sin costo por garantía
+                        BigDecimal.ZERO, EstadoPresupuesto.LISTO,
+                        null, null);
+
+        // ========== SERVICIO 4: CON PRESUPUESTO ENVIADO (precio dual) ==========
+        Servicio servicio4 = crearServicio(roberto, equipoRobertoHela, empleadoAdmin,
+                                          TipoIngreso.CLIENTE_TRAE, EstadoServicio.PRESUPUESTADO,
+                                          LocalDate.now().minusDays(2), false,
+                                          "La heladera hace mucho ruido y no enfría bien. A veces se apaga sola.",
+                                          "Revisar urgente");
+
+        Presupuesto pres4 = crearPresupuesto(servicio4, empleadoTecnico,
+                                            "Compresor con falla. Opción 1: Compresor original, Opción 2: Compresor genérico",
+                                            new BigDecimal("45000"), // Repuestos originales
+                                            new BigDecimal("28000"), // Repuestos alternativos
+                                            new BigDecimal("12000"), // Mano de obra
+                                            EstadoPresupuesto.ENVIADO,
+                                            null, null);
+        pres4.setFechaSolicitud(LocalDate.now().minusDays(2));
+        pres4.setFechaPactada(LocalDate.now().plusDays(1));
+        pres4.setFechaVencimiento(LocalDate.now().plusDays(15));
+        pres4.setMostrarOriginal(true);
+        pres4.setMostrarAlternativo(true);
+        presupuestoRepository.save(pres4);
+
+        // ========== SERVICIO 5: EN REPARACIÓN con Orden de Trabajo ==========
+        Servicio servicio5 = crearServicio(ana, equipoAnaLava, empleadoAdmin,
+                                          TipoIngreso.EMPRESA_BUSCA, EstadoServicio.EN_REPARACION,
+                                          LocalDate.now().minusDays(10), false,
+                                          "Pierde agua por abajo cuando lava. Se moja todo el piso.",
+                                          "Solicita retiro a domicilio - vive en el 5to piso");
+        servicio5.setAbonaVisita(true);
+        servicio5.setMontoVisita(new BigDecimal("2500"));
+        servicioRepository.save(servicio5);
+
+        Presupuesto pres5 = crearPresupuesto(servicio5, empleadoTecnico,
+                                            "Sello de puerta deteriorado y manguera rota",
+                                            new BigDecimal("8500"), null,
+                                            new BigDecimal("6000"), EstadoPresupuesto.APROBADO,
+                                            TipoConfirmacion.ORIGINAL, CanalConfirmacion.EMAIL);
+        pres5.setFechaConfirmacion(LocalDateTime.now().minusDays(7));
+        presupuestoRepository.save(pres5);
+
+        crearOrdenTrabajo(servicio5, pres5, empleadoTecnico,
+                         new BigDecimal("8500"), BigDecimal.ZERO,
+                         false, EstadoOrdenTrabajo.EN_PROGRESO,
+                         LocalDate.now().minusDays(6), null);
+
+        // ========== SERVICIO 6: APROBADO esperando inicio de reparación ==========
+        Servicio servicio6 = crearServicio(laura, equipoLauraLava, empleadoAdmin,
+                                          TipoIngreso.CLIENTE_TRAE, EstadoServicio.APROBADO,
+                                          LocalDate.now().minusDays(3), false,
+                                          "El lavarropas lava pero no centrifuga. Se queda con la ropa mojada.",
+                                          null);
+
+        Presupuesto pres6 = crearPresupuesto(servicio6, empleadoTecnico,
+                                            "Correa de transmisión rota",
+                                            new BigDecimal("4500"), null,
+                                            new BigDecimal("3500"), EstadoPresupuesto.APROBADO,
+                                            TipoConfirmacion.ORIGINAL, CanalConfirmacion.PRESENCIAL);
+        pres6.setFechaConfirmacion(LocalDateTime.now().minusDays(1));
+        presupuestoRepository.save(pres6);
+
+        crearOrdenTrabajo(servicio6, pres6, empleadoTecnico,
+                         new BigDecimal("4500"), BigDecimal.ZERO,
+                         false, EstadoOrdenTrabajo.PENDIENTE,
+                         null, null);
+
+        // ========== SERVICIO 7: RECIÉN RECIBIDO (con presupuesto PENDIENTE auto-creado) ==========
+        Servicio servicio7 = crearServicio(carlos, equipoRepository.findById(14L).orElseThrow(),
+                     empleadoAdmin, TipoIngreso.CLIENTE_TRAE,
+                     EstadoServicio.RECIBIDO, LocalDate.now(), false,
+                     "La heladera no enfría nada. El motor está caliente.",
+                     "Urgente - tiene mercadería guardada");
+
+        // Auto-crear presupuesto en estado PENDIENTE
+        crearPresupuesto(servicio7, empleadoAdmin,
+                        "", // Diagnóstico vacío - técnico lo llenará
+                        BigDecimal.ZERO, null,
+                        BigDecimal.ZERO, EstadoPresupuesto.PENDIENTE,
+                        null, null);
+
+        // ========== SERVICIO 8: GARANTÍA del Servicio 2 - ORDEN EN PROGRESO (SIN COSTO) ==========
+        Servicio servicio8 = crearServicio(juan, equipoJuanAire, empleadoAdmin,
+                                          TipoIngreso.CLIENTE_TRAE, EstadoServicio.EN_REPARACION,
+                                          LocalDate.now().minusDays(7), true,
+                                          "El aire vuelve a no enfriar. Es el mismo problema de antes.",
+                                          null);
+        servicio8.setServicioGarantia(servicio2);
+        servicio8.setGarantiaDentroPlazo(true);
+        servicio8.setGarantiaCumpleCondiciones(true);
+        servicio8.setObservacionesGarantia("Aire acondicionado vuelve a presentar problemas de refrigeración");
+        servicio8.setTecnicoEvaluacion(empleadoTecnico);
+        servicio8.setFechaEvaluacionGarantia(LocalDateTime.now().minusDays(6));
+        servicio8.setObservacionesEvaluacionGarantia("Se detectó fuga en sistema. Reparación dentro de garantía.");
+        servicioRepository.save(servicio8);
+
+        Presupuesto pres8 = crearPresupuesto(servicio8, empleadoTecnico,
+                                            "Fuga en soldadura del sistema de refrigeración",
+                                            BigDecimal.ZERO, null,
+                                            BigDecimal.ZERO, EstadoPresupuesto.APROBADO,
+                                            null, null);
+
+        OrdenTrabajo ot8 = crearOrdenTrabajo(servicio8, pres8, empleadoTecnico,
+                                            BigDecimal.ZERO, BigDecimal.ZERO,
+                                            true, // ES SIN COSTO - GARANTÍA
+                                            EstadoOrdenTrabajo.EN_PROGRESO,
+                                            LocalDate.now().minusDays(5), null);
+        ot8.setObservacionesExtras("Reparación bajo garantía - Se resuelda conexión defectuosa");
+        ordenTrabajoRepository.save(ot8);
+
+        // ========== SERVICIO 9: PRESUPUESTO RECHAZADO ==========
+        Servicio servicio9 = crearServicio(maria, equipoMariaHela, empleadoAdmin,
+                                          TipoIngreso.CLIENTE_TRAE, EstadoServicio.RECHAZADO,
+                                          LocalDate.now().minusDays(8), false,
+                                          "La luz de adentro de la heladera no prende",
+                                          null);
+
+        crearPresupuesto(servicio9, empleadoTecnico,
+                        "Foco quemado y switch de puerta defectuoso",
+                        new BigDecimal("3500"), null,
+                        new BigDecimal("2000"), EstadoPresupuesto.RECHAZADO,
+                        null, null);
+
+        // ========== SERVICIO 10: GARANTÍA PENDIENTE DE EVALUACIÓN (del Servicio 1) ==========
+        Servicio servicio10 = crearServicio(maria, equipoMariaLava, empleadoAdmin,
+                                           TipoIngreso.CLIENTE_TRAE, EstadoServicio.RECIBIDO,
+                                           LocalDate.now().minusDays(2), true,
+                                           "Otra vez el mismo problema. No enciende para nada.",
+                                           null);
+        servicio10.setServicioGarantia(servicio1);
+        // NO configurar técnico de evaluación ni fechas de evaluación - está pendiente
+        servicio10.setGarantiaDentroPlazo(null); // Sin evaluar aún
+        servicio10.setGarantiaCumpleCondiciones(null); // Sin evaluar aún
+        servicio10.setObservacionesGarantia("Cliente reporta que el lavarropas dejó de funcionar nuevamente. Posible falla recurrente.");
+        servicioRepository.save(servicio10);
+
+        // No crear presupuesto aún - se creará después de la evaluación de garantía
+
+        // ========== SERVICIO 11: PRESUPUESTO EN_CURSO (técnico trabajando en el presupuesto) ==========
+        Servicio servicio11 = crearServicio(laura, equipoRepository.findById(10L).orElseThrow(),
+                                           empleadoAdmin, TipoIngreso.CLIENTE_TRAE,
+                                           EstadoServicio.PRESUPUESTADO, LocalDate.now().minusDays(1), false,
+                                           "El microondas no calienta. Prende y gira pero la comida queda fría.",
+                                           "Urgente - es para el trabajo");
+
+        Presupuesto pres11 = crearPresupuesto(servicio11, empleadoTecnico,
+                                             "Magnetrón defectuoso - revisando opciones de repuesto",
+                                             new BigDecimal("8000"), new BigDecimal("5500"),
+                                             new BigDecimal("4000"), EstadoPresupuesto.EN_CURSO,
+                                             null, null);
+        pres11.setFechaSolicitud(LocalDate.now().minusDays(1));
+        presupuestoRepository.save(pres11);
+
+        // System.out.println("-------------------------------------------");
+        // System.out.println("SERVICIOS, PRESUPUESTOS Y ÓRDENES CREADOS:");
+        // System.out.println("  Servicios totales: " + servicioRepository.count());
+        // System.out.println("  - Terminados (con garantía válida): 2");
+        // System.out.println("  - Garantías activas: 3 (1 sin costo en reparación, 1 pendiente evaluación)");
+        // System.out.println("  - En reparación: 2");
+        // System.out.println("  - Pendientes de presupuesto: 1");
+        // System.out.println("  - Con presupuesto pendiente: 1");
+        // System.out.println("  - Aprobados: 1");
+        // System.out.println("  - Rechazados: 1");
+        // System.out.println("  - Garantías pendientes de evaluación: 1");
+        // System.out.println("  Presupuestos totales: " + presupuestoRepository.count());
+        // System.out.println("  Órdenes de trabajo totales: " + ordenTrabajoRepository.count());
+        // System.out.println("  - Órdenes sin costo (garantías): 1");
+    }
+
+    private Servicio crearServicio(Cliente cliente, Equipo equipo,
+                                   Empleado empleadoRecepcion, TipoIngreso tipoIngreso,
+                                   EstadoServicio estado, LocalDate fechaRecepcion, boolean esGarantia,
+                                   String fallaReportada, String observaciones) {
+        Servicio servicio = new Servicio();
+        // Generar número automáticamente usando el servicio
+        servicio.setNumeroServicio(servicioService.generarNumeroServicio());
+        servicio.setCliente(cliente);
+        servicio.setEquipo(equipo);
+        servicio.setEmpleadoRecepcion(empleadoRecepcion);
+        servicio.setTipoIngreso(tipoIngreso);
+        servicio.setEstado(estado);
+        servicio.setFechaRecepcion(fechaRecepcion);
+        servicio.setFechaCreacion(fechaRecepcion.atStartOfDay());
+        servicio.setEsGarantia(esGarantia);
+        servicio.setFallaReportada(fallaReportada);
+        servicio.setObservaciones(observaciones);
+        return servicioRepository.save(servicio);
+    }
+
+    private Presupuesto crearPresupuesto(Servicio servicio, Empleado empleado,
+                                        String diagnostico,
+                                        BigDecimal montoRepuestosOriginal, BigDecimal montoRepuestosAlternativo,
+                                        BigDecimal manoObra, EstadoPresupuesto estado,
+                                        TipoConfirmacion tipoConfirmado, CanalConfirmacion canalConfirmacion) {
+        Presupuesto presupuesto = new Presupuesto();
+        // Generar número automáticamente usando el servicio
+        presupuesto.setNumeroPresupuesto(presupuestoService.generarNumeroPresupuesto());
+        presupuesto.setServicio(servicio);
+        presupuesto.setEmpleado(empleado);
+        presupuesto.setDiagnostico(diagnostico);
+        presupuesto.setMontoRepuestosOriginal(montoRepuestosOriginal);
+        presupuesto.setMontoRepuestosAlternativo(montoRepuestosAlternativo);
+        presupuesto.setManoObra(manoObra);
+        presupuesto.setEstado(estado);
+        presupuesto.setTipoConfirmado(tipoConfirmado);
+        presupuesto.setCanalConfirmacion(canalConfirmacion);
+
+        // Calcular totales
+        presupuesto.setMontoTotalOriginal(montoRepuestosOriginal.add(manoObra));
+        if (montoRepuestosAlternativo != null) {
+            presupuesto.setMontoTotalAlternativo(montoRepuestosAlternativo.add(manoObra));
+        }
+
+        if (tipoConfirmado != null) {
+            presupuesto.setFechaConfirmacion(LocalDateTime.now().minusDays(1));
+        }
+
+        return presupuestoRepository.save(presupuesto);
+    }
+
+    private OrdenTrabajo crearOrdenTrabajo(Servicio servicio, Presupuesto presupuesto,
+                                          Empleado empleado, BigDecimal montoRepuestos, BigDecimal montoExtras,
+                                          boolean esSinCosto, EstadoOrdenTrabajo estado,
+                                          LocalDate fechaComienzo, LocalDate fechaFin) {
+        OrdenTrabajo ordenTrabajo = new OrdenTrabajo();
+        // Generar número automáticamente usando el servicio
+        ordenTrabajo.setNumeroOrdenTrabajo(ordenTrabajoService.generarNumeroOrdenTrabajo());
+        ordenTrabajo.setServicio(servicio);
+        ordenTrabajo.setPresupuesto(presupuesto);
+        ordenTrabajo.setEmpleado(empleado);
+        ordenTrabajo.setMontoTotalRepuestos(montoRepuestos);
+        ordenTrabajo.setMontoExtras(montoExtras);
+        ordenTrabajo.setEsSinCosto(esSinCosto);
+        ordenTrabajo.setEstado(estado);
+        ordenTrabajo.setFechaComienzo(fechaComienzo);
+        ordenTrabajo.setFechaFin(fechaFin);
+        return ordenTrabajoRepository.save(ordenTrabajo);
+    }
+
+    private Repuesto crearRepuesto(TipoEquipo tipoEquipo, String descripcion) {
+        Repuesto repuesto = new Repuesto();
+        repuesto.setTipoEquipo(tipoEquipo);
+        repuesto.setDescripcion(descripcion);
+        return repuestoRepository.save(repuesto);
+    }
+
+    private void agregarDetalleOrdenTrabajo(OrdenTrabajo ordenTrabajo, Repuesto repuesto, int cantidad, String comentario) {
+        DetalleOrdenTrabajo detalle = new DetalleOrdenTrabajo();
+        detalle.setOrdenTrabajo(ordenTrabajo);
+        detalle.setRepuesto(repuesto);
+        detalle.setCantidad(cantidad);
+        detalle.setComentario(comentario);
+        ordenTrabajo.getDetalleOrdenesTrabajo().add(detalle);
     }
 }

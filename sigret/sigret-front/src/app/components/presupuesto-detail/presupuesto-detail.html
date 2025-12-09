@@ -1,7 +1,13 @@
 <div class="presupuesto-detail-container p-4">
   <!-- Header with Back Button -->
   <div class="flex justify-content-between align-items-center mb-4">
-    <h2 class="text-3xl font-semibold m-0">Detalle del Presupuesto</h2>
+    <h2 class="text-3xl font-semibold m-0">
+      @if (modoCreacion()) {
+        Crear Presupuesto
+      } @else {
+        Detalle del Presupuesto
+      }
+    </h2>
     <p-button
       label="Volver"
       icon="pi pi-arrow-left"
@@ -36,175 +42,730 @@
     </div>
   }
 
-  <!-- Presupuesto Details -->
-  @if (!loading() && !error() && presupuesto()) {
+  <!-- Content -->
+  @if (!loading() && !error()) {
     <div class="grid">
-      <!-- Main Information Card -->
+      <!-- Main Content -->
       <div class="col-12 lg:col-8">
-        <p-card>
-          <ng-template pTemplate="header">
-            <div class="flex justify-content-between align-items-center p-3">
-              <h3 class="m-0">Información del Presupuesto</h3>
-              <p-badge
-                [value]="getEstadoLabel(presupuesto()!.estado)"
-                [severity]="getEstadoBadgeSeverity(presupuesto()!.estado)">
-              </p-badge>
-            </div>
-          </ng-template>
-
-          <div class="flex flex-column gap-3">
-            <div class="grid">
-              <div class="col-12 md:col-6">
-                <div class="flex flex-column gap-2">
-                  <label class="text-sm font-semibold text-600">Número de Presupuesto</label>
-                  <span class="text-lg">{{ presupuesto()!.numeroPresupuesto }}</span>
+        
+        <!-- MODO EDICIÓN: Formulario (Creación o EN_CURSO) -->
+        @if (esEditable() || modoCreacion()) {
+          <form [formGroup]="formularioPresupuesto" class="flex flex-column gap-4">
+            
+            <!-- Diagnóstico del Técnico -->
+            <p-card>
+              <ng-template pTemplate="header">
+                <div class="p-3">
+                  <h3 class="m-0 font-semibold">Diagnóstico del Técnico</h3>
                 </div>
+              </ng-template>
+
+              <div class="flex flex-column gap-2">
+                <label for="diagnostico" class="font-semibold text-sm">
+                  Diagnóstico <span class="text-red-600">*</span>
+                </label>
+                <textarea
+                  id="diagnostico"
+                  formControlName="diagnostico"
+                  pInputTextarea
+                  [rows]="4"
+                  placeholder="Ingrese el diagnóstico técnico del equipo"
+                  class="w-full">
+                </textarea>
+                @if (formularioPresupuesto.get('diagnostico')?.invalid && formularioPresupuesto.get('diagnostico')?.touched) {
+                  <small class="text-red-600">El diagnóstico es obligatorio</small>
+                }
               </div>
 
-              <div class="col-12 md:col-6">
-                <div class="flex flex-column gap-2">
-                  <label class="text-sm font-semibold text-600">Número de Servicio</label>
-                  <span class="text-lg">{{ presupuesto()!.numeroServicio }}</span>
-                </div>
-              </div>
-            </div>
-
-            <p-divider></p-divider>
-
-            <div class="grid">
-              <div class="col-12 md:col-6">
-                <div class="flex flex-column gap-2">
-                  <label class="text-sm font-semibold text-600">Cliente</label>
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-user text-primary"></i>
-                    <span class="text-lg">{{ presupuesto()!.clienteNombre }}</span>
+              @if (!modoCreacion() && presupuesto()) {
+                <ng-template pTemplate="footer">
+                  <div class="flex justify-content-end align-items-center text-sm text-color-secondary">
+                    @if (presupuesto()!.empleadoNombre) {
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-user"></i>
+                        <span>{{ presupuesto()!.empleadoNombre }}</span>
+                      </div>
+                    } @else {
+                      <span class="text-orange-600">Sin asignar</span>
+                    }
                   </div>
-                </div>
-              </div>
+                </ng-template>
+              }
+            </p-card>
 
-              @if (presupuesto()!.equipoDescripcion) {
-                <div class="col-12 md:col-6">
-                  <div class="flex flex-column gap-2">
-                    <label class="text-sm font-semibold text-600">Equipo</label>
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-desktop text-primary"></i>
-                      <span class="text-lg">{{ presupuesto()!.equipoDescripcion }}</span>
+            <!-- Detalles del Presupuesto -->
+            <p-card>
+              <ng-template pTemplate="header">
+                <div class="flex justify-content-between align-items-center p-3">
+                  <h3 class="m-0 font-semibold">Items del Presupuesto</h3>
+                  <p-button
+                    label="Agregar Item"
+                    icon="pi pi-plus"
+                    severity="success"
+                    [outlined]="true"
+                    (onClick)="agregarDetalle()">
+                  </p-button>
+                </div>
+              </ng-template>
+
+              @if (detalles.length === 0) {
+                <div class="text-center text-500 py-6">
+                  <i class="pi pi-inbox text-5xl mb-3 block text-300"></i>
+                  <p class="m-0">No hay items agregados. Haga clic en "Agregar Item" para comenzar.</p>
+                </div>
+              } @else {
+                <div class="flex flex-column gap-3" formArrayName="detalles">
+                  @for (detalle of detalles.controls; track $index) {
+                    <div [formGroupName]="$index" class="p-3 border-1 surface-border border-round">
+                      <div class="flex justify-content-between align-items-start mb-3">
+                        <h4 class="m-0 text-base font-semibold">Item {{ $index + 1 }}</h4>
+                        <p-button
+                          icon="pi pi-trash"
+                          severity="danger"
+                          [text]="true"
+                          (onClick)="eliminarDetalle($index)"
+                          [rounded]="true"
+                          size="small">
+                        </p-button>
+                      </div>
+
+                      <div class="flex flex-column gap-3">
+                        <div>
+                          <label [for]="'item-' + $index" class="font-semibold text-sm block mb-2">
+                            Descripción <span class="text-red-600">*</span>
+                          </label>
+                          <p-autoComplete
+                            [inputId]="'item-' + $index"
+                            formControlName="item"
+                            [suggestions]="repuestosFiltrados()"
+                            (completeMethod)="buscarRepuestos($event)"
+                            (onSelect)="onRepuestoSelect($event, $index)"
+                            optionLabel="descripcionCompleta"
+                            [forceSelection]="false"
+                            placeholder="Buscar repuesto o escribir descripción"
+                            [dropdown]="true"
+                            styleClass="w-full"
+                            inputStyleClass="w-full">
+                          </p-autoComplete>
+                        </div>
+
+                        <div class="grid">
+                          <div class="col-12 sm:col-4">
+                            <label [for]="'cantidad-' + $index" class="font-semibold text-sm block mb-2">
+                              Cantidad <span class="text-red-600">*</span>
+                            </label>
+                            <p-inputNumber
+                              [inputId]="'cantidad-' + $index"
+                              formControlName="cantidad"
+                              [min]="1"
+                              [showButtons]="true"
+                              styleClass="w-full"
+                              inputStyleClass="w-full">
+                            </p-inputNumber>
+                          </div>
+
+                          <div class="col-12 sm:col-4">
+                            <label [for]="'precioOriginal-' + $index" class="font-semibold text-sm block mb-2">
+                              Precio Original
+                            </label>
+                            <p-inputNumber
+                              [inputId]="'precioOriginal-' + $index"
+                              formControlName="precioOriginal"
+                              mode="currency"
+                              currency="UYU"
+                              locale="es-UY"
+                              [min]="0"
+                              placeholder="$0,00"
+                              styleClass="w-full"
+                              inputStyleClass="w-full">
+                            </p-inputNumber>
+                          </div>
+
+                          <div class="col-12 sm:col-4">
+                            <label [for]="'precioAlternativo-' + $index" class="font-semibold text-sm block mb-2">
+                              Precio Alternativo
+                            </label>
+                            <p-inputNumber
+                              [inputId]="'precioAlternativo-' + $index"
+                              formControlName="precioAlternativo"
+                              mode="currency"
+                              currency="UYU"
+                              locale="es-UY"
+                              [min]="0"
+                              placeholder="$0,00"
+                              styleClass="w-full"
+                              inputStyleClass="w-full">
+                            </p-inputNumber>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  }
                 </div>
               }
-            </div>
+            </p-card>
 
-            <p-divider></p-divider>
+            <!-- Mano de Obra y Totales -->
+            <p-card>
+              <ng-template pTemplate="header">
+                <div class="p-3">
+                  <h3 class="m-0 font-semibold">Mano de Obra y Totales</h3>
+                </div>
+              </ng-template>
 
-            <div class="grid">
-              <div class="col-12 md:col-6">
+              <div class="flex flex-column gap-4">
                 <div class="flex flex-column gap-2">
-                  <label class="text-sm font-semibold text-600">Monto Total</label>
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-dollar text-green-600"></i>
-                    <span class="text-2xl font-bold text-green-600">{{ formatCurrency(presupuesto()!.montoTotal) }}</span>
+                  <label for="manoObra" class="font-semibold text-sm">
+                    Mano de Obra <span class="text-red-600">*</span>
+                  </label>
+                  <p-inputNumber
+                    inputId="manoObra"
+                    formControlName="manoObra"
+                    mode="currency"
+                    currency="UYU"
+                    locale="es-UY"
+                    [min]="0"
+                    class="w-full">
+                  </p-inputNumber>
+                </div>
+
+                <p-divider></p-divider>
+
+                <div class="flex flex-column gap-3 p-3 surface-100 border-round">
+                  <div class="flex justify-content-between">
+                    <span class="font-semibold">Repuestos (Original):</span>
+                    <span>{{ formatCurrency(montoRepuestosOriginalCalculado()) }}</span>
                   </div>
+                  <div class="flex justify-content-between align-items-center pt-2 border-top-1 surface-border">
+                    <span class="text-xl font-semibold">Total Original:</span>
+                    <span class="text-2xl font-bold text-green-600">{{ formatCurrency(montoTotalOriginalCalculado()) }}</span>
+                  </div>
+
+                  @if (montoTotalAlternativoCalculado() !== null) {
+                    <p-divider></p-divider>
+                    <div class="flex justify-content-between">
+                      <span class="font-semibold">Repuestos (Alternativo):</span>
+                      <span>{{ formatCurrency(montoRepuestosAlternativoCalculado()!) }}</span>
+                    </div>
+                    <div class="flex justify-content-between align-items-center pt-2 border-top-1 surface-border">
+                      <span class="text-xl font-semibold">Total Alternativo:</span>
+                      <span class="text-2xl font-bold text-blue-600">{{ formatCurrency(montoTotalAlternativoCalculado()!) }}</span>
+                    </div>
+                  }
+                </div>
+
+                <div class="flex flex-column gap-2">
+                  <label for="fechaVencimiento" class="font-semibold text-sm">Fecha de Vencimiento</label>
+                  <p-datePicker
+                    inputId="fechaVencimiento"
+                    formControlName="fechaVencimiento"
+                    [showIcon]="true"
+                    dateFormat="dd/mm/yy"
+                    placeholder="Seleccionar fecha"
+                    class="w-full">
+                  </p-datePicker>
                 </div>
               </div>
 
-              @if (presupuesto()!.empleadoNombre) {
-                <div class="col-12 md:col-6">
-                  <div class="flex flex-column gap-2">
-                    <label class="text-sm font-semibold text-600">Técnico Asignado</label>
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-user-edit text-primary"></i>
-                      <span class="text-lg font-semibold text-primary assigned-employee-detail">{{ presupuesto()!.empleadoNombre }}</span>
-                    </div>
+              @if (!modoCreacion() && presupuesto()) {
+                <ng-template pTemplate="footer">
+                  <div class="flex justify-content-end align-items-center text-sm text-color-secondary">
+                    @if (presupuesto()!.empleadoNombre) {
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-user"></i>
+                        <span>{{ presupuesto()!.empleadoNombre }}</span>
+                      </div>
+                    } @else {
+                      <span class="text-orange-600">Sin asignar</span>
+                    }
                   </div>
-                </div>
+                </ng-template>
+              }
+            </p-card>
+
+            <!-- Botones de Acción -->
+            <div class="flex justify-content-end gap-2">
+              <p-button
+                label="Cancelar"
+                severity="secondary"
+                [outlined]="true"
+                (onClick)="goBack()">
+              </p-button>
+
+              <!-- Botón Guardar (solo en modo creación) -->
+              @if (modoCreacion()) {
+                <p-button
+                  label="Guardar Presupuesto"
+                  icon="pi pi-check"
+                  severity="success"
+                  (onClick)="guardarPresupuesto()"
+                  [loading]="guardando()"
+                  [disabled]="formularioPresupuesto.invalid || detalles.length === 0">
+                </p-button>
+              }
+
+              <!-- Botón Marcar como Listo (cuando está EN_CURSO) -->
+              @if (puedeMarcarListo()) {
+                <p-button
+                  label="Marcar como Listo"
+                  icon="pi pi-check-circle"
+                  severity="success"
+                  (onClick)="marcarComoListo()"
+                  [loading]="guardando()"
+                  [disabled]="formularioPresupuesto.invalid || detalles.length === 0">
+                </p-button>
               }
             </div>
+          </form>
+        }
 
-            <p-divider></p-divider>
+        <!-- MODO PENDIENTE: Solo visualización con botón para iniciar -->
+        @if (esPendiente()) {
+          <p-card>
+            <ng-template pTemplate="header">
+              <div class="flex justify-content-between align-items-center p-3">
+                <h3 class="m-0">Presupuesto Pendiente</h3>
+                <p-badge
+                  value="PENDIENTE"
+                  severity="warn">
+                </p-badge>
+              </div>
+            </ng-template>
 
-            <div class="grid">
-              <div class="col-12 md:col-6">
-                <div class="flex flex-column gap-2">
-                  <label class="text-sm font-semibold text-600">Fecha de Creación</label>
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-calendar text-color-secondary"></i>
-                    <span>{{ presupuesto()!.fechaCreacion | date: 'dd/MM/yyyy HH:mm' }}</span>
-                  </div>
-                </div>
+            <div class="flex flex-column gap-4 align-items-center justify-content-center py-8">
+              <i class="pi pi-clock text-6xl text-orange-500"></i>
+              <div class="text-center">
+                <h4 class="mt-0 mb-2">Este presupuesto está pendiente</h4>
+                <p class="text-color-secondary m-0">Haz clic en "Iniciar Presupuesto" para comenzar a trabajar en él</p>
               </div>
 
-              @if (presupuesto()!.fechaVencimiento) {
-                <div class="col-12 md:col-6">
+              <p-button
+                label="Iniciar Presupuesto"
+                icon="pi pi-play"
+                severity="success"
+                size="large"
+                (onClick)="iniciarPresupuesto()"
+                [loading]="guardando()">
+              </p-button>
+            </div>
+
+            <ng-template pTemplate="footer">
+              <div class="flex justify-content-between align-items-center">
+                <p-button
+                  label="Volver"
+                  icon="pi pi-arrow-left"
+                  [outlined]="true"
+                  severity="secondary"
+                  (onClick)="goBack()">
+                </p-button>
+                <div class="flex align-items-center gap-2 text-sm text-color-secondary">
+                  <span class="text-orange-600">Sin asignar</span>
+                </div>
+              </div>
+            </ng-template>
+          </p-card>
+        }
+
+        <!-- MODO VISUALIZACIÓN: Detalles del Presupuesto (LISTO, ENVIADO, APROBADO, RECHAZADO) -->
+        @if (!esEditable() && !esPendiente() && presupuesto()) {
+          <p-card>
+            <ng-template pTemplate="header">
+              <div class="flex justify-content-between align-items-center p-3">
+                <div>
+                  <h3 class="m-0 font-semibold">Presupuesto {{ presupuesto()!.numeroPresupuesto }}</h3>
+                  <span class="text-sm text-color-secondary">{{ presupuesto()!.fechaCreacion | date: 'dd/MM/yyyy HH:mm' }}</span>
+                </div>
+                <p-badge
+                  [value]="getEstadoLabel(presupuesto()!.estado)"
+                  [severity]="getEstadoBadgeSeverity(presupuesto()!.estado)">
+                </p-badge>
+              </div>
+            </ng-template>
+
+            <div class="flex flex-column gap-4">
+              <!-- Diagnóstico -->
+              <div>
+                <h4 class="mt-0 mb-2 text-900">Diagnóstico del Técnico</h4>
+                <p class="m-0 line-height-3 text-color-secondary">
+                  {{ presupuesto()!.diagnostico || 'Sin diagnóstico' }}
+                </p>
+              </div>
+
+              <p-divider></p-divider>
+
+              <!-- Items -->
+              <div>
+                <h4 class="mt-0 mb-3 text-900">Items del Presupuesto</h4>
+                @if (presupuesto()!.detalles && presupuesto()!.detalles.length > 0) {
                   <div class="flex flex-column gap-2">
-                    <label class="text-sm font-semibold text-600">Fecha de Vencimiento</label>
+                    @for (detalle of presupuesto()!.detalles; track detalle.item) {
+                      <div class="p-3 surface-50 border-round">
+                        <div class="flex justify-content-between align-items-start mb-2">
+                          <span class="font-semibold">{{ detalle.item }}</span>
+                          <span class="text-sm text-color-secondary">Cant: {{ detalle.cantidad }}</span>
+                        </div>
+                        <div class="flex justify-content-between text-sm">
+                          <span>Precio Original:</span>
+                          <span class="font-semibold">{{ formatCurrency(detalle.precioOriginal * detalle.cantidad) }}</span>
+                        </div>
+                        @if (detalle.precioAlternativo) {
+                          <div class="flex justify-content-between text-sm text-blue-600">
+                            <span>Precio Alternativo:</span>
+                            <span class="font-semibold">{{ formatCurrency(detalle.precioAlternativo * detalle.cantidad) }}</span>
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                } @else {
+                  <p class="text-color-secondary m-0">No hay ítems en el presupuesto</p>
+                }
+              </div>
+
+              <p-divider></p-divider>
+
+              <!-- Totales -->
+              <div>
+                <h4 class="mt-0 mb-3 text-900">Resumen de Costos</h4>
+
+                <!-- Mostrar banner de precio aprobado si aplica -->
+                @if (presupuesto()!.estado === 'APROBADO' && presupuesto()!.tipoConfirmado) {
+                  <div class="p-3 mb-3 border-round"
+                       [ngClass]="presupuesto()!.tipoConfirmado === 'ORIGINAL' ? 'bg-green-100 border-green-500' : 'bg-blue-100 border-blue-500'"
+                       style="border-left: 4px solid;">
                     <div class="flex align-items-center gap-2">
-                      <i class="pi pi-clock text-red-600"></i>
-                      <span class="text-red-600">{{ presupuesto()!.fechaVencimiento | date: 'dd/MM/yyyy' }}</span>
+                      <i class="pi pi-check-circle text-xl"
+                         [ngClass]="presupuesto()!.tipoConfirmado === 'ORIGINAL' ? 'text-green-700' : 'text-blue-700'"></i>
+                      <div>
+                        <div class="font-bold"
+                             [ngClass]="presupuesto()!.tipoConfirmado === 'ORIGINAL' ? 'text-green-800' : 'text-blue-800'">
+                          Cliente aprobó: Precio {{ presupuesto()!.tipoConfirmado === 'ORIGINAL' ? 'Original' : 'Alternativo' }}
+                        </div>
+                        @if (presupuesto()!.fechaConfirmacion) {
+                          <div class="text-sm text-600">
+                            Confirmado el {{ presupuesto()!.fechaConfirmacion | date: 'dd/MM/yyyy HH:mm' }}
+                            @if (presupuesto()!.canalConfirmacion) {
+                              vía {{ presupuesto()!.canalConfirmacion }}
+                            }
+                          </div>
+                        }
+                      </div>
                     </div>
                   </div>
+                }
+
+                <div class="flex flex-column gap-2">
+                  <div class="flex justify-content-between p-2">
+                    <span class="text-color-secondary">Repuestos:</span>
+                    <span>{{ formatCurrency(presupuesto()!.montoRepuestosOriginal || 0) }}</span>
+                  </div>
+                  <div class="flex justify-content-between p-2">
+                    <span class="text-color-secondary">Mano de Obra:</span>
+                    <span>{{ formatCurrency(presupuesto()!.manoObra || 0) }}</span>
+                  </div>
+
+                  <p-divider></p-divider>
+
+                  <div class="flex justify-content-between p-3 border-round"
+                       [ngClass]="presupuesto()!.estado === 'APROBADO' && presupuesto()!.tipoConfirmado === 'ORIGINAL' ? 'bg-green-50 border-2 border-green-500' : 'surface-100'">
+                    <span class="text-lg font-bold">Total Original:</span>
+                    <span class="text-xl font-bold text-green-600">
+                      {{ formatCurrency(presupuesto()!.montoTotalOriginal || 0) }}
+                    </span>
+                  </div>
+
+                  @if (tieneMontoAlternativo()) {
+                    <div class="flex flex-column gap-2 mt-2">
+                      <div class="flex justify-content-between p-2">
+                        <span class="text-color-secondary">Repuestos (Alt.):</span>
+                        <span>{{ formatCurrency(presupuesto()!.montoRepuestosAlternativo || 0) }}</span>
+                      </div>
+                      <div class="flex justify-content-between p-3 border-round"
+                           [ngClass]="presupuesto()!.estado === 'APROBADO' && presupuesto()!.tipoConfirmado === 'ALTERNATIVO' ? 'bg-blue-50 border-2 border-blue-500' : 'bg-blue-50'">
+                        <span class="text-lg font-bold text-blue-700">Total Alternativo:</span>
+                        <span class="text-xl font-bold text-blue-600">
+                          {{ formatCurrency(presupuesto()!.montoTotalAlternativo!) }}
+                        </span>
+                      </div>
+                    </div>
+                  }
+
+                  @if (presupuesto()!.fechaVencimiento) {
+                    <div class="flex align-items-center gap-2 p-2 mt-2 bg-orange-50 border-round">
+                      <i class="pi pi-clock text-orange-600"></i>
+                      <span class="text-sm">
+                        <strong>Vence:</strong> {{ formatFecha(presupuesto()!.fechaVencimiento) }}
+                      </span>
+                    </div>
+                  }
                 </div>
-              }
+              </div>
             </div>
-          </div>
-        </p-card>
+
+            <ng-template pTemplate="footer">
+              <div class="flex justify-content-between align-items-center">
+                <div class="flex align-items-center gap-2 text-sm text-color-secondary">
+                  @if (presupuesto()!.empleadoNombre) {
+                    <i class="pi pi-user"></i>
+                    <span>{{ presupuesto()!.empleadoNombre }}</span>
+                  } @else {
+                    <span class="text-orange-600">Sin asignar</span>
+                  }
+                </div>
+
+                <div class="flex gap-2">
+                  <p-button
+                    label="Volver"
+                    severity="secondary"
+                    [outlined]="true"
+                    (onClick)="goBack()">
+                  </p-button>
+
+                  @if (puedeEditar()) {
+                    <p-button
+                      label="Editar"
+                      icon="pi pi-pencil"
+                      severity="secondary"
+                      [outlined]="true"
+                      (onClick)="volverAEditar()"
+                      [loading]="guardando()">
+                    </p-button>
+                  }
+
+                  @if (puedeEnviar()) {
+                    <p-button
+                      label="Enviar al Cliente"
+                      icon="pi pi-send"
+                      severity="success"
+                      (onClick)="abrirDialogoEnvio()"
+                      [loading]="guardando()">
+                    </p-button>
+                  }
+
+                  @if (puedeCrearOrden()) {
+                    <p-button
+                      label="Crear Orden de Trabajo"
+                      icon="pi pi-wrench"
+                      severity="success"
+                      (onClick)="crearOrdenDeTrabajo()"
+                      [loading]="guardando()">
+                    </p-button>
+                  }
+                </div>
+              </div>
+            </ng-template>
+          </p-card>
+        }
       </div>
 
-      <!-- Actions Card -->
+      <!-- Resumen del Servicio (Reemplaza la sección de Acciones) -->
       <div class="col-12 lg:col-4">
-        <p-card>
-          <ng-template pTemplate="header">
-            <div class="p-3">
-              <h3 class="m-0">Acciones</h3>
-            </div>
-          </ng-template>
+        @if (servicio()) {
+          <p-card>
+            <ng-template pTemplate="header">
+              <div class="p-3 border-bottom-1 surface-border">
+                <h3 class="m-0 font-semibold flex align-items-center gap-2">
+                  <i class="pi pi-info-circle text-primary"></i>
+                  Información del Servicio
+                </h3>
+              </div>
+            </ng-template>
 
-          <div class="flex flex-column gap-2">
-            <p-button
-              label="Ver Servicio"
-              icon="pi pi-eye"
-              [outlined]="true"
-              class="w-full">
-            </p-button>
+            <div class="flex flex-column gap-4">
+              <!-- Número de Servicio -->
+              <div class="flex flex-column gap-2">
+                <label class="text-xs font-semibold text-600 uppercase">Número de Servicio</label>
+                <div class="flex align-items-center gap-2">
+                  <p-badge [value]="servicio()!.numeroServicio" severity="info"></p-badge>
+                </div>
+              </div>
 
-            @if (presupuesto()!.estado === EstadoPresupuesto.APROBADO) {
+              <p-divider class="my-2"></p-divider>
+
+              <!-- Cliente -->
+              <div class="flex flex-column gap-2">
+                <label class="text-xs font-semibold text-600 uppercase">Cliente</label>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-user text-primary"></i>
+                  <span class="font-medium">{{ servicio()!.clienteNombre }}</span>
+                </div>
+              </div>
+
+              <!-- Equipo -->
+              <div class="flex flex-column gap-2">
+                <label class="text-xs font-semibold text-600 uppercase">Equipo</label>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-desktop text-primary"></i>
+                  <span class="font-medium">{{ servicio()!.equipoDescripcion }}</span>
+                </div>
+              </div>
+
+              <p-divider class="my-2"></p-divider>
+
+              <!-- Problema Reportado -->
+              @if (servicio()!.fallaReportada) {
+                <div class="flex flex-column gap-2">
+                  <label class="text-xs font-semibold text-600 uppercase">Problema Reportado</label>
+                  <div class="p-3 bg-orange-50 border-left-3 border-orange-500 border-round-right">
+                    <p class="m-0 text-sm line-height-3 text-color-secondary">
+                      {{ servicio()!.fallaReportada }}
+                    </p>
+                  </div>
+                </div>
+              }
+
+              <!-- Observaciones del Servicio -->
+              @if (servicio()!.observaciones) {
+                <div class="flex flex-column gap-2">
+                  <label class="text-xs font-semibold text-600 uppercase">Observaciones del Empleado</label>
+                  <div class="p-3 bg-blue-50 border-left-3 border-primary border-round-right">
+                    <p class="m-0 text-sm line-height-3 text-color-secondary">
+                      {{ servicio()!.observaciones }}
+                    </p>
+                  </div>
+                </div>
+              }
+
+              <p-divider class="my-2"></p-divider>
+
+              <!-- Fechas -->
+              <div class="flex flex-column gap-3">
+                <div class="flex justify-content-between">
+                  <span class="text-xs font-semibold text-600 uppercase">Recepción</span>
+                  <span class="text-sm">{{ formatFecha(servicio()!.fechaRecepcion) }}</span>
+                </div>
+                
+                @if (servicio()!.fechaDevolucionPrevista) {
+                  <div class="flex justify-content-between">
+                    <span class="text-xs font-semibold text-600 uppercase">Devolución Prevista</span>
+                    <span class="text-sm">{{ formatFecha(servicio()!.fechaDevolucionPrevista) }}</span>
+                  </div>
+                }
+              </div>
+
+              <p-divider class="my-2"></p-divider>
+
+              <!-- Botón Ver Servicio Completo -->
               <p-button
-                label="Ver Orden de Trabajo"
-                icon="pi pi-file"
+                label="Ver Servicio Completo"
+                icon="pi pi-external-link"
                 [outlined]="true"
-                severity="success"
-                class="w-full">
+                class="w-full"
+                (onClick)="verServicio()">
               </p-button>
-            }
-
-            <p-divider></p-divider>
-
-            <p-button
-              label="Editar Presupuesto"
-              icon="pi pi-pencil"
-              severity="secondary"
-              [outlined]="true"
-              class="w-full">
-            </p-button>
-
-            @if (presupuesto()!.estado === EstadoPresupuesto.PENDIENTE || presupuesto()!.estado === EstadoPresupuesto.EN_CURSO) {
-              <p-button
-                label="Aprobar Presupuesto"
-                icon="pi pi-check"
-                severity="success"
-                class="w-full">
-              </p-button>
-
-              <p-button
-                label="Rechazar Presupuesto"
-                icon="pi pi-times"
-                severity="danger"
-                class="w-full">
-              </p-button>
-            }
-          </div>
-        </p-card>
+            </div>
+          </p-card>
+        }
       </div>
     </div>
   }
 </div>
+
+<!-- Diálogo de Envío de Presupuesto -->
+<p-dialog
+  [(visible)]="dialogEnvioVisible"
+  [modal]="true"
+  [closable]="true"
+  [dismissableMask]="false"
+  [style]="{ width: '450px' }"
+  header="Enviar Presupuesto al Cliente">
+
+  <div class="flex flex-column gap-4">
+    <!-- Mensaje de instrucción -->
+    <div class="p-3 bg-blue-50 border-left-3 border-blue-500 border-round-right">
+      <p class="m-0 text-sm line-height-3 text-color-secondary">
+        Seleccione qué precios desea mostrar al cliente. Puede elegir una o ambas opciones.
+      </p>
+    </div>
+
+    <!-- Opciones de precios -->
+    <div class="flex flex-column gap-3">
+      <div class="flex align-items-center">
+        <p-checkbox
+          [(ngModel)]="mostrarOriginal"
+          [binary]="true"
+          inputId="mostrarOriginal">
+        </p-checkbox>
+        <label for="mostrarOriginal" class="ml-2 cursor-pointer">
+          Mostrar Precio Original
+        </label>
+      </div>
+
+      <div class="flex align-items-center">
+        <p-checkbox
+          [(ngModel)]="mostrarAlternativo"
+          [binary]="true"
+          inputId="mostrarAlternativo">
+        </p-checkbox>
+        <label for="mostrarAlternativo" class="ml-2 cursor-pointer">
+          Mostrar Precio Alternativo
+        </label>
+      </div>
+    </div>
+
+    <!-- Mensaje adicional opcional -->
+    <div class="flex flex-column gap-2">
+      <label for="mensajeAdicional" class="text-sm font-semibold text-600">
+        Mensaje adicional (opcional)
+      </label>
+      <textarea
+        pTextarea
+        id="mensajeAdicional"
+        [(ngModel)]="mensajeAdicional"
+        rows="3"
+        [maxlength]="500"
+        placeholder="Agregue un mensaje personalizado para el cliente..."
+        class="w-full">
+      </textarea>
+      <small class="text-xs text-500">
+        {{ mensajeAdicional().length }}/500 caracteres
+      </small>
+    </div>
+
+    <!-- Vista previa de precios -->
+    @if (presupuesto()) {
+      <div class="p-3 bg-gray-50 border-round">
+        <div class="flex flex-column gap-2">
+          <span class="text-xs font-semibold text-600 uppercase">Vista Previa:</span>
+
+          @if (mostrarOriginal()) {
+            <div class="flex justify-content-between">
+              <span class="text-sm">Precio Original:</span>
+              <span class="text-sm font-semibold">{{ formatCurrency(presupuesto()!.montoTotalOriginal) }}</span>
+            </div>
+          }
+
+          @if (mostrarAlternativo() && presupuesto()!.montoTotalAlternativo) {
+            <div class="flex justify-content-between">
+              <span class="text-sm">Precio Alternativo:</span>
+              <span class="text-sm font-semibold">{{ formatCurrency(presupuesto()!.montoTotalAlternativo!) }}</span>
+            </div>
+          }
+
+          @if (!mostrarOriginal() && !mostrarAlternativo()) {
+            <span class="text-sm text-red-600">Debe seleccionar al menos una opción</span>
+          }
+        </div>
+      </div>
+    }
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="cerrarDialogoEnvio()">
+      </p-button>
+      <p-button
+        label="Enviar"
+        icon="pi pi-send"
+        severity="success"
+        (onClick)="confirmarEnvio()"
+        [disabled]="!mostrarOriginal() && !mostrarAlternativo()"
+        [loading]="enviandoEmail()">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>

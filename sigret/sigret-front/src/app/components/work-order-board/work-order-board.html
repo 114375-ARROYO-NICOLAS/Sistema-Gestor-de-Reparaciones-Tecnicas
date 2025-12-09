@@ -59,86 +59,100 @@
   @if (!loading() && !error()) {
     <div cdkDropListGroup class="flex gap-3 overflow-x-auto pb-3" style="min-height: calc(100vh - 16rem);">
       @for (column of columns; track column.state) {
-        <div
-          cdkDropList
-          [cdkDropListData]="column.orders"
-          [id]="'column-' + column.state"
-          (cdkDropListDropped)="dropOrder($event, column)"
-          class="flex flex-column border-round surface-card shadow-2"
-          style="flex: 0 0 380px; border-top: 4px solid"
-          [style.border-top-color]="column.color">
-
-          <!-- Column Header -->
-          <div class="flex justify-content-between align-items-center p-3 border-round-top text-white"
-               [style.background-color]="column.color">
-            <h5 class="m-0 font-semibold">{{ column.name }}</h5>
-            <p-badge [value]="column.orders.length.toString()"
-                     [style]="{ 'background-color': 'rgba(255, 255, 255, 0.25)' }">
-            </p-badge>
+        <div class="flex-shrink-0" style="width: 260px;">
+          <!-- Header de columna -->
+          <div class="border-round-top p-3 border-1 border-bottom-none surface-100"
+               [ngClass]="{
+                 'border-orange-200': column.state === 'PENDIENTE',
+                 'border-blue-200': column.state === 'EN_PROGRESO',
+                 'border-green-200': column.state === 'TERMINADA',
+                 'border-red-200': column.state === 'CANCELADA'
+               }">
+            <div class="flex align-items-center justify-content-between">
+              <h3 class="text-base font-semibold m-0"
+                  [ngClass]="{
+                    'text-orange-600': column.state === 'PENDIENTE',
+                    'text-blue-600': column.state === 'EN_PROGRESO',
+                    'text-green-600': column.state === 'TERMINADA',
+                    'text-red-600': column.state === 'CANCELADA'
+                  }">
+                {{ column.name }}
+              </h3>
+              <p-tag [value]="column.orders.length.toString()"
+                     [severity]="column.state === 'PENDIENTE' ? 'warn' :
+                                 column.state === 'EN_PROGRESO' ? 'info' :
+                                 column.state === 'TERMINADA' ? 'success' : 'danger'">
+              </p-tag>
+            </div>
           </div>
 
-          <!-- Column Body -->
-          <div class="flex-1 overflow-y-auto p-2" style="min-height: 200px; max-height: calc(100vh - 20rem);">
+          <!-- Drop zone -->
+          <div
+            cdkDropList
+            [cdkDropListData]="column.orders"
+            [id]="'column-' + column.state"
+            (cdkDropListDropped)="dropOrder($event, column)"
+            class="surface-border border-1 border-round-bottom p-3 surface-ground"
+            style="min-height: 400px; max-height: calc(100vh - 500px); overflow-y: auto;">
             @for (order of column.orders; track order.id) {
-              <p-card
+              <div
                 cdkDrag
                 [cdkDragData]="order"
-                class="mb-2 order-card">
+                class="surface-card border-round shadow-1 p-2 mb-2 cursor-move hover:shadow-3 transition-duration-200 border-1 surface-border"
+                (click)="viewOrderDetail(order.id, $event)">
 
-                <ng-template pTemplate="header">
-                  <div class="flex justify-content-between align-items-center p-3 pb-0">
-                    <strong class="text-primary text-lg">{{ order.numeroServicio }}</strong>
-                    @if (order.esSinCosto) {
-                      <p-badge value="Sin Costo" severity="success"></p-badge>
-                    }
-                  </div>
-                </ng-template>
-
-                <div class="flex flex-column gap-2">
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-user text-color-secondary"></i>
-                    <span class="text-sm font-medium">{{ order.clienteNombre }}</span>
-                  </div>
-
-                  @if (order.equipoDescripcion) {
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-desktop text-color-secondary"></i>
-                      <span class="text-sm">{{ order.equipoDescripcion }}</span>
-                    </div>
-                  }
-
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-user-edit text-color-secondary text-sm"></i>
-                    <span class="text-xs font-medium text-900">{{ order.empleadoNombre }}</span>
-                  </div>
-
-                  @if (order.montoTotalFinal) {
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-dollar text-color-secondary"></i>
-                      <span class="text-sm font-semibold text-900">{{ formatCurrency(order.montoTotalFinal) }}</span>
-                    </div>
-                  }
-
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-calendar text-color-secondary"></i>
-                    <span class="text-xs text-color-secondary">Creada: {{ order.fechaCreacion | date: 'dd/MM/yyyy' }}</span>
-                  </div>
-
-                  @if (order.fechaComienzo) {
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-play text-color-secondary"></i>
-                      <span class="text-xs text-color-secondary">Inicio: {{ order.fechaComienzo | date: 'dd/MM/yyyy' }}</span>
-                    </div>
-                  }
-
-                  @if (order.fechaFin) {
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-check text-color-secondary"></i>
-                      <span class="text-xs text-green-600">Fin: {{ order.fechaFin | date: 'dd/MM/yyyy' }}</span>
-                    </div>
+                <!-- Header de la card -->
+                <div class="flex justify-content-between align-items-start mb-2">
+                  <p-tag [value]="order.numeroOrdenTrabajo" severity="info"></p-tag>
+                  @if (order.esSinCosto) {
+                    <p-badge value="Sin Costo" severity="success"></p-badge>
                   }
                 </div>
-              </p-card>
+
+                <!-- Cliente -->
+                <div class="mb-1 overflow-hidden text-overflow-ellipsis white-space-nowrap">
+                  <span class="text-sm font-semibold text-900">{{ order.clienteNombre }}</span>
+                </div>
+
+                <!-- Equipo -->
+                <div class="mb-2 overflow-hidden text-overflow-ellipsis white-space-nowrap">
+                  <span class="text-sm text-700">{{ order.equipoDescripcion || 'Sin equipo' }}</span>
+                </div>
+
+                <!-- Footer: Fechas, Empleado y Monto -->
+                <div class="flex flex-column gap-2 pt-2 border-top-1 surface-border">
+                  <div class="flex align-items-center gap-2 text-xs text-500">
+                    <div class="flex align-items-center gap-1">
+                      <i class="pi pi-calendar text-xs"></i>
+                      <span>{{ order.fechaCreacion | date: 'dd/MM/yyyy' }}</span>
+                    </div>
+                    @if (order.fechaComienzo) {
+                      <div class="flex align-items-center gap-1">
+                        <i class="pi pi-play text-xs"></i>
+                        <span>{{ order.fechaComienzo | date: 'dd/MM/yy' }}</span>
+                      </div>
+                    }
+                    @if (order.fechaFin) {
+                      <div class="flex align-items-center gap-1">
+                        <i class="pi pi-check text-xs"></i>
+                        <span>{{ order.fechaFin | date: 'dd/MM/yy' }}</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Empleado asignado -->
+                  <div class="flex align-items-center gap-1 text-xs">
+                    @if (order.empleadoNombre) {
+                      <i class="pi pi-user text-xs text-600"></i>
+                      <span class="text-600 font-medium overflow-hidden text-overflow-ellipsis white-space-nowrap">
+                        {{ order.empleadoNombre }}
+                      </span>
+                    } @else {
+                      <span class="text-orange-600 font-medium">Sin asignar</span>
+                    }
+                  </div>
+                </div>
+              </div>
             }
 
             @if (column.orders.length === 0) {

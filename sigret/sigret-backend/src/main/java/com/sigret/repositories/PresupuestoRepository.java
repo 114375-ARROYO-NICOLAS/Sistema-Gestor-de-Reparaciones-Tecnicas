@@ -13,10 +13,6 @@ import java.util.List;
 @Repository
 public interface PresupuestoRepository extends JpaRepository<Presupuesto, Long> {
 
-    // Note: Presupuesto entity doesn't have numeroPresupuesto field
-    // Optional<Presupuesto> findByNumeroPresupuesto(String numeroPresupuesto);
-    // boolean existsByNumeroPresupuesto(String numeroPresupuesto);
-
     List<Presupuesto> findByServicioId(Long servicioId);
 
     List<Presupuesto> findByEstado(EstadoPresupuesto estado);
@@ -27,7 +23,6 @@ public interface PresupuestoRepository extends JpaRepository<Presupuesto, Long> 
     @Query("SELECT p FROM Presupuesto p WHERE p.fechaCreacion BETWEEN :fechaInicio AND :fechaFin")
     List<Presupuesto> findByFechaCreacionBetween(@Param("fechaInicio") LocalDate fechaInicio, @Param("fechaFin") LocalDate fechaFin);
 
-    // Note: Presupuesto entity doesn't have numeroPresupuesto field
-    // @Query("SELECT MAX(CAST(SUBSTRING(p.numeroPresupuesto, 5) AS UNSIGNED)) FROM Presupuesto p WHERE p.numeroPresupuesto LIKE :pattern")
-    // Integer findMaxNumeroPresupuesto(@Param("pattern") String pattern);
+    @Query("SELECT MAX(CAST(SUBSTRING(p.numeroPresupuesto, 8) AS int)) FROM Presupuesto p WHERE p.numeroPresupuesto LIKE :pattern")
+    Integer findMaxNumeroPresupuesto(@Param("pattern") String pattern);
 }

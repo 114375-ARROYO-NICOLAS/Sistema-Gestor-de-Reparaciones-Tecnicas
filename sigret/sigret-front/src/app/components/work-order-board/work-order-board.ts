@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
+import { Tag } from 'primeng/tag';
 
 interface Column {
   name: string;
@@ -27,6 +28,7 @@ interface Column {
     ProgressSpinnerModule,
     BadgeModule,
     CardModule,
+    Tag,
     CdkDrag,
     CdkDropList,
     CdkDropListGroup
@@ -300,5 +302,13 @@ export class WorkOrderBoardComponent implements OnInit, OnDestroy {
 
   refresh(): void {
     this.loadOrders();
+  }
+
+  viewOrderDetail(orderId: number, event?: MouseEvent): void {
+    // Prevent navigation if we're dragging
+    if (event && (event.target as HTMLElement).closest('.cdk-drag-preview')) {
+      return;
+    }
+    this.router.navigate(['/ordenes-trabajo', orderId]);
   }
 }

@@ -1,7 +1,9 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
+import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, OnDestroy, viewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { CdkDropListGroup, CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { ServicioService } from '../../services/servicio.service';
+import { OrdenTrabajoService } from '../../services/orden-trabajo.service';
 import { WebSocketService } from '../../services/websocket.service';
 import { AuthService } from '../../services/auth.service';
 import { ServicioList, EstadoServicio, ServicioEvent } from '../../models/servicio.model';
@@ -11,9 +13,8 @@ import { Card } from 'primeng/card';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { Toast } from 'primeng/toast';
-import { Tooltip } from 'primeng/tooltip';
 import { Subscription } from 'rxjs';
+import { EvaluacionGarantiaDialog, ResultadoEvaluacion, EvaluacionResult } from '../evaluacion-garantia-dialog/evaluacion-garantia-dialog';
 
 interface ColumnaKanban {
   titulo: string;
@@ -27,20 +28,22 @@ interface ColumnaKanban {
   selector: 'app-tablero-garantias',
   imports: [
     CommonModule,
+    CdkDropListGroup,
+    CdkDropList,
+    CdkDrag,
     Card,
     Button,
     Tag,
     ProgressSpinner,
-    Toast,
-    Tooltip
+    EvaluacionGarantiaDialog
   ],
   templateUrl: './tablero-garantias.html',
   styleUrl: './tablero-garantias.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [MessageService]
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TableroGarantiasComponent implements OnInit, OnDestroy {
   private readonly servicioService = inject(ServicioService);
+  private readonly ordenTrabajoService = inject(OrdenTrabajoService);
   private readonly websocketService = inject(WebSocketService);
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
@@ -49,8 +52,6 @@ export class TableroGarantiasComponent implements OnInit, OnDestroy {
   // Signals
   readonly loading = signal<boolean>(true);
   readonly servicios = signal<ServicioList[]>([]);
-  readonly servicioArrastrado = signal<ServicioList | null>(null);
-  readonly columnaHover = signal<string | null>(null);
 
   // Computed - Estadísticas totales
   readonly totalGarantias = computed(() => this.servicios().length);
@@ -63,6 +64,13 @@ export class TableroGarantiasComponent implements OnInit, OnDestroy {
 
   // WebSocket subscription
   private wsSubscription?: Subscription;
+
+  // Diálogo de evaluación
+  readonly evaluacionDialog = viewChild.required<EvaluacionGarantiaDialog>('evaluacionDialog');
+
+  // Estado temporal para el servicio que está siendo evaluado
+  private servicioEnEvaluacion?: ServicioList;
+  private estadoDestino?: EstadoServicio;
 
   // Definición de columnas del Kanban
   readonly columnas: ColumnaKanban[] = [
@@ -178,42 +186,34 @@ export class TableroGarantiasComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Drag and Drop handlers
-  onDragStart(servicio: ServicioList, event: DragEvent): void {
-    this.servicioArrastrado.set(servicio);
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', servicio.id.toString());
+  // Método para obtener IDs de todas las drop lists conectadas
+  getConnectedDropLists(): string[] {
+    const columnIds = this.columnas.map(col => `columna-${col.estado}`);
+    return ['servicios-recibidos', ...columnIds];
+  }
+
+  // CDK Drag and Drop handler
+  dropServicio(event: CdkDragDrop<ServicioList[]>, columna?: ColumnaKanban): void {
+    const servicio = event.item.data as ServicioList;
+
+    // Si se suelta en el mismo contenedor, reorganizar
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+      return;
     }
-  }
 
-  onDragOver(event: DragEvent): void {
-    event.preventDefault();
-    if (event.dataTransfer) {
-      event.dataTransfer.dropEffect = 'move';
+    // Determinar el nuevo estado
+    let nuevoEstado: EstadoServicio;
+
+    if (columna) {
+      nuevoEstado = columna.estado;
+    } else {
+      // Si no hay columna, es porque se soltó en servicios-recibidos
+      nuevoEstado = EstadoServicio.RECIBIDO;
     }
-  }
-
-  onDragEnter(columna: ColumnaKanban): void {
-    this.columnaHover.set(columna.estado);
-  }
-
-  onDragLeave(): void {
-    this.columnaHover.set(null);
-  }
-
-  onDrop(columna: ColumnaKanban, event: DragEvent): void {
-    event.preventDefault();
-    this.columnaHover.set(null);
-
-    const servicio = this.servicioArrastrado();
-    if (!servicio) return;
-
-    const nuevoEstado = columna.estado;
 
     // No hacer nada si es el mismo estado
     if (servicio.estado === nuevoEstado) {
-      this.servicioArrastrado.set(null);
       return;
     }
 
@@ -224,18 +224,43 @@ export class TableroGarantiasComponent implements OnInit, OnDestroy {
         summary: 'Transición no válida',
         detail: `No se puede mover de ${servicio.estado} a ${nuevoEstado}`
       });
-      this.servicioArrastrado.set(null);
       return;
     }
 
-    // Cambiar estado
-    this.cambiarEstado(servicio, nuevoEstado);
-    this.servicioArrastrado.set(null);
+    // Verificar si necesita evaluación (cuando viene de ESPERANDO_EVALUACION_GARANTIA)
+    if (servicio.estado === EstadoServicio.ESPERANDO_EVALUACION_GARANTIA) {
+      this.servicioEnEvaluacion = servicio;
+      this.estadoDestino = nuevoEstado;
+
+      // Determinar el tipo de evaluación según el estado destino
+      let tipoEvaluacion: ResultadoEvaluacion;
+
+      if (nuevoEstado === EstadoServicio.EN_REPARACION) {
+        tipoEvaluacion = 'CUMPLE';
+      } else if (nuevoEstado === EstadoServicio.GARANTIA_RECHAZADA) {
+        tipoEvaluacion = 'NO_CUMPLE';
+      } else if (nuevoEstado === EstadoServicio.GARANTIA_SIN_REPARACION) {
+        tipoEvaluacion = 'SIN_REPARACION';
+      } else {
+        // No debería llegar aquí, pero por si acaso
+        this.cambiarEstado(servicio, nuevoEstado);
+        return;
+      }
+
+      // Abrir el diálogo de evaluación
+      this.evaluacionDialog().open(servicio, tipoEvaluacion);
+    } else {
+      // Si no necesita evaluación, cambiar estado directamente
+      this.cambiarEstado(servicio, nuevoEstado);
+    }
   }
 
   esTransicionValida(estadoActual: EstadoServicio, estadoNuevo: EstadoServicio): boolean {
     // Definir transiciones válidas
     const transicionesValidas: Record<string, EstadoServicio[]> = {
+      [EstadoServicio.RECIBIDO]: [
+        EstadoServicio.ESPERANDO_EVALUACION_GARANTIA
+      ],
       [EstadoServicio.ESPERANDO_EVALUACION_GARANTIA]: [
         EstadoServicio.EN_REPARACION,
         EstadoServicio.GARANTIA_SIN_REPARACION,
@@ -275,13 +300,12 @@ export class TableroGarantiasComponent implements OnInit, OnDestroy {
     // Actualizar el servicio con estado y asignación de técnico
     this.servicioService.actualizarServicio(servicio.id, updateDto).subscribe({
       next: (servicioActualizado) => {
-        // Actualizar el servicio en la lista
-        this.servicios.update(servicios =>
-          servicios.map(s => s.id === servicio.id ? {
-            ...s,
-            estado: servicioActualizado.estado
-          } : s)
-        );
+        // Recargar todas las garantías para obtener los campos actualizados (incluido técnico asignado)
+        this.servicioService.obtenerServiciosGarantia().subscribe({
+          next: (servicios) => {
+            this.servicios.set(servicios);
+          }
+        });
 
         this.messageService.add({
           severity: 'success',
@@ -322,6 +346,166 @@ export class TableroGarantiasComponent implements OnInit, OnDestroy {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
+    });
+  }
+
+  /**
+   * Maneja la confirmación de la evaluación de garantía
+   */
+  onEvaluacionConfirmada(resultado: EvaluacionResult): void {
+    if (!this.servicioEnEvaluacion || !this.estadoDestino) {
+      return;
+    }
+
+    const servicio = this.servicioEnEvaluacion;
+    const nuevoEstado = this.estadoDestino;
+
+    // Obtener el empleado logueado
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser || !currentUser.empleadoId) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo identificar al empleado logueado'
+      });
+      return;
+    }
+
+    // Preparar el DTO según el resultado
+    const updateDto: ServicioUpdateDto = {
+      estado: nuevoEstado,
+      tecnicoEvaluacionId: currentUser.empleadoId
+    };
+
+    // Agregar información específica según el tipo de evaluación
+    if (resultado.resultado === 'CUMPLE') {
+      updateDto.garantiaCumpleCondiciones = true;
+      updateDto.itemsEvaluacionGarantia = resultado.itemsSeleccionados;
+      updateDto.observacionesEvaluacionGarantia = 'Garantía aceptada - Items con falla identificados';
+    } else if (resultado.resultado === 'NO_CUMPLE') {
+      updateDto.garantiaCumpleCondiciones = false;
+      updateDto.observacionesEvaluacionGarantia = resultado.observaciones;
+    } else if (resultado.resultado === 'SIN_REPARACION') {
+      updateDto.garantiaCumpleCondiciones = true; // Cumple pero no necesita reparación
+      updateDto.observacionesEvaluacionGarantia = resultado.observaciones;
+    }
+
+    // Actualizar el servicio
+    this.servicioService.actualizarServicio(servicio.id, updateDto).subscribe({
+      next: () => {
+        // Si cumple condiciones, crear orden de trabajo automáticamente
+        if (resultado.resultado === 'CUMPLE') {
+          this.crearOrdenTrabajoGarantia(servicio, resultado);
+        } else {
+          // Para los otros casos, solo recargar
+          this.recargarGarantias();
+          this.mostrarMensajeExito(resultado.resultado, servicio);
+        }
+      },
+      error: (error) => {
+        console.error('Error al evaluar garantía:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo procesar la evaluación de garantía'
+        });
+      }
+    });
+
+    // Limpiar estado temporal
+    this.servicioEnEvaluacion = undefined;
+    this.estadoDestino = undefined;
+  }
+
+  /**
+   * Crea una orden de trabajo sin costo para la garantía
+   */
+  private crearOrdenTrabajoGarantia(servicio: ServicioList, resultado: EvaluacionResult): void {
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser?.empleadoId) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo identificar el empleado actual',
+        life: 3000
+      });
+      return;
+    }
+
+    // Crear observaciones básicas
+    const observaciones = resultado.observaciones || 'Garantía aceptada';
+
+    // Llamar al servicio para crear la orden de trabajo con los items seleccionados
+    this.ordenTrabajoService.crearOrdenTrabajoGarantia(
+      servicio.id,
+      currentUser.empleadoId,
+      observaciones,
+      resultado.itemsSeleccionados
+    ).subscribe({
+      next: (ordenCreada) => {
+        this.recargarGarantias();
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Orden de Trabajo Creada',
+          detail: `Orden de trabajo sin costo creada para garantía ${servicio.numeroServicio}`,
+          life: 5000
+        });
+      },
+      error: (error) => {
+        console.error('Error al crear orden de trabajo:', error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo crear la orden de trabajo para la garantía',
+          life: 5000
+        });
+      }
+    });
+  }
+
+  /**
+   * Maneja la cancelación de la evaluación
+   */
+  onEvaluacionCancelada(): void {
+    this.servicioEnEvaluacion = undefined;
+    this.estadoDestino = undefined;
+
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Evaluación cancelada',
+      detail: 'La evaluación de garantía fue cancelada',
+      life: 3000
+    });
+  }
+
+  /**
+   * Recarga las garantías del backend
+   */
+  private recargarGarantias(): void {
+    this.servicioService.obtenerServiciosGarantia().subscribe({
+      next: (servicios) => {
+        this.servicios.set(servicios);
+      }
+    });
+  }
+
+  /**
+   * Muestra mensaje de éxito según el tipo de evaluación
+   */
+  private mostrarMensajeExito(resultado: ResultadoEvaluacion, servicio: ServicioList): void {
+    let mensaje = '';
+
+    if (resultado === 'NO_CUMPLE') {
+      mensaje = `Garantía ${servicio.numeroServicio} rechazada`;
+    } else if (resultado === 'SIN_REPARACION') {
+      mensaje = `Garantía ${servicio.numeroServicio} marcada como sin reparación`;
+    }
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Evaluación Completada',
+      detail: mensaje,
+      life: 3000
     });
   }
 }

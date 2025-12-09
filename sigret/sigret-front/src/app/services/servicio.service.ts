@@ -10,6 +10,7 @@ import {
   PaginatedResponse
 } from '../models/servicio.model';
 import { ServicioUpdateDto } from '../models/servicio-update.dto';
+import { ItemServicioOriginal } from '../models/item-evaluacion-garantia.model';
 
 @Injectable({
   providedIn: 'root'
@@ -154,5 +155,13 @@ export class ServicioService {
    */
   crearServicioGarantia(servicioOriginalId: number, datos: Partial<ServicioCreateDto>): Observable<ServicioResponse> {
     return this.http.post<ServicioResponse>(`${this.API_URL}/garantia/${servicioOriginalId}`, datos);
+  }
+
+  /**
+   * Obtiene los items (repuestos) usados en la reparación del servicio original
+   * Para mostrar en la evaluación de garantía
+   */
+  obtenerItemsServicioOriginal(servicioGarantiaId: number): Observable<ItemServicioOriginal[]> {
+    return this.http.get<ItemServicioOriginal[]>(`${this.API_URL}/${servicioGarantiaId}/items-servicio-original`);
   }
 }

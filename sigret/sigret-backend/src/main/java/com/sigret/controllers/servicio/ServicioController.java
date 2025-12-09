@@ -1,5 +1,6 @@
 package com.sigret.controllers.servicio;
 
+import com.sigret.dtos.servicio.ItemServicioOriginalDto;
 import com.sigret.dtos.servicio.ServicioCreateDto;
 import com.sigret.dtos.servicio.ServicioListDto;
 import com.sigret.dtos.servicio.ServicioResponseDto;
@@ -197,5 +198,18 @@ public class ServicioController {
             @Valid @RequestBody ServicioCreateDto servicioGarantiaDto) {
         ServicioResponseDto servicioGarantiaCreado = servicioService.crearServicioGarantia(servicioOriginalId, servicioGarantiaDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(servicioGarantiaCreado);
+    }
+
+    @GetMapping("/{id}/items-servicio-original")
+    @Operation(summary = "Obtener items del servicio original", description = "Obtiene los repuestos usados en la reparación del servicio original (para evaluación de garantía)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Items obtenidos exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Servicio no encontrado o no es garantía")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<List<ItemServicioOriginalDto>> obtenerItemsServicioOriginal(
+            @Parameter(description = "ID del servicio de garantía") @PathVariable Long id) {
+        List<ItemServicioOriginalDto> items = servicioService.obtenerItemsServicioOriginal(id);
+        return ResponseEntity.ok(items);
     }
 }

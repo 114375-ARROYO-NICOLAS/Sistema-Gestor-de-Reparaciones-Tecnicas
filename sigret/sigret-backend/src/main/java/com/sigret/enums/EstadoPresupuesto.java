@@ -4,6 +4,8 @@ public enum EstadoPresupuesto {
 
     PENDIENTE("Pendiente"),
     EN_CURSO("En Curso"),
+    LISTO("Listo"),
+    ENVIADO("Enviado"),
     APROBADO("Aprobado"),
     RECHAZADO("Rechazado");
 

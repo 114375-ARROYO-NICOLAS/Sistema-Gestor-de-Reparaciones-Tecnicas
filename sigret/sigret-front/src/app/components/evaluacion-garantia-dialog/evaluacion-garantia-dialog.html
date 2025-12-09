@@ -1,0 +1,164 @@
+<p-dialog
+  [(visible)]="visible"
+  [header]="dialogHeader()"
+  [modal]="true"
+  [style]="{ width: '700px' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onHide)="onCancel()">
+
+  @if (visible && servicio) {
+    <div class="dialog-content">
+      <!-- Información del servicio -->
+      <div class="mb-4 p-3 surface-100 border-round">
+        <div class="flex align-items-center gap-2 mb-2">
+          <i class="pi pi-shield text-primary text-xl"></i>
+          <span class="font-semibold text-lg">{{ servicio.numeroServicio }}</span>
+        </div>
+        <p class="text-600 m-0 text-sm">{{ servicio.clienteNombre }} - {{ servicio.equipoDescripcion }}</p>
+      </div>
+
+    <!-- Loading -->
+    @if (cargandoItems()) {
+      <div class="flex flex-column align-items-center justify-content-center py-6">
+        <p-progressSpinner
+          [style]="{ width: '40px', height: '40px' }"
+          strokeWidth="4"
+          animationDuration="1s">
+        </p-progressSpinner>
+        <p class="text-600 mt-3 m-0">Cargando items del servicio original...</p>
+      </div>
+    }
+
+    <!-- Evaluación para garantía que CUMPLE -->
+    @if (!cargandoItems() && resultado() === 'CUMPLE') {
+      <div class="mb-4">
+        <h4 class="text-900 mb-3">
+          <i class="pi pi-check-circle text-green-600 mr-2"></i>
+          Garantía Válida - Seleccione items con falla
+        </h4>
+        <p class="text-600 text-sm mb-3">
+          Marque los repuestos/componentes que presentan falla en la garantía:
+        </p>
+
+        @if (itemsEvaluacion().length === 0) {
+          <div class="text-center py-4 surface-50 border-round">
+            <i class="pi pi-info-circle text-4xl text-400 mb-2"></i>
+            <p class="m-0 text-600">No hay repuestos registrados en el servicio original</p>
+          </div>
+        } @else {
+          <div class="surface-card border-1 surface-border border-round overflow-hidden">
+            <table class="w-full">
+              <thead class="surface-100">
+                <tr>
+                  <th class="text-left p-3" style="width: 50px;"></th>
+                  <th class="text-left p-3">Repuesto</th>
+                  <th class="text-left p-3" style="width: 100px;">Cantidad</th>
+                  <th class="text-left p-3">Comentario (opcional)</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (item of itemsEvaluacion(); track item.repuestoId) {
+                  <tr class="border-top-1 surface-border hover:surface-hover transition-duration-150">
+                    <td class="p-3">
+                      <p-checkbox
+                        [(ngModel)]="item.seleccionado"
+                        [binary]="true"
+                        inputId="item-{{ item.repuestoId }}">
+                      </p-checkbox>
+                    </td>
+                    <td class="p-3">
+                      <div>
+                        <div class="font-semibold text-900">{{ item.item }}</div>
+                        @if (item.comentario) {
+                          <div class="text-xs text-500 mt-1">{{ item.comentario }}</div>
+                        }
+                      </div>
+                    </td>
+                    <td class="p-3 text-600">
+                      {{ item.cantidad }}
+                    </td>
+                    <td class="p-3">
+                      <input
+                        type="text"
+                        pInputText
+                        [(ngModel)]="item.comentarioEvaluacion"
+                        placeholder="Descripción de la falla..."
+                        class="w-full"
+                        [disabled]="!item.seleccionado" />
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mt-3 p-3 surface-50 border-round">
+            <p class="text-sm text-600 m-0">
+              <i class="pi pi-info-circle mr-2"></i>
+              Items seleccionados: <strong>{{ itemsSeleccionados().length }}</strong>
+            </p>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Evaluación para garantía que NO CUMPLE -->
+    @if (!cargandoItems() && resultado() === 'NO_CUMPLE') {
+      <div class="mb-4">
+        <h4 class="text-900 mb-3">
+          <i class="pi pi-times-circle text-red-600 mr-2"></i>
+          Garantía Rechazada
+        </h4>
+        <p class="text-600 text-sm mb-3">
+          Indique el motivo del rechazo de la garantía:
+        </p>
+        <textarea
+          pTextarea
+          [(ngModel)]="observaciones"
+          rows="5"
+          placeholder="Describa las razones por las que no se acepta la garantía..."
+          class="w-full">
+        </textarea>
+      </div>
+    }
+
+    <!-- Evaluación para SIN REPARACIÓN -->
+    @if (!cargandoItems() && resultado() === 'SIN_REPARACION') {
+      <div class="mb-4">
+        <h4 class="text-900 mb-3">
+          <i class="pi pi-info-circle text-cyan-600 mr-2"></i>
+          Sin Reparación
+        </h4>
+        <p class="text-600 text-sm mb-3">
+          Indique las observaciones sobre por qué no requiere reparación:
+        </p>
+        <textarea
+          pTextarea
+          [(ngModel)]="observaciones"
+          rows="5"
+          placeholder="Describa por qué el equipo no requiere reparación..."
+          class="w-full">
+        </textarea>
+      </div>
+    }
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="onCancel()">
+      </p-button>
+      <p-button
+        [label]="resultado() === 'CUMPLE' ? 'Evaluar y Continuar' : 'Confirmar'"
+        severity="primary"
+        (onClick)="onConfirm()"
+        [disabled]="!esFormularioValido()">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
