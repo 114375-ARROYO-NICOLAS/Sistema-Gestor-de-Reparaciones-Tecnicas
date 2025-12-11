@@ -1,0 +1,161 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="visible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '90vw', maxWidth: '800px', maxHeight: '90vh' }"
+  header="Términos y Condiciones del Servicio"
+  [closable]="true">
+
+  <div class="terminos-content">
+    <!-- Introducción -->
+    <section class="intro-section">
+      <p class="intro-text">
+        El presente servicio se rige por las disposiciones de la <strong>Ley N° 24.240 de Defensa del Consumidor</strong>
+        de la República Argentina y sus modificatorias. A continuación se detallan los artículos más relevantes
+        que regulan la relación entre nuestra empresa y el cliente.
+      </p>
+    </section>
+
+    <!-- Artículos de la Ley -->
+    <section class="articulos-section">
+      <h3>Ley de Defensa del Consumidor - Artículos Aplicables</h3>
+
+      <!-- Artículo 4 -->
+      <div class="articulo">
+        <h4>Artículo 4 - Información al Consumidor</h4>
+        <p>
+          El proveedor está obligado a suministrar al consumidor en forma cierta, clara y detallada todo lo relacionado
+          con las características esenciales de los bienes y servicios que provee, y las condiciones de su comercialización.
+          La información debe ser siempre gratuita para el consumidor y proporcionada con claridad necesaria que permita
+          su comprensión.
+        </p>
+      </div>
+
+      <!-- Artículo 10 -->
+      <div class="articulo">
+        <h4>Artículo 10 - Contenido del Documento de Venta</h4>
+        <p>
+          En el documento que se extienda por la operación deberá constar:
+        </p>
+        <ul>
+          <li>Descripción del servicio a realizar</li>
+          <li>Precio total y condiciones de pago</li>
+          <li>Nombre y domicilio del prestador del servicio</li>
+          <li>Identificación del equipo recibido</li>
+          <li>Plazo de entrega estimado si correspondiere</li>
+        </ul>
+      </div>
+
+      <!-- Artículo 11 -->
+      <div class="articulo">
+        <h4>Artículo 11 - Garantía Legal por Servicios</h4>
+        <p>
+          Los servicios de reparación deben ser realizados en forma adecuada y según las reglas del arte.
+          El prestador del servicio es responsable de los defectos que puedan presentarse en el trabajo realizado
+          durante el período de garantía establecido.
+        </p>
+      </div>
+
+      <!-- Artículo 13 -->
+      <div class="articulo">
+        <h4>Artículo 13 - Obligaciones del Prestador</h4>
+        <p>
+          El prestador debe:
+        </p>
+        <ul>
+          <li>Entregar un presupuesto detallado cuando el valor del servicio supere el monto establecido</li>
+          <li>Notificar cualquier modificación en el presupuesto antes de proceder</li>
+          <li>Realizar el servicio en el plazo convenido</li>
+          <li>Garantizar la calidad del trabajo realizado</li>
+          <li>Devolver el equipo en las condiciones pactadas</li>
+        </ul>
+      </div>
+
+      <!-- Artículo 19 -->
+      <div class="articulo">
+        <h4>Artículo 19 - Responsabilidad Solidaria</h4>
+        <p>
+          Los proveedores responderán solidariamente frente al consumidor por el incumplimiento de las obligaciones
+          resultantes de la venta de la cosa o de la prestación del servicio.
+        </p>
+      </div>
+
+      <!-- Artículo 21 -->
+      <div class="articulo">
+        <h4>Artículo 21 - Plazo de Garantía</h4>
+        <p>
+          En los servicios de reparación, el plazo de garantía será fijado expresamente en el comprobante que se entregue
+          al consumidor. En caso de no estar especificado, se considerará un plazo mínimo de garantía de 90 días
+          desde la entrega del bien reparado.
+        </p>
+      </div>
+
+      <!-- Artículo 27 -->
+      <div class="articulo">
+        <h4>Artículo 27 - Derecho a Rescindir</h4>
+        <p>
+          El consumidor tiene derecho a rescindir el contrato en caso de que el servicio no se preste en el plazo
+          acordado, o cuando resulte inadecuado para el destino que razonablemente debía tener.
+        </p>
+      </div>
+
+      <!-- Artículo 40 -->
+      <div class="articulo">
+        <h4>Artículo 40 - Servicio Técnico</h4>
+        <p>
+          Los fabricantes, importadores y vendedores de las cosas muebles no consumibles durables están obligados
+          a asegurar un servicio técnico adecuado y el suministro de partes y repuestos.
+        </p>
+      </div>
+
+      <!-- Artículo 40 bis -->
+      <div class="articulo">
+        <h4>Artículo 40 bis - Reparación de Equipos</h4>
+        <p>
+          Los prestadores de servicios de reparación deberán:
+        </p>
+        <ul>
+          <li>Entregar presupuesto previo cuando el monto supere el límite establecido</li>
+          <li>Extender comprobante de recepción del equipo con descripción detallada</li>
+          <li>Conservar en depósito las piezas sustituidas durante 60 días</li>
+          <li>Garantizar el servicio realizado por tiempo no inferior a 30 días</li>
+        </ul>
+      </div>
+
+      <!-- Artículo 45 -->
+      <div class="articulo">
+        <h4>Artículo 45 - Protección de Datos Personales</h4>
+        <p>
+          Los datos personales del consumidor serán tratados de acuerdo con lo establecido en la
+          Ley N° 25.326 de Protección de Datos Personales. El consumidor tiene derecho a acceder,
+          rectificar y suprimir sus datos en cualquier momento.
+        </p>
+      </div>
+    </section>
+
+    <!-- Nota final -->
+    <section class="nota-final">
+      <div class="nota-box">
+        <i class="pi pi-info-circle"></i>
+        <div>
+          <strong>Importante:</strong> Al aceptar los términos y condiciones, usted reconoce haber sido informado
+          de sus derechos como consumidor según la Ley 24.240 y acepta que el servicio se prestará bajo estas
+          disposiciones legales.
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="dialog-footer">
+      <p-button
+        label="Cerrar"
+        icon="pi pi-times"
+        (onClick)="hideDialog()"
+        severity="secondary"
+        [outlined]="true" />
+    </div>
+  </ng-template>
+</p-dialog>

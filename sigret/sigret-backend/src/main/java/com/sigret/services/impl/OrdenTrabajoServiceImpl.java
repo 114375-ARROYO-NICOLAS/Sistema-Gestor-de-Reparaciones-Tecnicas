@@ -328,7 +328,7 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
         dto.setClienteNombre(ordenTrabajo.getServicio().getCliente().getNombreCompleto());
         dto.setEquipoDescripcion(ordenTrabajo.getServicio().getEquipo().getDescripcionCompleta());
         dto.setPresupuestoId(ordenTrabajo.getPresupuesto() != null ? ordenTrabajo.getPresupuesto().getId() : null);
-        dto.setNumeroPresupuesto(ordenTrabajo.getPresupuesto() != null ? ordenTrabajo.getPresupuesto().getId().toString() : null);
+        dto.setNumeroPresupuesto(ordenTrabajo.getPresupuesto() != null ? ordenTrabajo.getPresupuesto().getNumeroPresupuesto() : null);
         dto.setEmpleadoId(ordenTrabajo.getEmpleado().getId());
         dto.setEmpleadoNombre(ordenTrabajo.getEmpleado().getNombreCompleto());
         dto.setMontoTotalRepuestos(ordenTrabajo.getMontoTotalRepuestos());

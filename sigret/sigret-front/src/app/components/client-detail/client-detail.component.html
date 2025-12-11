@@ -22,7 +22,6 @@
               [value]="clientService.getStatusDisplayName(client()!.activo)"
               [severity]="clientService.getStatusColor(client()!.activo)">
             </p-tag>
-            <span class="text-sm md:text-base text-600">{{ client()!.tipoPersona }}</span>
           </div>
         </div>
       </div>
@@ -92,16 +91,6 @@
                   </div>
                 </div>
               }
-
-              <div class="col-12 md:col-6">
-                <div class="mb-3">
-                  <label class="text-sm text-600 mb-1 block">Estado</label>
-                  <p-tag 
-                    [value]="clientService.getStatusDisplayName(client()!.activo)"
-                    [severity]="clientService.getStatusColor(client()!.activo)">
-                  </p-tag>
-                </div>
-              </div>
             </div>
           </ng-template>
         </p-card>

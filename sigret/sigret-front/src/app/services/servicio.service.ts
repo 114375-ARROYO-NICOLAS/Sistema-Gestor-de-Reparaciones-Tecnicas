@@ -164,4 +164,20 @@ export class ServicioService {
   obtenerItemsServicioOriginal(servicioGarantiaId: number): Observable<ItemServicioOriginal[]> {
     return this.http.get<ItemServicioOriginal[]>(`${this.API_URL}/${servicioGarantiaId}/items-servicio-original`);
   }
+
+  /**
+   * Descarga el PDF del servicio
+   */
+  descargarPdfServicio(id: number): Observable<Blob> {
+    return this.http.get(`${this.API_URL}/${id}/pdf`, {
+      responseType: 'blob'
+    });
+  }
+
+  /**
+   * Envía el PDF por email al cliente
+   */
+  enviarPdfPorEmail(id: number): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/${id}/pdf/enviar-email`, null);
+  }
 }

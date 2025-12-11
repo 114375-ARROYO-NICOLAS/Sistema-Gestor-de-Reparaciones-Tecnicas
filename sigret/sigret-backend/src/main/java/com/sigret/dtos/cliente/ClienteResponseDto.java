@@ -24,10 +24,11 @@ public class ClienteResponseDto {
     private String telefono;
     private String comentarios;
     private Boolean esPersonaJuridica;
-    
+    private Boolean activo;
+
     // Contactos de la persona
     private List<ContactoListDto> contactos;
-    
+
     // Direcciones de la persona
     private List<DireccionListDto> direcciones;
 }

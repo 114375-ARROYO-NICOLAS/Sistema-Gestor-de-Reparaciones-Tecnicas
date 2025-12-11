@@ -56,46 +56,38 @@ body {
 
 // Google Maps Autocomplete Dropdown - GLOBAL STYLES
 // The .pac-container is created by Google Maps outside of Angular components
+// Note: Estilos dinámicos aplicados vía JavaScript para mejor soporte de temas
 .pac-container {
   z-index: 9999 !important;
   border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
   margin-top: 4px;
-  font-family: var(--font-family-primary, 'Inter', sans-serif);
-  border: 1px solid var(--p-surface-border);
+  font-family: var(--font-family-primary, 'Inter', sans-serif) !important;
+  border: 1px solid var(--p-surface-border) !important;
 
   .pac-item {
-    padding: 10px 14px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    border-top: 1px solid var(--p-surface-border);
-    transition: background-color 0.15s ease;
+    padding: 10px 14px !important;
+    cursor: pointer !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+    border-top: 1px solid var(--p-surface-border) !important;
+    transition: background-color 0.15s ease !important;
 
     &:first-child {
-      border-top: none;
-    }
-
-    &:hover {
-      background-color: var(--p-surface-hover);
+      border-top: none !important;
     }
 
     .pac-icon {
-      margin-right: 10px;
+      margin-right: 10px !important;
     }
 
     .pac-item-query {
-      color: var(--p-text-color);
-      font-weight: 500;
+      font-weight: 500 !important;
     }
 
     .pac-matched {
-      font-weight: 600;
+      font-weight: 600 !important;
     }
-  }
-
-  .pac-item-selected {
-    background-color: var(--p-surface-hover);
   }
 }
 

@@ -34,6 +34,7 @@ export interface Presupuesto {
   estado: EstadoPresupuesto;
   observaciones?: string;
   fechaCreacion: Date;
+  tieneOrdenTrabajo?: boolean;
 }
 
 export interface PresupuestoCreateDto {

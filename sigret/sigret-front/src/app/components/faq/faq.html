@@ -1,0 +1,85 @@
+<div class="faq-container">
+  <!-- Header -->
+  <div class="faq-header">
+    <h1 class="faq-title">
+      <i class="pi pi-question-circle"></i>
+      Preguntas Frecuentes
+    </h1>
+    <p class="faq-subtitle">
+      Encuentra respuestas a las preguntas más comunes sobre el uso del sistema
+    </p>
+  </div>
+
+  <!-- Main Content -->
+  <div class="faq-content">
+    <!-- Sidebar con módulos -->
+    <aside class="faq-sidebar">
+      <div class="sidebar-header">
+        <h2>Módulos del Sistema</h2>
+      </div>
+
+      <nav class="modules-nav">
+        @for (module of modules(); track module.id) {
+          <div class="module-item" [class.expanded]="module.expanded">
+            <button
+              class="module-header"
+              [class.active]="selectedModuleId() === module.id"
+              (click)="selectModule(module.id)">
+              <i [class]="module.icon"></i>
+              <span class="module-name">{{ module.name }}</span>
+              <i class="pi pi-chevron-right expand-icon"></i>
+            </button>
+
+            @if (module.expanded) {
+              <ul class="faq-list">
+                @for (faq of module.faqs; track $index) {
+                  <li class="faq-item-preview">
+                    {{ faq.question }}
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        }
+      </nav>
+    </aside>
+
+    <!-- Panel central con preguntas y respuestas -->
+    <main class="faq-main">
+      @if (selectedModule(); as module) {
+        <div class="module-detail">
+          <div class="module-detail-header">
+            <i [class]="module.icon" class="module-icon"></i>
+            <h2>{{ module.name }}</h2>
+          </div>
+
+          <div class="faqs-container">
+            @for (faq of module.faqs; track $index) {
+              <div class="faq-card">
+                <div class="faq-question">
+                  <i class="pi pi-question-circle question-icon"></i>
+                  <h3>{{ faq.question }}</h3>
+                </div>
+                <div class="faq-answer">
+                  <p>{{ faq.answer }}</p>
+                </div>
+              </div>
+            }
+          </div>
+
+          @if (module.faqs.length === 0) {
+            <div class="empty-state">
+              <i class="pi pi-info-circle"></i>
+              <p>No hay preguntas frecuentes disponibles para este módulo.</p>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="empty-state">
+          <i class="pi pi-arrow-left"></i>
+          <p>Selecciona un módulo del menú lateral para ver sus preguntas frecuentes.</p>
+        </div>
+      }
+    </main>
+  </div>
+</div>

@@ -118,25 +118,25 @@
                 }
               </td>
               <td>
-                <p-tag 
-                  [value]="clientService.getStatusDisplayName(client.activo ?? true)"
-                  [severity]="clientService.getStatusColor(client.activo ?? true)">
+                <p-tag
+                  [value]="clientService.getStatusDisplayName(client.activo)"
+                  [severity]="clientService.getStatusColor(client.activo)">
                 </p-tag>
               </td>
               <td (click)="$event.stopPropagation()">
                 <div class="flex gap-1 justify-content-center">
-                  <p-button 
-                    icon="pi pi-pencil" 
+                  <p-button
+                    icon="pi pi-pencil"
                     severity="secondary"
                     size="small"
                     [text]="true"
                     (onClick)="openEditDialog(client)"
                     title="Editar">
                   </p-button>
-                  
-                  @if (client.activo ?? true) {
-                    <p-button 
-                      icon="pi pi-ban" 
+
+                  @if (client.activo) {
+                    <p-button
+                      icon="pi pi-ban"
                       severity="secondary"
                       size="small"
                       [text]="true"
@@ -144,8 +144,8 @@
                       title="Dar de baja">
                     </p-button>
                   } @else {
-                    <p-button 
-                      icon="pi pi-check" 
+                    <p-button
+                      icon="pi pi-check"
                       severity="success"
                       size="small"
                       [text]="true"
@@ -223,39 +223,16 @@
           </p-select>
         </div>
 
-        <!-- Document Number -->
-        <div class="col-12">
-          <label for="documento" class="block text-900 font-medium mb-2">Número de Documento *</label>
-          <input 
-            id="documento"
-            type="text"
-            pInputText
-            formControlName="documento"
-            placeholder="Ingrese el número de documento"
-            class="w-full">
-        </div>
-
-        <!-- Name fields (for natural person) -->
+        <!-- Document Number and Sex -->
         @if (isNaturalPerson()) {
           <div class="col-12 md:col-6">
-            <label for="nombre" class="block text-900 font-medium mb-2">Nombre *</label>
-            <input 
-              id="nombre"
+            <label for="documento" class="block text-900 font-medium mb-2">Número de Documento *</label>
+            <input
+              id="documento"
               type="text"
               pInputText
-              formControlName="nombre"
-              placeholder="Ingrese el nombre"
-              class="w-full">
-          </div>
-
-          <div class="col-12 md:col-6">
-            <label for="apellido" class="block text-900 font-medium mb-2">Apellido *</label>
-            <input 
-              id="apellido"
-              type="text"
-              pInputText
-              formControlName="apellido"
-              placeholder="Ingrese el apellido"
+              formControlName="documento"
+              placeholder="Ingrese el número de documento"
               class="w-full">
           </div>
 
@@ -268,6 +245,42 @@
               placeholder="Seleccionar sexo"
               class="w-full">
             </p-select>
+          </div>
+        } @else {
+          <div class="col-12">
+            <label for="documento" class="block text-900 font-medium mb-2">Número de Documento *</label>
+            <input
+              id="documento"
+              type="text"
+              pInputText
+              formControlName="documento"
+              placeholder="Ingrese el número de documento"
+              class="w-full">
+          </div>
+        }
+
+        <!-- Name fields (for natural person) -->
+        @if (isNaturalPerson()) {
+          <div class="col-12 md:col-6">
+            <label for="nombre" class="block text-900 font-medium mb-2">Nombre *</label>
+            <input
+              id="nombre"
+              type="text"
+              pInputText
+              formControlName="nombre"
+              placeholder="Ingrese el nombre"
+              class="w-full">
+          </div>
+
+          <div class="col-12 md:col-6">
+            <label for="apellido" class="block text-900 font-medium mb-2">Apellido *</label>
+            <input
+              id="apellido"
+              type="text"
+              pInputText
+              formControlName="apellido"
+              placeholder="Ingrese el apellido"
+              class="w-full">
           </div>
         }
 
@@ -309,17 +322,30 @@
                   <label for="addressAutocomplete" class="block text-900 font-medium mb-2">
                     Buscar dirección
                   </label>
-                  <input
-                    #addressInput
-                    id="addressAutocomplete"
-                    type="text"
-                    class="w-full p-3 border-1 surface-border border-round"
+                  <p-autocomplete
+                    [(ngModel)]="selectedAddressSuggestion"
+                    [ngModelOptions]="{standalone: true}"
+                    [suggestions]="addressSuggestions()"
+                    (completeMethod)="searchAddress($event)"
+                    (onSelect)="onAddressSelected($event)"
+                    field="description"
+                    [minLength]="3"
                     placeholder="Ingresa una dirección..."
-                    autocomplete="off"
-                  />
+                    [showEmptyMessage]="true"
+                    emptyMessage="Escribe al menos 3 caracteres para buscar"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                    [dropdown]="false">
+                    <ng-template let-suggestion pTemplate="item">
+                      <div class="flex align-items-center gap-2 py-2">
+                        <i class="pi pi-map-marker text-primary"></i>
+                        <span>{{ suggestion.description }}</span>
+                      </div>
+                    </ng-template>
+                  </p-autocomplete>
                   <small class="text-600 block mt-2">
                     <i class="pi pi-info-circle mr-1"></i>
-                    <strong>IMPORTANTE:</strong> Escribe y luego <strong>selecciona una opción</strong> del desplegable que aparece debajo.
+                    <strong>IMPORTANTE:</strong> Escribe y luego <strong>selecciona una opción</strong> del desplegable.
                   </small>
                 </div>                
                 <div class="col-12 md:col-6">
@@ -462,6 +488,107 @@
             <div class="text-center text-600 py-3">
               <i class="pi pi-map-marker text-2xl mb-2"></i>
               <p class="m-0">No hay direcciones agregadas</p>
+            </div>
+          }
+        </div>
+
+        <!-- Contacts Section -->
+        <div class="col-12">
+          <p-divider></p-divider>
+          <div class="flex justify-content-between align-items-center mb-3">
+            <h4 class="text-lg font-semibold text-900 m-0">Contactos</h4>
+            @if (!isAddingContacto()) {
+              <p-button
+                label="Agregar Contacto"
+                icon="pi pi-plus"
+                size="small"
+                [outlined]="true"
+                (onClick)="toggleAddingContacto()">
+              </p-button>
+            }
+          </div>
+
+          <!-- Add Contact Form -->
+          @if (isAddingContacto()) {
+            <div class="surface-50 border-round p-3 mb-3">
+              <div class="grid">
+                <div class="col-12 md:col-6">
+                  <label for="tipoContacto" class="block text-900 font-medium mb-2">Tipo de Contacto *</label>
+                  <p-select
+                    id="tipoContacto"
+                    [(ngModel)]="currentContacto().tipoContactoId"
+                    [ngModelOptions]="{standalone: true}"
+                    [options]="tiposContacto()"
+                    optionLabel="descripcion"
+                    optionValue="id"
+                    placeholder="Seleccionar tipo"
+                    class="w-full">
+                  </p-select>
+                </div>
+
+                <div class="col-12 md:col-6">
+                  <label for="contactoDescripcion" class="block text-900 font-medium mb-2">Valor *</label>
+                  <input
+                    id="contactoDescripcion"
+                    type="text"
+                    pInputText
+                    [(ngModel)]="currentContacto().descripcion"
+                    [ngModelOptions]="{standalone: true}"
+                    placeholder="Ej: ejemplo@email.com, +54 9 11 1234-5678"
+                    class="w-full">
+                </div>
+
+                <div class="col-12">
+                  <div class="flex gap-2 justify-content-end">
+                    <p-button
+                      label="Cancelar"
+                      severity="secondary"
+                      [outlined]="true"
+                      size="small"
+                      (onClick)="toggleAddingContacto()">
+                    </p-button>
+                    <p-button
+                      label="Agregar"
+                      icon="pi pi-plus"
+                      size="small"
+                      (onClick)="addContacto()">
+                    </p-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Contacts List -->
+          @if (contactos().length > 0) {
+            <div class="flex flex-column gap-2">
+              @for (contacto of contactos(); track $index) {
+                <div class="surface-50 border-round p-3">
+                  <div class="flex justify-content-between align-items-center">
+                    <div class="flex-1">
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-envelope text-primary"></i>
+                        <span class="font-medium">{{ getTipoContactoName(contacto.tipoContactoId) }}:</span>
+                        <span class="text-700">{{ contacto.descripcion }}</span>
+                      </div>
+                    </div>
+
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      size="small"
+                      [text]="true"
+                      (onClick)="removeContacto($index)"
+                      title="Eliminar">
+                    </p-button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-center text-600 py-3">
+              <i class="pi pi-envelope text-2xl mb-2"></i>
+              <p class="m-0">No hay contactos agregados</p>
             </div>
           }
         </div>

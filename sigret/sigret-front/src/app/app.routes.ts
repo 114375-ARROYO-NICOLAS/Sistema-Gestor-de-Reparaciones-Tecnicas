@@ -147,6 +147,10 @@ export const routes: Routes = [
       {
         path: 'profile',
         loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent)
+      },
+      {
+        path: 'ayuda',
+        loadComponent: () => import('./components/faq/faq').then(m => m.FaqComponent)
       }
     ]
   },

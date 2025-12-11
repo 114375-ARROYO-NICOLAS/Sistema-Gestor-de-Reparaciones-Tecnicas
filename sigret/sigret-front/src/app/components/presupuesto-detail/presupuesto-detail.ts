@@ -113,7 +113,7 @@ export class PresupuestoDetail implements OnInit {
   readonly puedeCrearOrden = computed(() => {
     const p = this.presupuesto();
     // Puede crear orden si está aprobado y no tiene órdenes de trabajo
-    return p?.estado === EstadoPresupuesto.APROBADO;
+    return p?.estado === EstadoPresupuesto.APROBADO && !p.tieneOrdenTrabajo;
   });
 
   readonly soloLectura = computed(() => {

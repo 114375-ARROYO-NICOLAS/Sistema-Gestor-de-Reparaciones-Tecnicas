@@ -432,6 +432,17 @@ export class ServicioDetail implements OnInit, AfterViewInit {
     return `$${monto.toFixed(2)}`;
   }
 
+  getMontoConfirmado(presupuesto: Presupuesto): number {
+    // Si el presupuesto está aprobado y tiene un tipo confirmado, mostrar ese monto
+    if (presupuesto.tipoConfirmado === 'ORIGINAL') {
+      return presupuesto.montoTotalOriginal;
+    } else if (presupuesto.tipoConfirmado === 'ALTERNATIVO' && presupuesto.montoTotalAlternativo) {
+      return presupuesto.montoTotalAlternativo;
+    }
+    // Por defecto, mostrar el monto original
+    return presupuesto.montoTotalOriginal;
+  }
+
   verPresupuesto(presupuestoId: number): void {
     this.router.navigate(['/presupuestos', presupuestoId]);
   }

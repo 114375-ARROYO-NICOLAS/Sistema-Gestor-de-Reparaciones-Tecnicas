@@ -46,6 +46,29 @@
   cursor: pointer;
 }
 
+// Enlace de términos y condiciones
+.terminos-link {
+  color: var(--primary-color);
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.2s;
+  position: relative;
+
+  &:hover {
+    color: var(--primary-color-text);
+    background-color: var(--primary-color);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    text-decoration: none;
+  }
+
+  &:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
 // Responsive
 @media (max-width: 768px) {
   .servicio-create-container {

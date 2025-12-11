@@ -6,6 +6,7 @@ import com.sigret.dtos.servicio.ServicioListDto;
 import com.sigret.dtos.servicio.ServicioResponseDto;
 import com.sigret.dtos.servicio.ServicioUpdateDto;
 import com.sigret.enums.EstadoServicio;
+import com.sigret.services.PdfService;
 import com.sigret.services.ServicioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -18,7 +19,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -34,6 +37,9 @@ public class ServicioController {
 
     @Autowired
     private ServicioService servicioService;
+
+    @Autowired
+    private PdfService pdfService;
 
     @PostMapping
     @Operation(summary = "Crear servicio", description = "Crea un nuevo servicio en el sistema con número automático")
@@ -211,5 +217,40 @@ public class ServicioController {
             @Parameter(description = "ID del servicio de garantía") @PathVariable Long id) {
         List<ItemServicioOriginalDto> items = servicioService.obtenerItemsServicioOriginal(id);
         return ResponseEntity.ok(items);
+    }
+
+    @GetMapping("/{id}/pdf")
+    @Operation(summary = "Descargar PDF del servicio", description = "Genera y descarga el PDF con la información del servicio")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "PDF generado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Servicio no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<byte[]> descargarPdfServicio(
+            @Parameter(description = "ID del servicio") @PathVariable Long id) {
+        byte[] pdfBytes = pdfService.generarPdfServicio(id);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "servicio-" + id + ".pdf");
+        headers.setContentLength(pdfBytes.length);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
+    }
+
+    @PostMapping("/{id}/pdf/enviar-email")
+    @Operation(summary = "Enviar PDF por email", description = "Genera el PDF y lo envía por email al cliente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "PDF enviado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Servicio no encontrado"),
+            @ApiResponse(responseCode = "400", description = "Cliente no tiene email registrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<Void> enviarPdfPorEmail(
+            @Parameter(description = "ID del servicio") @PathVariable Long id) {
+        pdfService.enviarPdfPorEmail(id);
+        return ResponseEntity.ok().build();
     }
 }

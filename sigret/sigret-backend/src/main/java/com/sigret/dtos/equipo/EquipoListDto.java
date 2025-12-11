@@ -18,4 +18,6 @@ public class EquipoListDto {
     private String tipoEquipo;
     private String marca;
     private String modelo;
+    private Long clienteId;
+    private String clienteNombre;
 }

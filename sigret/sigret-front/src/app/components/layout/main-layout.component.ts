@@ -116,6 +116,11 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       label: 'Modelos',
       icon: 'pi pi-database',
       routerLink: '/configuracion/modelos'
+    },
+    {
+      label: 'Ayuda',
+      icon: 'pi pi-question-circle',
+      routerLink: '/ayuda'
     }
   ];
 
@@ -189,7 +194,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       'tipos-equipo': 'Tipos de Equipo',
       'marcas': 'Marcas',
       'modelos': 'Modelos',
-      'profile': 'Perfil'
+      'profile': 'Perfil',
+      'ayuda': 'Ayuda'
     };
 
     return routeNames[route] || route.charAt(0).toUpperCase() + route.slice(1);

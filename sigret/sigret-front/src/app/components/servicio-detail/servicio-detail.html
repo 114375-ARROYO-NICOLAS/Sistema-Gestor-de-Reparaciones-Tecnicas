@@ -634,7 +634,7 @@
                     <div class="flex flex-column gap-2">
                       <div class="flex align-items-center gap-2">
                         <i class="pi pi-dollar text-color-secondary"></i>
-                        <span class="text-xl font-bold text-green-600">{{ formatMonto(presupuesto.montoTotalOriginal) }}</span>
+                        <span class="text-xl font-bold text-green-600">{{ formatMonto(getMontoConfirmado(presupuesto)) }}</span>
                       </div>
 
                       <div class="flex align-items-center gap-2">
@@ -686,7 +686,7 @@
                   <p-card class="cursor-pointer hover:surface-100" (click)="verOrdenTrabajo(orden.id)">
                     <div class="flex justify-content-between align-items-start mb-3">
                       <div>
-                        <h4 class="text-lg font-semibold m-0 mb-1">OT #{{ orden.id }}</h4>
+                        <h4 class="text-lg font-semibold m-0 mb-1">{{ orden.numeroOrdenTrabajo }}</h4>
                         <span class="text-sm text-color-secondary">{{ orden.empleadoNombre }}</span>
                       </div>
                       <p-tag [value]="orden.estado" [severity]="getEstadoSeverity(orden.estado)"></p-tag>

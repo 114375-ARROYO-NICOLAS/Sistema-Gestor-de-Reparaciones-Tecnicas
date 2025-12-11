@@ -18,6 +18,8 @@ export interface EquipoListDto {
   tipoEquipo: string;
   marca: string;
   modelo?: string;
+  clienteId?: number;
+  clienteNombre?: string;
 }
 
 export interface EquipoCreateDto {

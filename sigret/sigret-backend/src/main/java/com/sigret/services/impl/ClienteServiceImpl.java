@@ -394,10 +394,11 @@ public class ClienteServiceImpl implements ClienteService {
                 cliente.getPrimerTelefono(),
                 cliente.getComentarios(),
                 cliente.esPersonaJuridica(),
+                cliente.getActivo(),
                 contactosDto,
                 direccionesDto
         );
-        
+
         return response;
     }
 
@@ -420,7 +421,7 @@ public class ClienteServiceImpl implements ClienteService {
     private ClienteListDto convertirAClienteListDto(Cliente cliente) {
         // Obtener dirección principal formateada
         String direccionPrincipal = obtenerDireccionPrincipalFormateada(cliente.getPersona().getId());
-        
+
         return new ClienteListDto(
                 cliente.getId(),
                 cliente.getNombreCompleto(),
@@ -428,7 +429,8 @@ public class ClienteServiceImpl implements ClienteService {
                 cliente.getPrimerEmail(),
                 cliente.getPrimerTelefono(),
                 direccionPrincipal,
-                cliente.esPersonaJuridica()
+                cliente.esPersonaJuridica(),
+                cliente.getActivo()
         );
     }
 

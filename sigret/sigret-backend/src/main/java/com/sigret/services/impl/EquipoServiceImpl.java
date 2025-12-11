@@ -199,19 +199,53 @@ public class EquipoServiceImpl implements EquipoService {
     }
 
     private EquipoResponseDto convertirAEquipoResponseDto(Equipo equipo) {
+        EquipoResponseDto.TipoEquipoDto tipoEquipoDto = new EquipoResponseDto.TipoEquipoDto(
+                equipo.getTipoEquipo().getId(),
+                equipo.getTipoEquipo().getDescripcion()
+        );
+
+        EquipoResponseDto.MarcaDto marcaDto = new EquipoResponseDto.MarcaDto(
+                equipo.getMarca().getId(),
+                equipo.getMarca().getDescripcion()
+        );
+
+        EquipoResponseDto.ModeloDto modeloDto = null;
+        if (equipo.getModelo() != null) {
+            modeloDto = new EquipoResponseDto.ModeloDto(
+                    equipo.getModelo().getId(),
+                    equipo.getModelo().getDescripcion()
+            );
+        }
+
         return new EquipoResponseDto(
                 equipo.getId(),
                 equipo.getDescripcionCompleta(),
                 equipo.getNumeroSerie(),
                 equipo.getColor(),
                 equipo.getObservaciones(),
-                equipo.getTipoEquipo().getDescripcion(),
-                equipo.getMarca().getDescripcion(),
-                equipo.getModelo() != null ? equipo.getModelo().getDescripcion() : null
+                tipoEquipoDto,
+                marcaDto,
+                modeloDto
         );
     }
 
     private EquipoListDto convertirAEquipoListDto(Equipo equipo) {
+        // Obtener el cliente asociado al equipo (el primero si hay varios)
+        Long clienteId = null;
+        String clienteNombre = null;
+
+        if (equipo.getClienteEquipos() != null && !equipo.getClienteEquipos().isEmpty()) {
+            // Tomar el primer cliente activo
+            var clienteEquipo = equipo.getClienteEquipos().stream()
+                    .findFirst()
+                    .orElse(null);
+
+            if (clienteEquipo != null && clienteEquipo.getCliente() != null) {
+                clienteId = clienteEquipo.getCliente().getId();
+                clienteNombre = clienteEquipo.getCliente().getPersona().getNombreCompleto();
+            }
+        }
+
         return new EquipoListDto(
                 equipo.getId(),
                 equipo.getDescripcionCompleta(),
@@ -219,7 +253,9 @@ public class EquipoServiceImpl implements EquipoService {
                 equipo.getColor(),
                 equipo.getTipoEquipo().getDescripcion(),
                 equipo.getMarca().getDescripcion(),
-                equipo.getModelo() != null ? equipo.getModelo().getDescripcion() : null
+                equipo.getModelo() != null ? equipo.getModelo().getDescripcion() : null,
+                clienteId,
+                clienteNombre
         );
     }
 

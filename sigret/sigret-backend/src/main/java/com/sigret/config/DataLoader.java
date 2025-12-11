@@ -330,7 +330,7 @@ public class DataLoader implements CommandLineRunner {
                             philcoPHCD250, whirlpoolWLF80AB, lgGCL247);
 
         // Crear servicios, presupuestos, órdenes de trabajo y garantías
-        crearServiciosCompletos(empleadoAdmin, empleadoTecnico, placaElectronicaLava, bombaAguaLava);
+        //crearServiciosCompletos(empleadoAdmin, empleadoTecnico, placaElectronicaLava, bombaAguaLava);
 
         // System.out.println("===========================================");
         // System.out.println("DATOS INICIALES CREADOS EXITOSAMENTE");
@@ -558,6 +558,7 @@ public class DataLoader implements CommandLineRunner {
         clienteEquipoRepository.save(clienteEquipo);
     }
 
+/* 
     private void crearServiciosCompletos(Empleado empleadoAdmin, Empleado empleadoTecnico, Repuesto placaElectronicaLava, Repuesto bombaAguaLava) {
         // Obtener clientes y equipos para crear servicios
         Cliente maria = clienteRepository.findById(1L).orElseThrow();
@@ -880,6 +881,8 @@ public class DataLoader implements CommandLineRunner {
         return ordenTrabajoRepository.save(ordenTrabajo);
     }
 
+ */
+
     private Repuesto crearRepuesto(TipoEquipo tipoEquipo, String descripcion) {
         Repuesto repuesto = new Repuesto();
         repuesto.setTipoEquipo(tipoEquipo);
@@ -887,6 +890,7 @@ public class DataLoader implements CommandLineRunner {
         return repuestoRepository.save(repuesto);
     }
 
+    /*
     private void agregarDetalleOrdenTrabajo(OrdenTrabajo ordenTrabajo, Repuesto repuesto, int cantidad, String comentario) {
         DetalleOrdenTrabajo detalle = new DetalleOrdenTrabajo();
         detalle.setOrdenTrabajo(ordenTrabajo);
@@ -895,4 +899,5 @@ public class DataLoader implements CommandLineRunner {
         detalle.setComentario(comentario);
         ordenTrabajo.getDetalleOrdenesTrabajo().add(detalle);
     }
+    */
 }

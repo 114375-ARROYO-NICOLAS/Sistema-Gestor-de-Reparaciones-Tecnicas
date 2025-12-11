@@ -580,10 +580,18 @@
                       [checked]="aceptaTerminos()"
                       (change)="aceptaTerminos.set($any($event.target).checked)"
                       class="mt-1">
-                    <label for="aceptaTerminos" class="text-900 flex-1 cursor-pointer">
-                      <span class="font-semibold">Acepto los Términos y Condiciones</span>
+                    <label for="aceptaTerminos" class="text-900 flex-1">
+                      <span class="font-semibold">
+                        Acepto los
+                        <a
+                          href="javascript:void(0)"
+                          (click)="mostrarTerminos()"
+                          class="terminos-link">
+                          Términos y Condiciones
+                        </a>
+                      </span>
                       <p class="text-600 text-sm mt-1 mb-0">
-                        Al marcar esta casilla, confirmo que he leído y acepto los términos y condiciones del servicio.
+                        Al marcar esta casilla, confirmo que he leído y acepto los términos y condiciones del servicio conforme a la Ley de Defensa del Consumidor.
                       </p>
                     </label>
                   </div>
@@ -652,3 +660,84 @@
 </div>
 
 <p-toast></p-toast>
+
+<!-- Diálogo de Términos y Condiciones -->
+<app-terminos-condiciones-dialog #terminosDialog></app-terminos-condiciones-dialog>
+
+<!-- Diálogo de Opciones PDF -->
+<p-dialog
+  [(visible)]="mostrarDialogoPdf"
+  [modal]="true"
+  [closable]="false"
+  [style]="{width: '500px'}"
+  header="Servicio Creado Exitosamente">
+  <div class="flex flex-column gap-4">
+    <p class="text-center text-900 mb-0">
+      ¿Cómo desea enviar el comprobante del servicio?
+    </p>
+
+    <div class="flex flex-column gap-3">
+      <!-- Opción Email -->
+      <p-button
+        label="Enviar por Email"
+        icon="pi pi-envelope"
+        [outlined]="true"
+        severity="info"
+        class="w-full"
+        [disabled]="!clienteEmail()"
+        (onClick)="enviarPorEmail()">
+      </p-button>
+      @if (!clienteEmail()) {
+        <small class="text-orange-500 -mt-2">
+          <i class="pi pi-info-circle mr-1"></i>
+          El cliente no tiene email registrado
+        </small>
+      } @else {
+        <small class="text-600 -mt-2">
+          <i class="pi pi-info-circle mr-1"></i>
+          Se enviará a: {{ clienteEmail() }}
+        </small>
+      }
+
+      <!-- Opción WhatsApp -->
+      <p-button
+        label="Enviar por WhatsApp"
+        icon="pi pi-whatsapp"
+        [outlined]="true"
+        severity="success"
+        class="w-full"
+        (onClick)="enviarPorWhatsApp()">
+      </p-button>
+      @if (clienteTelefono()) {
+        <small class="text-600 -mt-2">
+          <i class="pi pi-info-circle mr-1"></i>
+          Se descargará y abrirá WhatsApp para: {{ clienteTelefono() }}
+        </small>
+      } @else {
+        <small class="text-orange-500 -mt-2">
+          <i class="pi pi-info-circle mr-1"></i>
+          El cliente no tiene teléfono. Solo se descargará el PDF.
+        </small>
+      }
+
+      <!-- Opción Descargar -->
+      <p-button
+        label="Solo Descargar PDF"
+        icon="pi pi-download"
+        [outlined]="true"
+        severity="secondary"
+        class="w-full"
+        (onClick)="descargarPdf()">
+      </p-button>
+    </div>
+
+    <div class="flex justify-content-end mt-3 pt-3 border-top-1 border-300">
+      <p-button
+        label="Cerrar y Volver"
+        severity="secondary"
+        [text]="true"
+        (onClick)="cerrarDialogoYVolver()">
+      </p-button>
+    </div>
+  </div>
+</p-dialog>

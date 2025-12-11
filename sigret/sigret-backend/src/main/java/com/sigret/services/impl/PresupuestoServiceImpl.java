@@ -306,6 +306,13 @@ public class PresupuestoServiceImpl implements PresupuestoService {
         presupuesto.setEstado(nuevoEstado);
         Presupuesto presupuestoActualizado = presupuestoRepository.save(presupuesto);
 
+        // Sincronizar estado del servicio cuando el presupuesto está LISTO o ENVIADO
+        Servicio servicio = presupuesto.getServicio();
+        if (nuevoEstado == EstadoPresupuesto.LISTO || nuevoEstado == EstadoPresupuesto.ENVIADO) {
+            servicio.setEstado(EstadoServicio.PRESUPUESTADO);
+            servicioRepository.save(servicio);
+        }
+
         // Notificar cambio de estado via WebSocket
         PresupuestoEventDto evento = new PresupuestoEventDto();
         evento.setTipoEvento("CAMBIO_ESTADO");
@@ -446,15 +453,36 @@ public class PresupuestoServiceImpl implements PresupuestoService {
 
         Servicio servicio = presupuesto.getServicio();
 
+        // Generar número de orden de trabajo
+        String numeroOrdenTrabajo = generarNumeroOrdenTrabajo();
+
         // Crear la Orden de Trabajo
         OrdenTrabajo ordenTrabajo = new OrdenTrabajo();
+        ordenTrabajo.setNumeroOrdenTrabajo(numeroOrdenTrabajo);
         ordenTrabajo.setServicio(servicio);
         ordenTrabajo.setPresupuesto(presupuesto);
         ordenTrabajo.setEmpleado(presupuesto.getEmpleado()); // Mismo empleado del presupuesto
         ordenTrabajo.setEsSinCosto(servicio.getEsGarantia()); // Si es garantía, sin costo
         ordenTrabajo.setEstado(com.sigret.enums.EstadoOrdenTrabajo.PENDIENTE);
         ordenTrabajo.setFechaCreacion(LocalDateTime.now());
+
+        // Guardar la orden primero para obtener el ID
         OrdenTrabajo ordenGuardada = ordenTrabajoRepository.save(ordenTrabajo);
+
+        // Copiar detalles del presupuesto a la orden de trabajo
+        if (presupuesto.getDetallePresupuestos() != null && !presupuesto.getDetallePresupuestos().isEmpty()) {
+            for (var detallePresupuesto : presupuesto.getDetallePresupuestos()) {
+                com.sigret.entities.DetalleOrdenTrabajo detalle = new com.sigret.entities.DetalleOrdenTrabajo();
+                detalle.setOrdenTrabajo(ordenGuardada);
+                detalle.setItemDescripcion(detallePresupuesto.getItem());
+                detalle.setCantidad(detallePresupuesto.getCantidad());
+                detalle.setComentario(null); // Sin comentario inicial
+                detalle.setCompletado(false);
+                ordenGuardada.getDetalleOrdenesTrabajo().add(detalle);
+            }
+            // Guardar nuevamente para persistir los detalles
+            ordenGuardada = ordenTrabajoRepository.save(ordenGuardada);
+        }
 
         return ordenGuardada.getId();
     }
@@ -471,7 +499,7 @@ public class PresupuestoServiceImpl implements PresupuestoService {
     public String generarNumeroPresupuesto() {
         String year = String.valueOf(LocalDate.now().getYear()).substring(2); // Últimos 2 dígitos del año
         String pattern = "PRE" + year + "%";
-        
+
         log.error("DEBUG - Generando número de presupuesto con patrón: {}", pattern);
 
         Integer maxNumero = null;
@@ -482,11 +510,34 @@ public class PresupuestoServiceImpl implements PresupuestoService {
             log.error("ERROR al buscar máximo número: {}", e.getMessage());
             maxNumero = null;
         }
-        
+
         int siguienteNumero = (maxNumero != null ? maxNumero : 0) + 1;
-        
+
         String numeroGenerado = String.format("PRE%s%05d", year, siguienteNumero);
         log.error("DEBUG - Número generado: {}", numeroGenerado);
+
+        return numeroGenerado;
+    }
+
+    private String generarNumeroOrdenTrabajo() {
+        String year = String.valueOf(LocalDate.now().getYear()).substring(2); // Últimos 2 dígitos del año
+        String pattern = "OT" + year + "%";
+
+        log.info("Generando número de orden de trabajo con patrón: {}", pattern);
+
+        Integer maxNumero = null;
+        try {
+            maxNumero = ordenTrabajoRepository.findMaxNumeroOrdenTrabajo(pattern);
+            log.info("Máximo número de orden encontrado: {}", maxNumero);
+        } catch (Exception e) {
+            log.error("ERROR al buscar máximo número de orden: {}", e.getMessage());
+            maxNumero = null;
+        }
+
+        int siguienteNumero = (maxNumero != null ? maxNumero : 0) + 1;
+
+        String numeroGenerado = String.format("OT%s%05d", year, siguienteNumero);
+        log.info("Número de orden generado: {}", numeroGenerado);
 
         return numeroGenerado;
     }
@@ -549,10 +600,14 @@ public class PresupuestoServiceImpl implements PresupuestoService {
                 presupuesto.getServicio().getCliente().getNombreCompleto(),
                 presupuesto.getEmpleado() != null ? presupuesto.getEmpleado().getNombreCompleto() : null,
                 presupuesto.getServicio().getEquipo().getDescripcionCompleta(),
+                presupuesto.getMontoTotalOriginal(), // montoTotal (deprecated, mantener compatibilidad)
                 presupuesto.getMontoTotalOriginal(),
+                presupuesto.getMontoTotalAlternativo(),
+                presupuesto.getTipoConfirmado(),
                 presupuesto.getFechaVencimiento(),
                 presupuesto.getEstado(),
-                presupuesto.getFechaCreacion()
+                presupuesto.getFechaCreacion(),
+                !presupuesto.getOrdenesTrabajo().isEmpty() // tieneOrdenTrabajo
         );
     }
 }

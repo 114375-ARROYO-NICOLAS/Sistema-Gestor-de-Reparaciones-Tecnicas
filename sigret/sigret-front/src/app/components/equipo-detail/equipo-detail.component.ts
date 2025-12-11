@@ -4,6 +4,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Badge } from 'primeng/badge';
+import { Tag } from 'primeng/tag';
 import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
@@ -17,6 +18,7 @@ import { EquipoResponseDto } from '../../models/equipo.model';
     Button,
     Card,
     Badge,
+    Tag,
     Toast
   ],
   templateUrl: './equipo-detail.component.html',

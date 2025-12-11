@@ -105,7 +105,7 @@
                 <div class="flex flex-column gap-2 mb-3">
                   <label class="text-sm font-semibold text-color-secondary">Presupuesto Asociado</label>
                   <div class="flex align-items-center gap-2">
-                    <span class="text-lg">{{ ordenTrabajo()!.numeroPresupuesto }}</span>
+                    <span class="text-lg font-bold text-primary">{{ ordenTrabajo()!.numeroPresupuesto }}</span>
                     <p-button
                       icon="pi pi-external-link"
                       [text]="true"
@@ -225,13 +225,13 @@
                 </tr>
               </ng-template>
               <ng-template pTemplate="body" let-detalle>
-                <tr [ngClass]="{'bg-green-50': detalle.completado}">
+                <tr [ngClass]="{'bg-green-900': detalle.completado}">
                   <td class="text-center">
                     <p-checkbox
-                      [(ngModel)]="detalle.completado"
+                      [ngModel]="detalle.completado"
                       [binary]="true"
-                      (onChange)="toggleDetalleCompletado(detalle)"
-                      [disabled]="actualizandoDetalle() === detalle.id || ordenTrabajo()!.estado === EstadoOrdenTrabajo.TERMINADA">
+                      (ngModelChange)="toggleDetalleCompletado(detalle)"
+                      [disabled]="actualizandoDetalle() === detalle.id || ordenTrabajo()!.estado !== EstadoOrdenTrabajo.EN_PROGRESO">
                     </p-checkbox>
                   </td>
                   <td>
@@ -245,7 +245,7 @@
                       pTextarea
                       [(ngModel)]="detalle.comentario"
                       (blur)="actualizarComentarioDetalle(detalle, detalle.comentario || '')"
-                      [disabled]="actualizandoDetalle() === detalle.id || ordenTrabajo()!.estado === EstadoOrdenTrabajo.TERMINADA"
+                      [disabled]="actualizandoDetalle() === detalle.id || ordenTrabajo()!.estado !== EstadoOrdenTrabajo.EN_PROGRESO"
                       placeholder="Agregar comentario..."
                       [rows]="2"
                       class="w-full">
@@ -323,35 +323,6 @@
                 class="w-full">
               </p-button>
             }
-          </div>
-        </p-card>
-
-        <!-- Estado Card -->
-        <p-card class="mt-3">
-          <ng-template pTemplate="header">
-            <div class="p-3">
-              <h3 class="m-0 font-semibold">Estado Actual</h3>
-            </div>
-          </ng-template>
-
-          <div class="flex flex-column align-items-center gap-3 py-3">
-            <div class="flex align-items-center justify-content-center border-circle"
-                 [ngClass]="{
-                   'bg-orange-100': ordenTrabajo()!.estado === EstadoOrdenTrabajo.PENDIENTE,
-                   'bg-blue-100': ordenTrabajo()!.estado === EstadoOrdenTrabajo.EN_PROGRESO,
-                   'bg-green-100': ordenTrabajo()!.estado === EstadoOrdenTrabajo.TERMINADA,
-                   'bg-red-100': ordenTrabajo()!.estado === EstadoOrdenTrabajo.CANCELADA
-                 }"
-                 style="width: 80px; height: 80px;">
-              <i class="pi text-4xl"
-                 [ngClass]="{
-                   'pi-clock text-orange-600': ordenTrabajo()!.estado === EstadoOrdenTrabajo.PENDIENTE,
-                   'pi-spin pi-spinner text-blue-600': ordenTrabajo()!.estado === EstadoOrdenTrabajo.EN_PROGRESO,
-                   'pi-check-circle text-green-600': ordenTrabajo()!.estado === EstadoOrdenTrabajo.TERMINADA,
-                   'pi-times-circle text-red-600': ordenTrabajo()!.estado === EstadoOrdenTrabajo.CANCELADA
-                 }"></i>
-            </div>
-            <span class="text-2xl font-bold">{{ getEstadoLabel(ordenTrabajo()!.estado) }}</span>
           </div>
         </p-card>
       </div>
