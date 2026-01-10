@@ -265,6 +265,11 @@ public class ServicioServiceImpl implements ServicioService {
 
         if (servicioUpdateDto.getEstado() != null) {
             servicio.setEstado(servicioUpdateDto.getEstado());
+
+            // Si el servicio cambia a TERMINADO y no tiene fechaDevolucionReal, establecerla automáticamente
+            if (servicioUpdateDto.getEstado() == EstadoServicio.TERMINADO && servicio.getFechaDevolucionReal() == null) {
+                servicio.setFechaDevolucionReal(LocalDate.now());
+            }
         }
 
         if (servicioUpdateDto.getFechaDevolucionPrevista() != null) {
@@ -332,6 +337,12 @@ public class ServicioServiceImpl implements ServicioService {
 
         EstadoServicio estadoAnterior = servicio.getEstado();
         servicio.setEstado(nuevoEstado);
+
+        // Si el servicio cambia a TERMINADO y no tiene fechaDevolucionReal, establecerla automáticamente
+        if (nuevoEstado == EstadoServicio.TERMINADO && servicio.getFechaDevolucionReal() == null) {
+            servicio.setFechaDevolucionReal(LocalDate.now());
+        }
+
         Servicio servicioActualizado = servicioRepository.save(servicio);
 
         // Notificar cambio de estado via WebSocket
