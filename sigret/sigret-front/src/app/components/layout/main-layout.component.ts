@@ -118,6 +118,11 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       routerLink: '/configuracion/modelos'
     },
     {
+      label: 'Repuestos',
+      icon: 'pi pi-box',
+      routerLink: '/configuracion/repuestos'
+    },
+    {
       label: 'Ayuda',
       icon: 'pi pi-question-circle',
       routerLink: '/ayuda'
@@ -194,6 +199,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       'tipos-equipo': 'Tipos de Equipo',
       'marcas': 'Marcas',
       'modelos': 'Modelos',
+      'repuestos': 'Repuestos',
       'profile': 'Perfil',
       'ayuda': 'Ayuda'
     };

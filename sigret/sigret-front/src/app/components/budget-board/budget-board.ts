@@ -143,11 +143,15 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
 
   private connectWebSocket(): void {
     this.wsService.connect();
+    // Limpiar cualquier evento anterior para evitar mostrar notificaciones viejas al entrar
+    this.wsService.clearLastPresupuestoEvent();
 
     this.wsSubscription = this.wsService.presupuestoEvent$.subscribe({
       next: (event: PresupuestoEvent | null) => {
         if (event) {
           this.handleWebSocketEvent(event);
+          // Limpiar el evento después de procesarlo
+          this.wsService.clearLastPresupuestoEvent();
         }
       },
       error: (err) => {

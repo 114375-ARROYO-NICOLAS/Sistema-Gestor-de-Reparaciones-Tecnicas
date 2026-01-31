@@ -1,0 +1,139 @@
+<div class="container-fluid py-4">
+  <p-toast />
+
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center py-3">
+      <h3 class="m-0">Repuestos</h3>
+      <p-button
+        label="Nuevo Repuesto"
+        icon="pi pi-plus"
+        (onClick)="openCreateDialog()">
+      </p-button>
+    </div>
+
+    <div class="card-body pt-4">
+      <p-table
+        [value]="repuestos()"
+        [loading]="isLoading()"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[5, 10, 20, 50]"
+        [globalFilterFields]="['descripcion', 'tipoEquipo']"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-sm">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="tipoEquipo">Tipo de Equipo <p-sortIcon field="tipoEquipo" /></th>
+            <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
+            <th style="width: 120px; text-align: center">Acciones</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-repuesto>
+          <tr>
+            <td>{{ repuesto.tipoEquipo }}</td>
+            <td>{{ repuesto.descripcion }}</td>
+            <td class="text-center">
+              <p-button
+                icon="pi pi-pencil"
+                [text]="true"
+                [rounded]="true"
+                severity="warn"
+                (onClick)="openEditDialog(repuesto)"
+                pTooltip="Editar"
+                tooltipPosition="top">
+              </p-button>
+              <p-button
+                icon="pi pi-trash"
+                [text]="true"
+                [rounded]="true"
+                severity="danger"
+                (onClick)="deleteRepuesto(repuesto)"
+                pTooltip="Eliminar"
+                tooltipPosition="top">
+              </p-button>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="3" class="text-center py-4">No se encontraron repuestos</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <!-- Dialog for Create/Edit -->
+  <p-dialog
+    [header]="isEditMode() ? 'Editar Repuesto' : 'Nuevo Repuesto'"
+    [(visible)]="showDialog"
+    [modal]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{width: '500px'}">
+
+    <form [formGroup]="repuestoForm" (ngSubmit)="saveRepuesto()">
+      <div class="field mb-4">
+        <label for="tipoEquipoId" class="block font-medium mb-2">
+          Tipo de Equipo <span class="text-danger">*</span>
+        </label>
+        <p-select
+          id="tipoEquipoId"
+          formControlName="tipoEquipoId"
+          [options]="tiposEquipo()"
+          optionLabel="descripcion"
+          optionValue="id"
+          placeholder="Seleccione tipo de equipo"
+          styleClass="w-full"
+          [filter]="true"
+          filterPlaceholder="Buscar...">
+        </p-select>
+        @if (repuestoForm.get('tipoEquipoId')?.invalid && repuestoForm.get('tipoEquipoId')?.touched) {
+          <small class="block text-danger mt-2">
+            El tipo de equipo es requerido
+          </small>
+        }
+      </div>
+
+      <div class="field mb-3">
+        <label for="descripcion" class="block font-medium mb-2">
+          Descripción <span class="text-danger">*</span>
+        </label>
+        <input
+          pInputText
+          id="descripcion"
+          formControlName="descripcion"
+          class="w-full"
+          placeholder="Ingrese descripción del repuesto"
+          maxlength="200" />
+        @if (repuestoForm.get('descripcion')?.invalid && repuestoForm.get('descripcion')?.touched) {
+          <small class="block text-danger mt-2">
+            @if (repuestoForm.get('descripcion')?.errors?.['required']) {
+              La descripción es requerida
+            }
+            @if (repuestoForm.get('descripcion')?.errors?.['maxlength']) {
+              La descripción no puede exceder 200 caracteres
+            }
+          </small>
+        }
+      </div>
+    </form>
+
+    <ng-template pTemplate="footer">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        (onClick)="closeDialog()"
+        [disabled]="isSaving()">
+      </p-button>
+      <p-button
+        [label]="isEditMode() ? 'Actualizar' : 'Crear'"
+        (onClick)="saveRepuesto()"
+        [loading]="isSaving()">
+      </p-button>
+    </ng-template>
+  </p-dialog>
+</div>

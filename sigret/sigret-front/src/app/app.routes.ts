@@ -141,6 +141,10 @@ export const routes: Routes = [
           {
             path: 'modelos',
             loadComponent: () => import('./components/configuracion/modelo-config/modelo-config').then(m => m.ModeloConfigComponent)
+          },
+          {
+            path: 'repuestos',
+            loadComponent: () => import('./components/configuracion/repuesto-config/repuesto-config').then(m => m.RepuestoConfigComponent)
           }
         ]
       },

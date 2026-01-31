@@ -233,7 +233,8 @@ public class PresupuestoController {
                 envioDto.getMostrarAlternativo(),
                 envioDto.getMensajeAdicional()
         );
-        PresupuestoResponseDto presupuesto = presupuestoService.obtenerPresupuestoPorId(id);
+        // Cambiar estado a ENVIADO después de enviar el email exitosamente
+        PresupuestoResponseDto presupuesto = presupuestoService.cambiarEstadoPresupuesto(id, EstadoPresupuesto.ENVIADO);
         return ResponseEntity.ok(presupuesto);
     }
 
