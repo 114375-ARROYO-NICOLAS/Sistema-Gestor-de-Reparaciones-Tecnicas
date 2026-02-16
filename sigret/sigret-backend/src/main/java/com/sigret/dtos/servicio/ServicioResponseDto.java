@@ -59,6 +59,9 @@ public class ServicioResponseDto {
     private LocalDate fechaDevolucionReal;
     private String descripcionCompleta;
 
+    // Soft delete
+    private Boolean activo;
+
     // Detalles del servicio
     private List<DetalleServicioDto> detalles = new ArrayList<>();
 }

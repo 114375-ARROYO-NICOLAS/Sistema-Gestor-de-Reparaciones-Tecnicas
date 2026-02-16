@@ -17,6 +17,9 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { BadgeModule } from 'primeng/badge';
+import { TooltipModule } from 'primeng/tooltip';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
 
 import { ClientService } from '../../services/client.service';
 import {
@@ -55,7 +58,10 @@ declare const google: any;
     ProgressSpinnerModule,
     CardModule,
     DividerModule,
-    BadgeModule
+    BadgeModule,
+    TooltipModule,
+    IconField,
+    InputIcon
   ],
   templateUrl: './client-management.component.html',
   styleUrls: ['./client-management.component.scss'],
@@ -77,6 +83,7 @@ export class ClientManagementComponent implements OnInit, OnDestroy {
   public readonly isSaving = signal(false);
   public readonly showClientDialog = signal(false);
   public readonly isEditMode = signal(false);
+  public readonly expanded = signal(false);
   public readonly selectedClient = signal<ClientListDto | null>(null);
   public readonly totalRecords = signal(0);
   public readonly currentPage = signal(0);
@@ -422,6 +429,10 @@ export class ClientManagementComponent implements OnInit, OnDestroy {
   // Navigate to client detail page
   viewClientDetail(client: ClientListDto): void {
     this.router.navigate(['/clientes', client.id]);
+  }
+
+  navigateToEliminados(): void {
+    this.router.navigate(['/clientes/eliminados']);
   }
 
   // Google Places - Classic Autocomplete API

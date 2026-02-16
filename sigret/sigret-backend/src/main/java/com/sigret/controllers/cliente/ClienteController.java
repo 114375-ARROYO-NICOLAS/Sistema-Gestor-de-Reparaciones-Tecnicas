@@ -149,6 +149,17 @@ public class ClienteController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/inactivos")
+    @Operation(summary = "Listar clientes inactivos", description = "Obtiene una lista paginada de clientes dados de baja")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de clientes inactivos obtenida exitosamente")
+    })
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO')")
+    public ResponseEntity<Page<ClienteListDto>> obtenerClientesInactivos(Pageable pageable) {
+        Page<ClienteListDto> clientes = clienteService.obtenerClientesInactivos(pageable);
+        return ResponseEntity.ok(clientes);
+    }
+
     @PutMapping("/{id}/reactivar")
     @Operation(summary = "Reactivar cliente", description = "Reactiva un cliente previamente desactivado")
     @ApiResponses(value = {

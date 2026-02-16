@@ -6,6 +6,7 @@ public enum EstadoPresupuesto {
     EN_CURSO("En Curso"),
     LISTO("Listo"),
     ENVIADO("Enviado"),
+    VENCIDO("Vencido"),
     APROBADO("Aprobado"),
     RECHAZADO("Rechazado");
 

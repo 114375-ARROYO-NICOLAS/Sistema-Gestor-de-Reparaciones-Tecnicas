@@ -27,7 +27,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/servicios")
@@ -40,6 +42,19 @@ public class ServicioController {
 
     @Autowired
     private PdfService pdfService;
+
+    @GetMapping("/estados")
+    @Operation(summary = "Obtener estados disponibles", description = "Retorna todos los estados posibles de un servicio")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de estados obtenida exitosamente")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<List<Map<String, String>>> obtenerEstados() {
+        List<Map<String, String>> estados = Arrays.stream(EstadoServicio.values())
+                .map(e -> Map.of("value", e.name(), "label", e.getDescripcion()))
+                .toList();
+        return ResponseEntity.ok(estados);
+    }
 
     @PostMapping
     @Operation(summary = "Crear servicio", description = "Crea un nuevo servicio en el sistema con número automático")
@@ -168,7 +183,7 @@ public class ServicioController {
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Eliminar servicio", description = "Elimina un servicio del sistema")
+    @Operation(summary = "Eliminar servicio", description = "Desactiva un servicio del sistema (soft delete)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Servicio eliminado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Servicio no encontrado")
@@ -178,6 +193,30 @@ public class ServicioController {
             @Parameter(description = "ID del servicio") @PathVariable Long id) {
         servicioService.eliminarServicio(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/eliminados")
+    @Operation(summary = "Listar servicios eliminados", description = "Obtiene una lista paginada de servicios eliminados")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de servicios eliminados obtenida exitosamente")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<Page<ServicioListDto>> obtenerServiciosEliminados(Pageable pageable) {
+        Page<ServicioListDto> servicios = servicioService.obtenerServiciosEliminados(pageable);
+        return ResponseEntity.ok(servicios);
+    }
+
+    @PatchMapping("/{id}/restaurar")
+    @Operation(summary = "Restaurar servicio", description = "Restaura un servicio eliminado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Servicio restaurado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Servicio no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO')")
+    public ResponseEntity<ServicioResponseDto> restaurarServicio(
+            @Parameter(description = "ID del servicio") @PathVariable Long id) {
+        ServicioResponseDto servicioRestaurado = servicioService.restaurarServicio(id);
+        return ResponseEntity.ok(servicioRestaurado);
     }
 
     @GetMapping("/generar-numero")
@@ -251,6 +290,57 @@ public class ServicioController {
     public ResponseEntity<Void> enviarPdfPorEmail(
             @Parameter(description = "ID del servicio") @PathVariable Long id) {
         pdfService.enviarPdfPorEmail(id);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}/finalizar")
+    @Operation(summary = "Finalizar servicio", description = "Registra la firma de conformidad y cambia el estado a FINALIZADO")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Servicio finalizado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Servicio no encontrado"),
+            @ApiResponse(responseCode = "400", description = "El servicio no está en estado TERMINADO o falta la firma")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<ServicioResponseDto> finalizarServicio(
+            @Parameter(description = "ID del servicio") @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        String firmaConformidad = body.get("firmaConformidad");
+        ServicioResponseDto servicioFinalizado = servicioService.finalizarServicio(id, firmaConformidad);
+        return ResponseEntity.ok(servicioFinalizado);
+    }
+
+    @GetMapping("/{id}/pdf-final")
+    @Operation(summary = "Descargar PDF final del servicio", description = "Genera y descarga el PDF final con presupuesto, orden de trabajo y firma de conformidad")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "PDF final generado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Servicio no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    public ResponseEntity<byte[]> descargarPdfFinal(
+            @Parameter(description = "ID del servicio") @PathVariable Long id) {
+        byte[] pdfBytes = pdfService.generarPdfFinal(id);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "servicio-final-" + id + ".pdf");
+        headers.setContentLength(pdfBytes.length);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
+    }
+
+    @PostMapping("/{id}/pdf-final/enviar-email")
+    @Operation(summary = "Enviar PDF final por email", description = "Genera el PDF final y lo envía por email al cliente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "PDF final enviado exitosamente"),
+            @ApiResponse(responseCode = "404", description = "Servicio no encontrado"),
+            @ApiResponse(responseCode = "400", description = "Cliente no tiene email registrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<Void> enviarPdfFinalPorEmail(
+            @Parameter(description = "ID del servicio") @PathVariable Long id) {
+        pdfService.enviarPdfFinalPorEmail(id);
         return ResponseEntity.ok().build();
     }
 }

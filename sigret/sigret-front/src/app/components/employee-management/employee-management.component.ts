@@ -17,6 +17,9 @@ import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { BadgeModule } from 'primeng/badge';
 import { StepperModule } from 'primeng/stepper';
+import { TooltipModule } from 'primeng/tooltip';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
 
 import { EmployeeService } from '../../services/employee.service';
 import {
@@ -56,7 +59,10 @@ declare const google: any;
     CardModule,
     DividerModule,
     BadgeModule,
-    StepperModule
+    StepperModule,
+    TooltipModule,
+    IconField,
+    InputIcon
   ],
   templateUrl: './employee-management.component.html',
   styleUrls: ['./employee-management.component.scss'],
@@ -78,6 +84,7 @@ export class EmployeeManagementComponent implements OnInit {
   public readonly isLoading = signal(false);
   public readonly isSaving = signal(false);
   public readonly showEmployeeDialog = signal(false);
+  public readonly expanded = signal(false);
   public readonly isEditMode = signal(false);
   public readonly selectedEmployee = signal<EmployeeListDto | null>(null);
   public readonly totalRecords = signal(0);

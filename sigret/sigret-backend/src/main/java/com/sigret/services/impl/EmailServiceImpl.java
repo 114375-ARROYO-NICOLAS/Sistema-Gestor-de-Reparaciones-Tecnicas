@@ -102,6 +102,15 @@ public class EmailServiceImpl implements EmailService {
                 throw new RuntimeException("El cliente no tiene email registrado");
             }
 
+            // Validar que el presupuesto tenga fecha de vencimiento
+            if (presupuesto.getFechaVencimiento() == null) {
+                throw new RuntimeException("El presupuesto debe tener una fecha de vencimiento antes de ser enviado");
+            }
+
+            if (presupuesto.getFechaVencimiento().isBefore(java.time.LocalDate.now())) {
+                throw new RuntimeException("La fecha de vencimiento del presupuesto no puede ser anterior a hoy");
+            }
+
             // Invalidar tokens anteriores
             tokenService.invalidarTokensAnteriores(presupuestoId);
 
@@ -193,18 +202,18 @@ public class EmailServiceImpl implements EmailService {
         html.append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
         html.append("<style>");
         html.append("body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }");
-        html.append(".header { background-color: #2c3e50; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }");
+        html.append(".header { background-color: #1c6091; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }");
         html.append(".content { background-color: #f8f9fa; padding: 20px; }");
-        html.append(".info-box { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #3498db; }");
+        html.append(".info-box { background-color: white; padding: 15px; margin: 10px 0; border-radius: 5px; border-left: 4px solid #1c6091; }");
         html.append(".precio-box { background-color: #e8f5e9; padding: 15px; margin: 15px 0; border-radius: 5px; border: 2px solid #4caf50; }");
         html.append(".precio-alternativo { background-color: #fff3e0; border: 2px solid #ff9800; }");
         html.append(".botones { text-align: center; margin: 20px 0; }");
         html.append(".boton { display: inline-block; padding: 12px 30px; margin: 10px 5px; text-decoration: none; border-radius: 5px; font-weight: bold; }");
         html.append(".boton-aprobar { background-color: #4caf50; color: white; }");
         html.append(".boton-rechazar { background-color: #f44336; color: white; }");
-        html.append(".footer { background-color: #34495e; color: white; padding: 15px; text-align: center; font-size: 12px; border-radius: 0 0 5px 5px; }");
-        html.append("h2 { color: #2c3e50; margin-top: 0; }");
-        html.append("h3 { color: #34495e; }");
+        html.append(".footer { background-color: #0d2d4c; color: white; padding: 15px; text-align: center; font-size: 12px; border-radius: 0 0 5px 5px; }");
+        html.append("h2 { color: #1c6091; margin-top: 0; }");
+        html.append("h3 { color: #0d2d4c; }");
         html.append(".detalle { margin: 10px 0; padding: 8px; background-color: #f5f5f5; border-radius: 3px; }");
         html.append("</style>");
         html.append("</head>");
@@ -257,7 +266,7 @@ public class EmailServiceImpl implements EmailService {
             html.append("<h3 style='color: #4caf50; margin-top: 0;'>Presupuesto con Repuestos Originales</h3>");
             html.append("<p><strong>Repuestos:</strong> ").append(formatoPrecio.format(presupuesto.getMontoRepuestosOriginal())).append("</p>");
             html.append("<p><strong>Mano de Obra:</strong> ").append(formatoPrecio.format(presupuesto.getManoObra())).append("</p>");
-            html.append("<p style='font-size: 18px; font-weight: bold; color: #2c3e50;'>");
+            html.append("<p style='font-size: 18px; font-weight: bold; color: #1c6091;'>");
             html.append("<strong>TOTAL:</strong> ").append(formatoPrecio.format(presupuesto.getMontoTotalOriginal()));
             html.append("</p>");
             html.append("</div>");
@@ -269,7 +278,7 @@ public class EmailServiceImpl implements EmailService {
             html.append("<h3 style='color: #ff9800; margin-top: 0;'>Presupuesto con Repuestos Alternativos</h3>");
             html.append("<p><strong>Repuestos:</strong> ").append(formatoPrecio.format(presupuesto.getMontoRepuestosAlternativo())).append("</p>");
             html.append("<p><strong>Mano de Obra:</strong> ").append(formatoPrecio.format(presupuesto.getManoObra())).append("</p>");
-            html.append("<p style='font-size: 18px; font-weight: bold; color: #2c3e50;'>");
+            html.append("<p style='font-size: 18px; font-weight: bold; color: #1c6091;'>");
             html.append("<strong>TOTAL:</strong> ").append(formatoPrecio.format(presupuesto.getMontoTotalAlternativo()));
             html.append("</p>");
             html.append("</div>");
@@ -301,7 +310,10 @@ public class EmailServiceImpl implements EmailService {
         html.append("<div class='info-box'>");
         html.append("<p><strong>Importante:</strong></p>");
         html.append("<ul>");
-        html.append("<li>Este presupuesto tiene una validez de 7 días.</li>");
+        String fechaVencStr = presupuesto.getFechaVencimiento() != null
+                ? presupuesto.getFechaVencimiento().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+                : "No especificada";
+        html.append("<li>Este presupuesto es válido hasta el ").append(fechaVencStr).append(".</li>");
         html.append("<li>Una vez aprobado, procederemos con la reparación.</li>");
         html.append("<li>Si tiene alguna consulta, no dude en contactarnos.</li>");
         html.append("</ul>");

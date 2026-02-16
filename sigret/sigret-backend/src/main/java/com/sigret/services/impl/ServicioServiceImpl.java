@@ -189,14 +189,14 @@ public class ServicioServiceImpl implements ServicioService {
     @Override
     @Transactional(readOnly = true)
     public Page<ServicioListDto> obtenerServicios(Pageable pageable) {
-        Page<Servicio> servicios = servicioRepository.findAll(pageable);
+        Page<Servicio> servicios = servicioRepository.findByActivoTrue(pageable);
         return servicios.map(this::convertirAServicioListDto);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ServicioListDto> obtenerServiciosPorEstado(EstadoServicio estado) {
-        List<Servicio> servicios = servicioRepository.findByEstado(estado);
+        List<Servicio> servicios = servicioRepository.findByEstadoAndActivoTrue(estado);
         return servicios.stream()
                 .map(this::convertirAServicioListDto)
                 .collect(Collectors.toList());
@@ -205,7 +205,7 @@ public class ServicioServiceImpl implements ServicioService {
     @Override
     @Transactional(readOnly = true)
     public List<ServicioListDto> obtenerServiciosPorCliente(Long clienteId) {
-        List<Servicio> servicios = servicioRepository.findByClienteId(clienteId);
+        List<Servicio> servicios = servicioRepository.findByClienteIdAndActivoTrue(clienteId);
         return servicios.stream()
                 .map(this::convertirAServicioListDto)
                 .collect(Collectors.toList());
@@ -214,7 +214,7 @@ public class ServicioServiceImpl implements ServicioService {
     @Override
     @Transactional(readOnly = true)
     public List<ServicioListDto> obtenerServiciosPorFechas(LocalDate fechaInicio, LocalDate fechaFin) {
-        List<Servicio> servicios = servicioRepository.findByFechaRecepcionBetween(fechaInicio, fechaFin);
+        List<Servicio> servicios = servicioRepository.findByFechaRecepcionBetweenAndActivoTrue(fechaInicio, fechaFin);
         return servicios.stream()
                 .map(this::convertirAServicioListDto)
                 .collect(Collectors.toList());
@@ -353,13 +353,38 @@ public class ServicioServiceImpl implements ServicioService {
 
     @Override
     public void eliminarServicio(Long id) {
-        if (!servicioRepository.existsById(id)) {
-            throw new ServicioNotFoundException("Servicio no encontrado con ID: " + id);
-        }
-        servicioRepository.deleteById(id);
+        Servicio servicio = servicioRepository.findById(id)
+                .orElseThrow(() -> new ServicioNotFoundException("Servicio no encontrado con ID: " + id));
+        servicio.setActivo(false);
+        servicioRepository.save(servicio);
 
         // Notificar eliminación del servicio via WebSocket
         notificationService.notificarServicioEliminado(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ServicioListDto> obtenerServiciosEliminados(Pageable pageable) {
+        Page<Servicio> servicios = servicioRepository.findByActivoFalse(pageable);
+        return servicios.map(this::convertirAServicioListDto);
+    }
+
+    @Override
+    public ServicioResponseDto restaurarServicio(Long id) {
+        Servicio servicio = servicioRepository.findById(id)
+                .orElseThrow(() -> new ServicioNotFoundException("Servicio no encontrado con ID: " + id));
+
+        if (servicio.getActivo()) {
+            throw new RuntimeException("El servicio no está eliminado");
+        }
+
+        servicio.setActivo(true);
+        Servicio servicioRestaurado = servicioRepository.save(servicio);
+
+        // Notificar restauración via WebSocket
+        notificationService.notificarServicioCreado(convertirAServicioListDto(servicioRestaurado));
+
+        return convertirAServicioResponseDto(servicioRestaurado);
     }
 
     @Override
@@ -386,7 +411,7 @@ public class ServicioServiceImpl implements ServicioService {
     @Override
     @Transactional(readOnly = true)
     public List<ServicioListDto> obtenerServiciosGarantia() {
-        List<Servicio> servicios = servicioRepository.findServiciosGarantia();
+        List<Servicio> servicios = servicioRepository.findServiciosGarantiaActivos();
         return servicios.stream()
                 .map(this::convertirAServicioListDto)
                 .collect(Collectors.toList());
@@ -465,6 +490,7 @@ public class ServicioServiceImpl implements ServicioService {
         dto.setFechaDevolucionPrevista(servicio.getFechaDevolucionPrevista());
         dto.setFechaDevolucionReal(servicio.getFechaDevolucionReal());
         dto.setDescripcionCompleta(servicio.getDescripcionCompleta());
+        dto.setActivo(servicio.getActivo());
 
         // Convertir detalles
         List<DetalleServicioDto> detallesDto = servicio.getDetalleServicios().stream()
@@ -501,6 +527,7 @@ public class ServicioServiceImpl implements ServicioService {
         dto.setFechaRecepcion(servicio.getFechaRecepcion());
         dto.setFechaDevolucionPrevista(servicio.getFechaDevolucionPrevista());
         dto.setFechaDevolucionReal(servicio.getFechaDevolucionReal());
+        dto.setActivo(servicio.getActivo());
 
         // Técnico evaluador (para garantías)
         if (servicio.getTecnicoEvaluacion() != null) {
@@ -560,5 +587,33 @@ public class ServicioServiceImpl implements ServicioService {
                         detalle.getComentario()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public ServicioResponseDto finalizarServicio(Long id, String firmaConformidad) {
+        Servicio servicio = servicioRepository.findById(id)
+                .orElseThrow(() -> new ServicioNotFoundException("Servicio no encontrado con ID: " + id));
+
+        if (servicio.getEstado() != EstadoServicio.TERMINADO) {
+            throw new RuntimeException("Solo se pueden finalizar servicios en estado TERMINADO. Estado actual: " + servicio.getEstado());
+        }
+
+        if (firmaConformidad == null || firmaConformidad.isBlank()) {
+            throw new RuntimeException("La firma de conformidad es obligatoria para finalizar el servicio");
+        }
+
+        EstadoServicio estadoAnterior = servicio.getEstado();
+        servicio.setFirmaConformidad(firmaConformidad);
+        servicio.setEstado(EstadoServicio.FINALIZADO);
+
+        if (servicio.getFechaDevolucionReal() == null) {
+            servicio.setFechaDevolucionReal(LocalDate.now());
+        }
+
+        Servicio servicioActualizado = servicioRepository.save(servicio);
+
+        notificationService.notificarCambioEstado(convertirAServicioListDto(servicioActualizado), estadoAnterior);
+
+        return convertirAServicioResponseDto(servicioActualizado);
     }
 }

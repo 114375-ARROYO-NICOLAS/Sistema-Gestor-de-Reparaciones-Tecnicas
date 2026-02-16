@@ -1,9 +1,12 @@
 {
-  "name": "sigret-front",
-  "short_name": "sigret-front",
+  "name": "Arroyo Electromecánica",
+  "short_name": "Arroyo",
+  "description": "Sistema de Gestión de Reparaciones - Arroyo Electromecánica",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
+  "theme_color": "#1c6091",
+  "background_color": "#ffffff",
   "icons": [
     {
       "src": "icons/icon-72x72.png",

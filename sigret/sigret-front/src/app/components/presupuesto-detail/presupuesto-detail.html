@@ -255,15 +255,25 @@
                 </div>
 
                 <div class="flex flex-column gap-2">
-                  <label for="fechaVencimiento" class="font-semibold text-sm">Fecha de Vencimiento</label>
+                  <label for="fechaVencimiento" class="font-semibold text-sm">
+                    Fecha de Vencimiento <span class="text-red-600">*</span>
+                  </label>
                   <p-datePicker
                     inputId="fechaVencimiento"
                     formControlName="fechaVencimiento"
                     [showIcon]="true"
+                    [minDate]="minFechaVencimiento"
                     dateFormat="dd/mm/yy"
                     placeholder="Seleccionar fecha"
                     class="w-full">
                   </p-datePicker>
+                  @if (formularioPresupuesto.get('fechaVencimiento')?.invalid && formularioPresupuesto.get('fechaVencimiento')?.touched) {
+                    <small class="text-red-600">La fecha de vencimiento es obligatoria</small>
+                  }
+                  <small class="text-color-secondary">
+                    <i class="pi pi-info-circle mr-1"></i>
+                    El token del cliente expirará en esta fecha
+                  </small>
                 </div>
               </div>
 
@@ -542,6 +552,16 @@
                     </p-button>
                   }
 
+                  @if (puedeActualizar()) {
+                    <p-button
+                      label="Actualizar Presupuesto"
+                      icon="pi pi-refresh"
+                      severity="info"
+                      [outlined]="true"
+                      (onClick)="abrirModalActualizar()">
+                    </p-button>
+                  }
+
                   @if (puedeCrearOrden()) {
                     <p-button
                       label="Crear Orden de Trabajo"
@@ -769,3 +789,13 @@
     </div>
   </ng-template>
 </p-dialog>
+
+<!-- Diálogo de Actualizar Presupuesto -->
+@if (presupuesto()) {
+  <app-actualizar-presupuesto-dialog
+    [visible]="dialogActualizarVisible()"
+    (visibleChange)="dialogActualizarVisible.set($event)"
+    [presupuesto]="presupuesto()!"
+    (updated)="onPresupuestoActualizado($event)">
+  </app-actualizar-presupuesto-dialog>
+}

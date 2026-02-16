@@ -17,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.sigret.enums.EstadoPresupuesto;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,12 +69,27 @@ public class PresupuestoPublicoController {
             throw new RuntimeException("Este token no es válido para aprobar el presupuesto");
         }
 
-        Long presupuestoId = presupuestoToken.getPresupuesto().getId();
+        Presupuesto presupuesto = presupuestoToken.getPresupuesto();
+
+        // Validar que el presupuesto no haya sido ya respondido
+        if (presupuesto.getEstado() == EstadoPresupuesto.APROBADO ||
+                presupuesto.getEstado() == EstadoPresupuesto.RECHAZADO) {
+            throw new RuntimeException("Este presupuesto ya fue respondido.");
+        }
+
+        // Validar que el presupuesto no esté vencido
+        if (presupuesto.getEstado() == EstadoPresupuesto.VENCIDO ||
+                (presupuesto.getFechaVencimiento() != null && presupuesto.getFechaVencimiento().isBefore(LocalDate.now()))) {
+            throw new RuntimeException("Este presupuesto ha vencido. Por favor contacte al técnico.");
+        }
+
+        Long presupuestoId = presupuesto.getId();
         String tipoPrecio = presupuestoToken.getTipoPrecio(); // "ORIGINAL" o "ALTERNATIVO"
         String ip = obtenerIpCliente(request);
 
         presupuestoService.aprobarPresupuesto(presupuestoId, tipoPrecio);
         tokenService.marcarTokenComoUsado(token, ip);
+        tokenService.invalidarTokensAnteriores(presupuestoId);
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "Presupuesto aprobado exitosamente");
@@ -98,11 +115,26 @@ public class PresupuestoPublicoController {
             throw new RuntimeException("Este token no es válido para rechazar el presupuesto");
         }
 
-        Long presupuestoId = presupuestoToken.getPresupuesto().getId();
+        Presupuesto presupuesto = presupuestoToken.getPresupuesto();
+
+        // Validar que el presupuesto no haya sido ya respondido
+        if (presupuesto.getEstado() == EstadoPresupuesto.APROBADO ||
+                presupuesto.getEstado() == EstadoPresupuesto.RECHAZADO) {
+            throw new RuntimeException("Este presupuesto ya fue respondido.");
+        }
+
+        // Validar que el presupuesto no esté vencido
+        if (presupuesto.getEstado() == EstadoPresupuesto.VENCIDO ||
+                (presupuesto.getFechaVencimiento() != null && presupuesto.getFechaVencimiento().isBefore(LocalDate.now()))) {
+            throw new RuntimeException("Este presupuesto ha vencido. Por favor contacte al técnico.");
+        }
+
+        Long presupuestoId = presupuesto.getId();
         String ip = obtenerIpCliente(request);
 
         presupuestoService.rechazarPresupuesto(presupuestoId);
         tokenService.marcarTokenComoUsado(token, ip);
+        tokenService.invalidarTokensAnteriores(presupuestoId);
 
         Map<String, String> response = new HashMap<>();
         response.put("message", "Presupuesto rechazado exitosamente");
@@ -125,6 +157,9 @@ public class PresupuestoPublicoController {
         dto.setMostrarAlternativo(presupuesto.getMostrarAlternativo());
         dto.setEstado(presupuesto.getEstado().name());
         dto.setFechaCreacion(presupuesto.getFechaCreacion().toLocalDate());
+        dto.setFechaVencimiento(presupuesto.getFechaVencimiento());
+        dto.setVencido(presupuesto.getEstado() == EstadoPresupuesto.VENCIDO ||
+                (presupuesto.getFechaVencimiento() != null && presupuesto.getFechaVencimiento().isBefore(LocalDate.now())));
 
         List<DetallePresupuestoDto> detallesDto = presupuesto.getDetallePresupuestos().stream()
                 .map(this::convertirADetalleDto)

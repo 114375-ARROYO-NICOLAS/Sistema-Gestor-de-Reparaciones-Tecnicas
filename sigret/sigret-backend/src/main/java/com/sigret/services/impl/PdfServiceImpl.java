@@ -13,6 +13,8 @@ import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import com.sigret.entities.*;
+import com.sigret.enums.EstadoOrdenTrabajo;
+import com.sigret.enums.EstadoPresupuesto;
 import com.sigret.repositories.ServicioRepository;
 import com.sigret.services.EmailService;
 import com.sigret.services.PdfService;
@@ -88,7 +90,7 @@ public class PdfServiceImpl implements PdfService {
                         "Fecha de recepción: %s\n\n" +
                         "Gracias por confiar en nuestros servicios.\n\n" +
                         "Saludos cordiales,\n" +
-                        "Sistema de Gestión de Reparaciones Técnicas",
+                        "Arroyo Electromecánica",
                 servicio.getCliente().getNombreCompleto(),
                 servicio.getNumeroServicio(),
                 servicio.getEquipo().getDescripcionCompleta(),
@@ -107,6 +109,15 @@ public class PdfServiceImpl implements PdfService {
     }
 
     private void agregarEncabezado(Document document, Servicio servicio) {
+        // Nombre de la empresa
+        Paragraph empresa = new Paragraph("Arroyo Electromecánica")
+                .setFontSize(12)
+                .setBold()
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(5);
+        document.add(empresa);
+
         // Título principal
         Paragraph titulo = new Paragraph("COMPROBANTE DE SERVICIO TÉCNICO")
                 .setFontSize(18)
@@ -335,5 +346,282 @@ public class PdfServiceImpl implements PdfService {
         Cell cellValor = new Cell().add(new Paragraph(valor != null ? valor : "-"));
         table.addCell(cellEtiqueta);
         table.addCell(cellValor);
+    }
+
+    // ==================== PDF FINAL ====================
+
+    @Override
+    public byte[] generarPdfFinal(Long servicioId) {
+        Servicio servicio = servicioRepository.findById(servicioId)
+                .orElseThrow(() -> new RuntimeException("Servicio no encontrado"));
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+
+            agregarEncabezadoFinal(document, servicio);
+            agregarInformacionCliente(document, servicio);
+            agregarInformacionEquipo(document, servicio);
+            agregarDetallesServicio(document, servicio);
+            agregarPresupuestoAprobado(document, servicio);
+            agregarOrdenTrabajo(document, servicio);
+            agregarConformidad(document, servicio);
+            agregarPiePagina(document);
+
+            document.close();
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Error al generar PDF final para servicio {}", servicioId, e);
+            throw new RuntimeException("Error al generar PDF final", e);
+        }
+    }
+
+    @Override
+    public void enviarPdfFinalPorEmail(Long servicioId) {
+        Servicio servicio = servicioRepository.findById(servicioId)
+                .orElseThrow(() -> new RuntimeException("Servicio no encontrado"));
+
+        String email = servicio.getCliente().getPrimerEmail();
+        if (email == null || email.isEmpty()) {
+            throw new RuntimeException("El cliente no tiene un email registrado");
+        }
+
+        byte[] pdfBytes = generarPdfFinal(servicioId);
+
+        String asunto = "Comprobante Final de Servicio - " + servicio.getNumeroServicio();
+        String mensaje = String.format(
+                "Estimado/a %s,\n\n" +
+                        "Adjuntamos el comprobante final del servicio técnico número %s.\n\n" +
+                        "Equipo: %s\n" +
+                        "Fecha de recepción: %s\n" +
+                        "Fecha de devolución: %s\n\n" +
+                        "Gracias por confiar en nuestros servicios.\n\n" +
+                        "Saludos cordiales,\n" +
+                        "Arroyo Electromecánica",
+                servicio.getCliente().getNombreCompleto(),
+                servicio.getNumeroServicio(),
+                servicio.getEquipo().getDescripcionCompleta(),
+                servicio.getFechaRecepcion().format(DATE_FORMATTER),
+                servicio.getFechaDevolucionReal() != null ? servicio.getFechaDevolucionReal().format(DATE_FORMATTER) : "N/A"
+        );
+
+        emailService.enviarEmailConAdjunto(
+                email,
+                asunto,
+                mensaje,
+                pdfBytes,
+                "comprobante-final-" + servicio.getNumeroServicio() + ".pdf"
+        );
+
+        log.info("PDF final del servicio {} enviado por email a {}", servicioId, email);
+    }
+
+    private void agregarEncabezadoFinal(Document document, Servicio servicio) {
+        // Nombre de la empresa
+        Paragraph empresa = new Paragraph("Arroyo Electromecánica")
+                .setFontSize(12)
+                .setBold()
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(5);
+        document.add(empresa);
+
+        Paragraph titulo = new Paragraph("COMPROBANTE FINAL DE SERVICIO TÉCNICO")
+                .setFontSize(18)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(5);
+        document.add(titulo);
+
+        Paragraph numeroServicio = new Paragraph("Nº " + servicio.getNumeroServicio())
+                .setFontSize(14)
+                .setBold()
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(5);
+        document.add(numeroServicio);
+
+        Paragraph estado = new Paragraph("Estado: " + servicio.getEstado().getDescripcion())
+                .setFontSize(10)
+                .setTextAlignment(TextAlignment.CENTER)
+                .setMarginBottom(20);
+        document.add(estado);
+
+        SolidLine line = new SolidLine(1f);
+        line.setColor(ColorConstants.GRAY);
+        document.add(new LineSeparator(line));
+        document.add(new Paragraph("\n"));
+    }
+
+    private void agregarPresupuestoAprobado(Document document, Servicio servicio) {
+        // Buscar el presupuesto aprobado o confirmado
+        Presupuesto presupuestoAprobado = servicio.getPresupuestos().stream()
+                .filter(p -> p.getEstado() == EstadoPresupuesto.APROBADO)
+                .findFirst()
+                .orElse(null);
+
+        if (presupuestoAprobado == null) {
+            return;
+        }
+
+        Paragraph seccion = new Paragraph("PRESUPUESTO APROBADO")
+                .setFontSize(12)
+                .setBold()
+                .setMarginBottom(10);
+        document.add(seccion);
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 70}));
+        table.setWidth(UnitValue.createPercentValue(100));
+
+        agregarFilaTabla(table, "Nº Presupuesto:", presupuestoAprobado.getNumeroPresupuesto());
+
+        if (presupuestoAprobado.getDiagnostico() != null && !presupuestoAprobado.getDiagnostico().isEmpty()) {
+            agregarFilaTabla(table, "Diagnóstico:", presupuestoAprobado.getDiagnostico());
+        }
+
+        agregarFilaTabla(table, "Mano de Obra:", "$" + presupuestoAprobado.getManoObra().toString());
+        agregarFilaTabla(table, "Repuestos:", "$" + presupuestoAprobado.getMontoRepuestosOriginal().toString());
+        agregarFilaTabla(table, "Total:", "$" + presupuestoAprobado.getMontoTotalOriginal().toString());
+
+        document.add(table);
+        document.add(new Paragraph("\n"));
+    }
+
+    private void agregarOrdenTrabajo(Document document, Servicio servicio) {
+        // Buscar la orden de trabajo terminada o la más reciente
+        OrdenTrabajo orden = servicio.getOrdenesTrabajo().stream()
+                .filter(ot -> ot.getEstado() == EstadoOrdenTrabajo.TERMINADA)
+                .findFirst()
+                .orElse(null);
+
+        if (orden == null) {
+            return;
+        }
+
+        Paragraph seccion = new Paragraph("ORDEN DE TRABAJO")
+                .setFontSize(12)
+                .setBold()
+                .setMarginBottom(10);
+        document.add(seccion);
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 70}));
+        table.setWidth(UnitValue.createPercentValue(100));
+
+        agregarFilaTabla(table, "Nº Orden:", orden.getNumeroOrdenTrabajo());
+        agregarFilaTabla(table, "Técnico:", orden.getEmpleado().getPersona().getNombreCompleto());
+        agregarFilaTabla(table, "Estado:", orden.getEstado().getDescripcion());
+
+        if (orden.getFechaComienzo() != null) {
+            agregarFilaTabla(table, "Fecha Inicio:", orden.getFechaComienzo().format(DATE_FORMATTER));
+        }
+        if (orden.getFechaFin() != null) {
+            agregarFilaTabla(table, "Fecha Fin:", orden.getFechaFin().format(DATE_FORMATTER));
+        }
+
+        if (orden.getObservacionesExtras() != null && !orden.getObservacionesExtras().isEmpty()) {
+            agregarFilaTabla(table, "Observaciones:", orden.getObservacionesExtras());
+        }
+
+        document.add(table);
+
+        // Detalle de items de la orden
+        if (orden.getDetalleOrdenesTrabajo() != null && !orden.getDetalleOrdenesTrabajo().isEmpty()) {
+            document.add(new Paragraph("\n"));
+
+            Table tablaItems = new Table(UnitValue.createPercentArray(new float[]{50, 15, 35}));
+            tablaItems.setWidth(UnitValue.createPercentValue(100));
+
+            Cell headerItem = new Cell().add(new Paragraph("Item").setBold())
+                    .setBackgroundColor(new DeviceRgb(230, 230, 230))
+                    .setTextAlignment(TextAlignment.CENTER);
+            Cell headerCantidad = new Cell().add(new Paragraph("Cant.").setBold())
+                    .setBackgroundColor(new DeviceRgb(230, 230, 230))
+                    .setTextAlignment(TextAlignment.CENTER);
+            Cell headerComentario = new Cell().add(new Paragraph("Comentario").setBold())
+                    .setBackgroundColor(new DeviceRgb(230, 230, 230))
+                    .setTextAlignment(TextAlignment.CENTER);
+
+            tablaItems.addCell(headerItem);
+            tablaItems.addCell(headerCantidad);
+            tablaItems.addCell(headerComentario);
+
+            for (DetalleOrdenTrabajo detalle : orden.getDetalleOrdenesTrabajo()) {
+                tablaItems.addCell(new Cell().add(new Paragraph(detalle.getItemDisplay())));
+                tablaItems.addCell(new Cell().add(new Paragraph(String.valueOf(detalle.getCantidad())))
+                        .setTextAlignment(TextAlignment.CENTER));
+                tablaItems.addCell(new Cell().add(new Paragraph(detalle.getComentario() != null ? detalle.getComentario() : "-")));
+            }
+
+            document.add(tablaItems);
+        }
+
+        document.add(new Paragraph("\n"));
+    }
+
+    private void agregarConformidad(Document document, Servicio servicio) {
+        Paragraph seccion = new Paragraph("CONFORMIDAD DEL CLIENTE")
+                .setFontSize(12)
+                .setBold()
+                .setMarginBottom(10);
+        document.add(seccion);
+
+        Paragraph textoConformidad = new Paragraph(
+                "El cliente declara haber recibido el equipo en condiciones satisfactorias " +
+                        "y de conformidad con el servicio realizado."
+        )
+                .setFontSize(10)
+                .setMarginBottom(10);
+        document.add(textoConformidad);
+
+        if (servicio.getFechaDevolucionReal() != null) {
+            Paragraph fechaDevolucion = new Paragraph("Fecha de devolución: " + servicio.getFechaDevolucionReal().format(DATE_FORMATTER))
+                    .setFontSize(10)
+                    .setMarginBottom(10);
+            document.add(fechaDevolucion);
+        }
+
+        // Firma de conformidad
+        if (servicio.getFirmaConformidad() != null && !servicio.getFirmaConformidad().isEmpty()) {
+            Paragraph firmaLabel = new Paragraph("Firma de Conformidad:")
+                    .setFontSize(10)
+                    .setBold()
+                    .setMarginBottom(5);
+            document.add(firmaLabel);
+
+            try {
+                byte[] imageBytes = Base64.getDecoder().decode(servicio.getFirmaConformidad());
+                Image firma = new Image(ImageDataFactory.create(imageBytes));
+                firma.setWidth(200);
+                firma.setHeight(100);
+                document.add(firma);
+            } catch (Exception e) {
+                log.error("Error al agregar firma de conformidad al PDF", e);
+                document.add(new Paragraph("Error al cargar firma de conformidad"));
+            }
+        }
+
+        // Firma de ingreso
+        if (servicio.getFirmaIngreso() != null && !servicio.getFirmaIngreso().isEmpty()) {
+            document.add(new Paragraph("\n"));
+            Paragraph firmaIngresoLabel = new Paragraph("Firma de Ingreso:")
+                    .setFontSize(10)
+                    .setBold()
+                    .setMarginBottom(5);
+            document.add(firmaIngresoLabel);
+
+            try {
+                byte[] imageBytes = Base64.getDecoder().decode(servicio.getFirmaIngreso());
+                Image firma = new Image(ImageDataFactory.create(imageBytes));
+                firma.setWidth(200);
+                firma.setHeight(100);
+                document.add(firma);
+            } catch (Exception e) {
+                log.error("Error al agregar firma de ingreso al PDF final", e);
+                document.add(new Paragraph("Error al cargar firma de ingreso"));
+            }
+        }
+
+        document.add(new Paragraph("\n"));
     }
 }

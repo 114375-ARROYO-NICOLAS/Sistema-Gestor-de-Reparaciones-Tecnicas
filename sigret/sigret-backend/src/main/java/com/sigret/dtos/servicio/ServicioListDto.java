@@ -44,4 +44,7 @@ public class ServicioListDto {
     // Técnico asignado a la reparación (desde OrdenTrabajo)
     private Long tecnicoAsignadoId;
     private String tecnicoAsignadoNombre;
+
+    // Soft delete
+    private Boolean activo;
 }

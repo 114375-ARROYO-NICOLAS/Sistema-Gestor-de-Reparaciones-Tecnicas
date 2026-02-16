@@ -1,6 +1,7 @@
 package com.sigret.controllers.presupuesto;
 
 import com.sigret.dtos.presupuesto.EnvioPresupuestoDto;
+import com.sigret.dtos.presupuesto.PresupuestoActualizarReenviarDto;
 import com.sigret.dtos.presupuesto.PresupuestoCreateDto;
 import com.sigret.dtos.presupuesto.PresupuestoListDto;
 import com.sigret.dtos.presupuesto.PresupuestoResponseDto;
@@ -236,6 +237,21 @@ public class PresupuestoController {
         // Cambiar estado a ENVIADO después de enviar el email exitosamente
         PresupuestoResponseDto presupuesto = presupuestoService.cambiarEstadoPresupuesto(id, EstadoPresupuesto.ENVIADO);
         return ResponseEntity.ok(presupuesto);
+    }
+
+    @PutMapping("/{id}/actualizar-y-reenviar")
+    @Operation(summary = "Actualizar y reenviar presupuesto", description = "Actualiza fecha de vencimiento, precios e items de un presupuesto enviado, y opcionalmente lo reenvía al cliente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Presupuesto actualizado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o presupuesto no está en estado ENVIADO"),
+            @ApiResponse(responseCode = "404", description = "Presupuesto no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<PresupuestoResponseDto> actualizarYReenviar(
+            @Parameter(description = "ID del presupuesto") @PathVariable Long id,
+            @Valid @RequestBody PresupuestoActualizarReenviarDto dto) {
+        PresupuestoResponseDto presupuestoActualizado = presupuestoService.actualizarYReenviar(id, dto);
+        return ResponseEntity.ok(presupuestoActualizado);
     }
 
     @DeleteMapping("/{id}")

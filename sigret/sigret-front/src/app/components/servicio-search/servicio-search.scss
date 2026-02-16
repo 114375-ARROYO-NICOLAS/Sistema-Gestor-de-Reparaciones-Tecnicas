@@ -2,6 +2,11 @@
   max-width: 1600px;
   margin: 0 auto;
 
+  // Botón de filtros mobile — oculto en desktop
+  .mobile-filter-toggle {
+    display: none;
+  }
+
   .filtros-card {
     position: sticky;
     top: 1rem;
@@ -21,46 +26,72 @@
     }
   }
 
-  // Estilos para el accordion
-  ::ng-deep {
-    .p-accordion {
-      .p-accordionpanel {
-        margin-bottom: 0.5rem;
+  // Secciones de filtros con checkboxes
+  .filter-section {
+    .filter-checkbox-item {
+      display: flex;
+      align-items: center;
+      padding: 0.25rem 0;
+
+      label {
+        font-size: 0.875rem;
+        color: var(--text-color);
+        user-select: none;
       }
 
-      .p-accordionpanel-header {
-        background: var(--surface-50);
-        border-radius: 8px;
-        margin-bottom: 0.25rem;
-
-        &:hover {
-          background: var(--surface-100);
-        }
-      }
-
-      .p-accordionpanel-content {
-        padding: 1rem;
+      &:hover {
+        background: var(--surface-hover);
+        border-radius: 4px;
+        margin: 0 -0.5rem;
+        padding: 0.25rem 0.5rem;
       }
     }
+  }
 
-    // Estilos para MultiSelect
-    .p-multiselect {
-      width: 100%;
+  // Botón "Ver más..." / "Ver menos"
+  .ver-mas-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    padding: 0.25rem 0;
+    font-weight: 500;
 
-      .p-multiselect-label {
-        padding: 0.5rem;
-      }
+    &:hover {
+      text-decoration: underline;
+    }
+  }
 
-      &.p-multiselect-chip {
-        .p-multiselect-label {
-          padding: 0.25rem 0.5rem;
-        }
+  // Tabla — permitir que el dropdown del paginator no se corte
+  ::ng-deep {
+    .p-table-wrapper {
+      overflow-x: auto;
+    }
+
+    .p-paginator {
+      overflow: visible;
+
+      .p-select {
+        overflow: visible;
       }
     }
   }
 
   // Responsive
   @media (max-width: 992px) {
+    .mobile-filter-toggle {
+      display: block;
+    }
+
+    .filtros-panel {
+      display: none;
+
+      &--visible {
+        display: block;
+      }
+    }
+
     .filtros-card {
       position: relative;
       top: 0;

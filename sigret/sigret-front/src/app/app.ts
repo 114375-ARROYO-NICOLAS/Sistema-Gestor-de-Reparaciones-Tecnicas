@@ -9,5 +9,5 @@ import { ToastModule } from 'primeng/toast';
   styleUrl: './app.scss'
 })
 export class App {
-  protected readonly title = signal('SIGRET - Sistema Gestor de Reparaciones Técnicas');
+  protected readonly title = signal('Arroyo Electromecánica');
 }

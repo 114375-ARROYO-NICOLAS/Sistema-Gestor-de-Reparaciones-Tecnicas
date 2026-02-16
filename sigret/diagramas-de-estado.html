@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGRET - Diagramas de Estado</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f5f7fa;
+      color: #2d3748;
+      padding: 40px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 50px;
+      padding: 30px;
+      background: linear-gradient(135deg, #1a365d, #2b6cb0);
+      color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    }
+
+    .header h1 {
+      font-size: 2.2rem;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .diagram-section {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+      page-break-inside: avoid;
+    }
+
+    .diagram-section h2 {
+      font-size: 1.6rem;
+      color: #1a365d;
+      margin-bottom: 8px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #2b6cb0;
+    }
+
+    .diagram-section .subtitle {
+      font-size: 0.95rem;
+      color: #718096;
+      margin-bottom: 25px;
+    }
+
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .mermaid svg {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .legend {
+      margin-top: 20px;
+      padding: 15px 20px;
+      background: #f7fafc;
+      border-radius: 8px;
+      border-left: 4px solid #2b6cb0;
+    }
+
+    .legend h4 {
+      margin-bottom: 8px;
+      color: #2d3748;
+    }
+
+    .legend ul {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 24px;
+    }
+
+    .legend li {
+      font-size: 0.9rem;
+      color: #4a5568;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .legend li .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .notes {
+      margin-top: 15px;
+      padding: 12px 18px;
+      background: #fffbeb;
+      border-radius: 8px;
+      border-left: 4px solid #f6ad55;
+      font-size: 0.9rem;
+      color: #744210;
+    }
+
+    .notes strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .toc {
+      background: white;
+      border-radius: 12px;
+      padding: 30px 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    .toc h3 {
+      font-size: 1.2rem;
+      color: #1a365d;
+      margin-bottom: 15px;
+    }
+
+    .toc ol {
+      padding-left: 20px;
+    }
+
+    .toc li {
+      margin-bottom: 8px;
+    }
+
+    .toc a {
+      color: #2b6cb0;
+      text-decoration: none;
+      font-size: 1rem;
+    }
+
+    .toc a:hover {
+      text-decoration: underline;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 20px;
+      color: #a0aec0;
+      font-size: 0.85rem;
+    }
+
+    @media print {
+      body { padding: 20px; background: white; }
+      .header { break-after: avoid; }
+      .diagram-section { break-inside: avoid; box-shadow: none; border: 1px solid #e2e8f0; }
+      .toc { break-after: page; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>SIGRET - Diagramas de Estado</h1>
+    <p>Sistema Gestor de Reparaciones T&eacute;cnicas &mdash; Documentaci&oacute;n T&eacute;cnica</p>
+  </div>
+
+  <div class="toc">
+    <h3>Contenido</h3>
+    <ol>
+      <li><a href="#servicio">Diagrama de Estado &mdash; Servicio (Flujo Normal)</a></li>
+      <li><a href="#servicio-garantia">Diagrama de Estado &mdash; Servicio (Flujo Garant&iacute;a)</a></li>
+      <li><a href="#presupuesto">Diagrama de Estado &mdash; Presupuesto</a></li>
+      <li><a href="#orden-trabajo">Diagrama de Estado &mdash; Orden de Trabajo</a></li>
+      <li><a href="#integracion">Diagrama de Integraci&oacute;n &mdash; Sincronizaci&oacute;n entre Entidades</a></li>
+    </ol>
+  </div>
+
+  <!-- ===================== SERVICIO - FLUJO NORMAL ===================== -->
+  <div class="diagram-section" id="servicio">
+    <h2>1. Diagrama de Estado &mdash; Servicio (Flujo Normal)</h2>
+    <p class="subtitle">Entidad: <code>Servicio</code> &nbsp;|&nbsp; Enum: <code>EstadoServicio</code> &nbsp;|&nbsp; Representa el ciclo de vida completo de un servicio de reparaci&oacute;n est&aacute;ndar.</p>
+
+    <div class="mermaid">
+stateDiagram-v2
+    direction TB
+
+    [*] --> RECIBIDO : Crear Servicio\n(POST /api/servicios)
+
+    RECIBIDO --> PRESUPUESTADO : Crear Presupuesto\n(POST /api/presupuestos)
+
+    PRESUPUESTADO --> APROBADO : Cliente aprueba presupuesto\n(PATCH /presupuestos/{id}/aprobar)
+
+    PRESUPUESTADO --> RECHAZADO : Cliente rechaza presupuesto\n(PATCH /presupuestos/{id}/rechazar)
+
+    APROBADO --> EN_REPARACION : Iniciar orden de trabajo\n(PATCH /ordenes-trabajo/{id}/iniciar)
+
+    EN_REPARACION --> TERMINADO : Finalizar orden de trabajo\n(PATCH /ordenes-trabajo/{id}/finalizar)
+
+    TERMINADO --> FINALIZADO : Firmar conformidad y entregar\n(PATCH /servicios/{id}/finalizar)
+
+    RECIBIDO --> RECHAZADO : Rechazar presupuesto\n(sin presupuestado previo)
+
+    state RECIBIDO {
+        [*] : Equipo ingresado al taller
+    }
+
+    state FINALIZADO {
+        [*] : Equipo devuelto al cliente
+    }
+
+    state RECHAZADO {
+        [*] : Servicio cancelado
+    }
+    </div>
+
+    <div class="legend">
+      <h4>Referencias de colores del tablero Kanban</h4>
+      <ul>
+        <li><span class="dot" style="background:#ffc107"></span> Presupuestado</li>
+        <li><span class="dot" style="background:#17a2b8"></span> Aprobado</li>
+        <li><span class="dot" style="background:#007bff"></span> En Reparaci&oacute;n</li>
+        <li><span class="dot" style="background:#28a745"></span> Terminado</li>
+        <li><span class="dot" style="background:#dc3545"></span> Rechazado</li>
+      </ul>
+    </div>
+
+    <div class="notes">
+      <strong>Notas:</strong>
+      Los servicios en estado RECIBIDO se muestran en una secci&oacute;n especial superior del tablero Kanban.
+      El estado FINALIZADO no aparece en el tablero ya que representa servicios completados y entregados.
+      La transici&oacute;n a FINALIZADO requiere obligatoriamente la firma de conformidad del cliente (<code>firmaConformidad</code>).
+    </div>
+  </div>
+
+  <!-- ===================== SERVICIO - FLUJO GARANTÍA ===================== -->
+  <div class="diagram-section" id="servicio-garantia">
+    <h2>2. Diagrama de Estado &mdash; Servicio (Flujo Garant&iacute;a)</h2>
+    <p class="subtitle">Entidad: <code>Servicio</code> con <code>esGarantia = true</code> &nbsp;|&nbsp; Representa el ciclo de un servicio ingresado por garant&iacute;a, vinculado a un servicio original.</p>
+
+    <div class="mermaid">
+stateDiagram-v2
+    direction TB
+
+    [*] --> RECIBIDO : Crear Servicio Garant&iacute;a\n(POST /api/servicios/garantia/{id})
+
+    RECIBIDO --> ESP_EVAL_GARANTIA : Ingreso autom&aacute;tico\n(esGarantia = true)
+
+    state ESP_EVAL_GARANTIA {
+        [*] : T&eacute;cnico eval&uacute;a si aplica garant&iacute;a
+    }
+
+    ESP_EVAL_GARANTIA --> EN_REPARACION : Garant&iacute;a CUMPLE\n(Crea OT sin costo)
+
+    ESP_EVAL_GARANTIA --> GARANTIA_RECHAZADA : Garant&iacute;a NO CUMPLE\n(Evaluaci&oacute;n negativa)
+
+    ESP_EVAL_GARANTIA --> GARANTIA_SIN_REPARACION : Sin reparaci&oacute;n posible\n(Evaluaci&oacute;n t&eacute;cnica)
+
+    EN_REPARACION --> TERMINADO : Finalizar orden de trabajo\n(PATCH /ordenes-trabajo/{id}/finalizar)
+
+    TERMINADO --> FINALIZADO : Firmar conformidad y entregar\n(PATCH /servicios/{id}/finalizar)
+
+    state GARANTIA_RECHAZADA {
+        [*] : No aplica garant&iacute;a
+    }
+
+    state GARANTIA_SIN_REPARACION {
+        [*] : Equipo no reparable
+    }
+
+    state FINALIZADO {
+        [*] : Equipo devuelto al cliente
+    }
+
+    note right of ESP_EVAL_GARANTIA
+        Estado: ESPERANDO_EVALUACION_GARANTIA
+        No se crea presupuesto para garant&iacute;as.
+        La OT se crea con esSinCosto = true.
+    end note
+    </div>
+
+    <div class="notes">
+      <strong>Notas:</strong>
+      Los servicios de garant&iacute;a no generan presupuesto. La orden de trabajo se crea directamente con <code>esSinCosto = true</code>.
+      El servicio de garant&iacute;a queda vinculado al servicio original mediante <code>servicioGarantia</code>.
+      La evaluaci&oacute;n permite seleccionar &iacute;tems del servicio original para determinar qu&eacute; componentes est&aacute;n cubiertos.
+    </div>
+  </div>
+
+  <!-- ===================== PRESUPUESTO ===================== -->
+  <div class="diagram-section" id="presupuesto">
+    <h2>3. Diagrama de Estado &mdash; Presupuesto</h2>
+    <p class="subtitle">Entidad: <code>Presupuesto</code> &nbsp;|&nbsp; Enum: <code>EstadoPresupuesto</code> &nbsp;|&nbsp; Representa el ciclo de elaboraci&oacute;n, env&iacute;o y aprobaci&oacute;n de un presupuesto.</p>
+
+    <div class="mermaid">
+stateDiagram-v2
+    direction TB
+
+    [*] --> PENDIENTE : Auto-creado con el servicio\no creado manualmente
+
+    PENDIENTE --> EN_CURSO : Empleado toma el presupuesto\n(PATCH /cambiar-estado)
+
+    EN_CURSO --> LISTO : Marcar como listo\n(PATCH /cambiar-estado)
+
+    LISTO --> EN_CURSO : Volver a editar\n(Modificar items)
+
+    LISTO --> ENVIADO : Enviar por email al cliente\n(POST /presupuestos/{id}/enviar)
+
+    ENVIADO --> APROBADO : Cliente aprueba\n(PATCH /presupuestos/{id}/aprobar)
+
+    ENVIADO --> RECHAZADO : Cliente rechaza\n(PATCH /presupuestos/{id}/rechazar)
+
+    ENVIADO --> VENCIDO : Vencimiento autom&aacute;tico\n(fechaVencimiento < hoy)
+
+    VENCIDO --> ENVIADO : Actualizar y reenviar\n(PUT /actualizar-y-reenviar)
+
+    PENDIENTE --> RECHAZADO : Rechazar directamente
+    EN_CURSO --> RECHAZADO : Rechazar en curso
+    LISTO --> RECHAZADO : Rechazar listo
+
+    state PENDIENTE {
+        [*] : Sin asignar
+    }
+
+    state EN_CURSO {
+        [*] : Empleado elaborando
+    }
+
+    state APROBADO {
+        [*] : Permite crear Orden de Trabajo
+    }
+
+    state RECHAZADO {
+        [*] : Servicio pasa a RECHAZADO
+    }
+
+    note right of APROBADO
+        Registra: tipoConfirmado (ORIGINAL/ALTERNATIVO),
+        canalConfirmacion, fechaConfirmacion
+    end note
+
+    note right of VENCIDO
+        Se detecta autom&aacute;ticamente al
+        consultar la lista de presupuestos.
+    end note
+    </div>
+
+    <div class="legend">
+      <h4>Referencias de colores del tablero Kanban de Presupuestos</h4>
+      <ul>
+        <li><span class="dot" style="background:#ffc107"></span> Pendiente</li>
+        <li><span class="dot" style="background:#17a2b8"></span> En Curso</li>
+        <li><span class="dot" style="background:#6f42c1"></span> Listo</li>
+        <li><span class="dot" style="background:#fd7e14"></span> Enviado (incluye Vencidos)</li>
+        <li><span class="dot" style="background:#28a745"></span> Aprobado</li>
+        <li><span class="dot" style="background:#dc3545"></span> Rechazado</li>
+      </ul>
+    </div>
+
+    <div class="notes">
+      <strong>Notas:</strong>
+      Al pasar a EN_CURSO se auto-asigna el empleado autenticado si no tiene uno asignado.
+      Los presupuestos VENCIDOS se muestran en la columna de ENVIADO en el tablero Kanban.
+      El presupuesto puede contener precios originales y alternativos; el cliente elige al aprobar (<code>tipoConfirmado</code>).
+      Solo es editable (agregar/modificar &iacute;tems) cuando est&aacute; en estado EN_CURSO.
+    </div>
+  </div>
+
+  <!-- ===================== ORDEN DE TRABAJO ===================== -->
+  <div class="diagram-section" id="orden-trabajo">
+    <h2>4. Diagrama de Estado &mdash; Orden de Trabajo</h2>
+    <p class="subtitle">Entidad: <code>OrdenTrabajo</code> &nbsp;|&nbsp; Enum: <code>EstadoOrdenTrabajo</code> &nbsp;|&nbsp; Representa la ejecuci&oacute;n de las tareas de reparaci&oacute;n.</p>
+
+    <div class="mermaid">
+stateDiagram-v2
+    direction TB
+
+    [*] --> PENDIENTE : Crear desde presupuesto aprobado\n(POST /crear-orden-trabajo)\no crear OT de garant&iacute;a
+
+    PENDIENTE --> EN_PROGRESO : Iniciar trabajo\n(PATCH /ordenes-trabajo/{id}/iniciar)\nRegistra fechaComienzo
+
+    EN_PROGRESO --> TERMINADA : Finalizar trabajo\n(PATCH /ordenes-trabajo/{id}/finalizar)\nRegistra fechaFin
+
+    PENDIENTE --> CANCELADA : Cancelar orden\n(PATCH /cambiar-estado)
+
+    state PENDIENTE {
+        [*] : Asignada a t&eacute;cnico
+    }
+
+    state EN_PROGRESO {
+        [*] : T&eacute;cnico trabajando
+    }
+
+    state EN_PROGRESO {
+        Detalle1 : Completar detalles individuales
+    }
+
+    state TERMINADA {
+        [*] : Servicio pasa a TERMINADO
+    }
+
+    state CANCELADA {
+        [*] : Trabajo cancelado
+    }
+
+    note right of EN_PROGRESO
+        Cada DetalleOrdenTrabajo puede
+        marcarse como completado
+        individualmente con comentario.
+    end note
+
+    note right of PENDIENTE
+        Origen normal: desde Presupuesto APROBADO
+        Origen garant&iacute;a: esSinCosto = true,
+        sin presupuesto asociado
+    end note
+    </div>
+
+    <div class="legend">
+      <h4>Referencias de colores del tablero Kanban de &Oacute;rdenes de Trabajo</h4>
+      <ul>
+        <li><span class="dot" style="background:#ffc107"></span> Pendiente</li>
+        <li><span class="dot" style="background:#007bff"></span> En Progreso</li>
+        <li><span class="dot" style="background:#28a745"></span> Terminada</li>
+        <li><span class="dot" style="background:#dc3545"></span> Cancelada</li>
+      </ul>
+    </div>
+
+    <div class="notes">
+      <strong>Notas:</strong>
+      Al iniciar la OT se registra <code>fechaComienzo = hoy</code> y el servicio pasa a EN_REPARACION.
+      Al finalizar la OT se registra <code>fechaFin = hoy</code> y el servicio pasa a TERMINADO.
+      Se puede verificar si todos los detalles est&aacute;n completados mediante el endpoint <code>/detalles-completados</code>.
+    </div>
+  </div>
+
+  <!-- ===================== INTEGRACIÓN ===================== -->
+  <div class="diagram-section" id="integracion">
+    <h2>5. Diagrama de Integraci&oacute;n &mdash; Sincronizaci&oacute;n entre Entidades</h2>
+    <p class="subtitle">Muestra c&oacute;mo los cambios de estado en una entidad impactan en las dem&aacute;s. Las flechas indican sincronizaci&oacute;n autom&aacute;tica.</p>
+
+    <div class="mermaid">
+stateDiagram-v2
+    direction LR
+
+    state "SERVICIO" as S {
+        S_REC : RECIBIDO
+        S_PRE : PRESUPUESTADO
+        S_APR : APROBADO
+        S_REP : EN_REPARACION
+        S_TER : TERMINADO
+        S_FIN : FINALIZADO
+        S_RCH : RECHAZADO
+
+        S_REC --> S_PRE
+        S_PRE --> S_APR
+        S_APR --> S_REP
+        S_REP --> S_TER
+        S_TER --> S_FIN
+        S_PRE --> S_RCH
+    }
+
+    state "PRESUPUESTO" as P {
+        P_PEN : PENDIENTE
+        P_EC : EN_CURSO
+        P_LIS : LISTO
+        P_ENV : ENVIADO
+        P_VEN : VENCIDO
+        P_APR : APROBADO
+        P_RCH : RECHAZADO
+
+        P_PEN --> P_EC
+        P_EC --> P_LIS
+        P_LIS --> P_ENV
+        P_ENV --> P_VEN
+        P_VEN --> P_ENV
+        P_ENV --> P_APR
+        P_ENV --> P_RCH
+    }
+
+    state "ORDEN DE TRABAJO" as O {
+        O_PEN : PENDIENTE
+        O_PRO : EN_PROGRESO
+        O_TER : TERMINADA
+        O_CAN : CANCELADA
+
+        O_PEN --> O_PRO
+        O_PRO --> O_TER
+        O_PEN --> O_CAN
+    }
+
+    note right of S
+        Sincronizaci&oacute;n autom&aacute;tica:
+        &bull; Crear Presupuesto &rarr; Servicio = PRESUPUESTADO
+        &bull; Aprobar Presupuesto &rarr; Servicio = APROBADO
+        &bull; Rechazar Presupuesto &rarr; Servicio = RECHAZADO
+        &bull; Iniciar OT &rarr; Servicio = EN_REPARACION
+        &bull; Finalizar OT &rarr; Servicio = TERMINADO
+    end note
+    </div>
+
+    <div class="notes">
+      <strong>Reglas de sincronizaci&oacute;n:</strong>
+      <br><br>
+      <strong>Presupuesto &rarr; Servicio:</strong>
+      Crear presupuesto cambia servicio a PRESUPUESTADO.
+      Aprobar presupuesto cambia servicio a APROBADO.
+      Rechazar presupuesto cambia servicio a RECHAZADO.
+      <br><br>
+      <strong>Orden de Trabajo &rarr; Servicio:</strong>
+      Iniciar OT cambia servicio a EN_REPARACION.
+      Finalizar OT cambia servicio a TERMINADO.
+      <br><br>
+      <strong>Presupuesto &rarr; Orden de Trabajo:</strong>
+      Desde un presupuesto APROBADO se puede crear una OT (m&aacute;ximo una por presupuesto).
+      Para garant&iacute;as, la OT se crea sin presupuesto con <code>esSinCosto = true</code>.
+    </div>
+  </div>
+
+  <div class="footer">
+    <p>SIGRET &mdash; Sistema Gestor de Reparaciones T&eacute;cnicas &mdash; Documentaci&oacute;n T&eacute;cnica generada el 14/02/2026</p>
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#e2e8f0',
+        primaryTextColor: '#1a202c',
+        primaryBorderColor: '#2b6cb0',
+        lineColor: '#4a5568',
+        secondaryColor: '#ebf8ff',
+        tertiaryColor: '#f7fafc',
+        noteBkgColor: '#fffbeb',
+        noteTextColor: '#744210',
+        noteBorderColor: '#f6ad55',
+        fontFamily: 'Segoe UI, Tahoma, Geneva, Verdana, sans-serif',
+        fontSize: '14px'
+      },
+      stateDiagram: {
+        useMaxWidth: true,
+        defaultRenderer: 'dagre-wrapper'
+      }
+    });
+  </script>
+
+</body>
+</html>

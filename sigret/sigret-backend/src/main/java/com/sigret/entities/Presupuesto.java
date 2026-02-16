@@ -78,7 +78,7 @@ public class Presupuesto {
     private CanalConfirmacion canalConfirmacion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @Column(name = "estado", nullable = false, length = 20)
     private EstadoPresupuesto estado = EstadoPresupuesto.PENDIENTE;
 
     @Column(name = "fecha_creacion", nullable = false)
@@ -94,7 +94,7 @@ public class Presupuesto {
     private LocalDate fechaVencimiento;
 
     // RELACIONES INVERSAS
-    @OneToMany(mappedBy = "presupuesto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "presupuesto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DetallePresupuesto> detallePresupuestos = new ArrayList<>();
 
     @OneToMany(mappedBy = "presupuesto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

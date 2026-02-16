@@ -7,6 +7,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { MenuModule } from 'primeng/menu';
 import { PopoverModule } from 'primeng/popover';
+import { NotificationBellComponent } from '../notification-bell/notification-bell';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { MenuItem } from 'primeng/api';
@@ -18,6 +19,18 @@ interface MenuLink {
   icon: string;
   routerLink: string;
   badge?: string;
+}
+
+interface MenuGroup {
+  label: string;
+  icon: string;
+  children: MenuLink[];
+}
+
+type SidebarItem = MenuLink | MenuGroup;
+
+function isGroup(item: SidebarItem): item is MenuGroup {
+  return 'children' in item;
 }
 
 @Component({
@@ -32,7 +45,8 @@ interface MenuLink {
     AvatarModule,
     BadgeModule,
     MenuModule,
-    PopoverModule
+    PopoverModule,
+    NotificationBellComponent
   ],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss'
@@ -55,72 +69,45 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   // Subscriptions
   private routerSubscription?: Subscription;
 
-  // Configuración del menú - Lista plana de opciones
-  protected readonly menuItems: MenuLink[] = [
+  // Estado de grupos expandidos
+  protected readonly expandedGroups = signal<Set<string>>(new Set());
+
+  // Configuración del menú con grupos desplegables
+  protected readonly menuItems: SidebarItem[] = [
     {
       label: 'Dashboard',
       icon: 'pi pi-chart-bar',
       routerLink: '/dashboard'
     },
     {
-      label: 'Servicios',
-      icon: 'pi pi-list',
-      routerLink: '/servicios'
+      label: 'Tableros',
+      icon: 'pi pi-th-large',
+      children: [
+        { label: 'Servicios', icon: 'pi pi-list', routerLink: '/servicios' },
+        { label: 'Garantías', icon: 'pi pi-shield', routerLink: '/garantias' },
+        { label: 'Presupuestos', icon: 'pi pi-dollar', routerLink: '/presupuestos' },
+        { label: 'Órdenes de Trabajo', icon: 'pi pi-wrench', routerLink: '/ordenes-trabajo' }
+      ]
     },
     {
-      label: 'Garantías',
-      icon: 'pi pi-shield',
-      routerLink: '/garantias'
+      label: 'Administración',
+      icon: 'pi pi-briefcase',
+      children: [
+        { label: 'Clientes', icon: 'pi pi-users', routerLink: '/clientes' },
+        { label: 'Capital Humano', icon: 'pi pi-id-card', routerLink: '/empleados' },
+        { label: 'Equipos', icon: 'pi pi-desktop', routerLink: '/equipos' },
+        { label: 'Usuarios', icon: 'pi pi-user', routerLink: '/usuarios' }
+      ]
     },
     {
-      label: 'Presupuestos',
-      icon: 'pi pi-dollar',
-      routerLink: '/presupuestos'
-    },
-    {
-      label: 'Órdenes de Trabajo',
-      icon: 'pi pi-wrench',
-      routerLink: '/ordenes-trabajo'
-    },
-    {
-      label: 'Clientes',
-      icon: 'pi pi-users',
-      routerLink: '/clientes'
-    },
-    {
-      label: 'Empleados',
-      icon: 'pi pi-id-card',
-      routerLink: '/empleados'
-    },
-    {
-      label: 'Equipos',
-      icon: 'pi pi-desktop',
-      routerLink: '/equipos'
-    },
-    {
-      label: 'Usuarios',
-      icon: 'pi pi-user',
-      routerLink: '/usuarios'
-    },
-    {
-      label: 'Tipos de Equipo',
-      icon: 'pi pi-tag',
-      routerLink: '/configuracion/tipos-equipo'
-    },
-    {
-      label: 'Marcas',
-      icon: 'pi pi-bookmark',
-      routerLink: '/configuracion/marcas'
-    },
-    {
-      label: 'Modelos',
-      icon: 'pi pi-database',
-      routerLink: '/configuracion/modelos'
-    },
-    {
-      label: 'Repuestos',
-      icon: 'pi pi-box',
-      routerLink: '/configuracion/repuestos'
+      label: 'Configuración',
+      icon: 'pi pi-cog',
+      children: [
+        { label: 'Tipos de Equipo', icon: 'pi pi-tag', routerLink: '/configuracion/tipos-equipo' },
+        { label: 'Marcas', icon: 'pi pi-bookmark', routerLink: '/configuracion/marcas' },
+        { label: 'Modelos', icon: 'pi pi-database', routerLink: '/configuracion/modelos' },
+        { label: 'Repuestos', icon: 'pi pi-box', routerLink: '/configuracion/repuestos' }
+      ]
     },
     {
       label: 'Ayuda',
@@ -128,6 +115,8 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       routerLink: '/ayuda'
     }
   ];
+
+  protected readonly isGroup = isGroup;
 
   protected readonly userMenuItems: MenuItem[] = [
     {
@@ -165,6 +154,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       )
       .subscribe(url => {
         this.updateCurrentRoute(url);
+        this.expandGroupForRoute(url);
         // Auto-close drawer on navigation (works for all screen sizes)
         this.isSidebarVisible.set(false);
       });
@@ -183,16 +173,24 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   private findRouteLabel(url: string): string | null {
-    const menuItem = this.menuItems.find(item => item.routerLink === url);
-    return menuItem ? menuItem.label : null;
+    for (const item of this.menuItems) {
+      if (isGroup(item)) {
+        const child = item.children.find(c => c.routerLink === url);
+        if (child) return child.label;
+      } else if (item.routerLink === url) {
+        return item.label;
+      }
+    }
+    return null;
   }
 
   private formatRouteName(route: string): string {
     const routeNames: { [key: string]: string } = {
       'dashboard': 'Dashboard',
       'servicios': 'Servicios',
+      'garantias': 'Garantías',
       'clientes': 'Clientes',
-      'empleados': 'Empleados',
+      'empleados': 'Capital Humano',
       'equipos': 'Equipos',
       'usuarios': 'Usuarios',
       'configuracion': 'Configuración',
@@ -205,6 +203,34 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     };
 
     return routeNames[route] || route.charAt(0).toUpperCase() + route.slice(1);
+  }
+
+  protected toggleGroup(label: string): void {
+    this.expandedGroups.update(groups => {
+      const next = new Set(groups);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  }
+
+  protected isGroupExpanded(label: string): boolean {
+    return this.expandedGroups().has(label);
+  }
+
+  private expandGroupForRoute(url: string): void {
+    for (const item of this.menuItems) {
+      if (isGroup(item) && item.children.some(c => url.startsWith(c.routerLink))) {
+        this.expandedGroups.update(groups => {
+          const next = new Set(groups);
+          next.add(item.label);
+          return next;
+        });
+      }
+    }
   }
 
   protected onMenuToggle(): void {

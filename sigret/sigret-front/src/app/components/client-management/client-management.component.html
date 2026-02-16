@@ -1,94 +1,81 @@
-<div class="client-management-container">
-  <!-- Header -->
-  <div class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center gap-3 mb-4">
-    <div class="flex-1">
-      <h2 class="text-xl md:text-2xl font-bold text-900 m-0">Gestión de Clientes</h2>
-      <p class="text-sm md:text-base text-600 mt-1 md:mt-2">Administra la información de los clientes del sistema</p>
-    </div>
-    <p-button 
-      label="Nuevo Cliente" 
-      icon="pi pi-plus" 
-      (onClick)="openCreateDialog()"
-      severity="primary"
-      class="w-full md:w-auto"
-      [size]="isMobile() ? 'small' : undefined">
-    </p-button>
-  </div>
-
-  <!-- Stats Cards -->
-  <div class="grid mb-4">
-    <div class="col-12 md:col-6">
-      <p-card class="text-center">
-        <ng-template pTemplate="content">
-          <div class="text-3xl font-bold text-primary">{{ totalRecords() }}</div>
-          <div class="text-600">Total Clientes</div>
-        </ng-template>
-      </p-card>
-    </div>
-    <div class="col-12 md:col-6">
-      <p-card class="text-center">
-        <ng-template pTemplate="content">
-          <div class="text-3xl font-bold text-green-500">{{ activeClients() }}</div>
-          <div class="text-600">Clientes Activos</div>
-        </ng-template>
-      </p-card>
-    </div>
-  </div>
-
-  <!-- Clients Table -->
-  <p-card>
-    <ng-template pTemplate="header">
-      <div class="p-3 md:p-4">
-        <h3 class="text-lg md:text-xl font-semibold m-0 mb-3">Lista de Clientes</h3>
-        
-        <!-- Filters -->
-        <div class="grid">
-          <div class="col-12 md:col-10">
-            <label for="filterSearch" class="block text-900 font-medium mb-2 text-sm md:text-base">Búsqueda</label>
-            <input 
-              id="filterSearch"
-              type="text"
-              pInputText
-              [(ngModel)]="filterBusqueda"
-              (input)="onFilterChange()"
-              placeholder="Buscar por nombre, apellido, razón social o documento..."
-              class="w-full text-sm md:text-base">
-          </div>
-          <div class="col-12 md:col-2 flex align-items-end">
-            <p-button 
-              icon="pi pi-refresh" 
-              severity="secondary"
-              (onClick)="loadClients()"
-              [loading]="isLoading()"
-              title="Actualizar"
-              class="w-full">
-            </p-button>
-          </div>
-        </div>
+<div class="client-management-container" [class.expanded]="expanded()">
+  <div class="surface-card p-4 shadow-2 border-round">
+    <!-- Header -->
+    <div class="flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="text-900 font-bold text-4xl m-0 mb-2">Gestión de Clientes</h2>
+        <p class="text-600 m-0">Administra la información de los clientes del sistema</p>
       </div>
-    </ng-template>
+      <div class="flex align-items-center gap-2">
+        <p-button
+          [icon]="expanded() ? 'pi pi-arrows-h' : 'pi pi-arrows-alt'"
+          [text]="true"
+          [rounded]="true"
+          severity="secondary"
+          (onClick)="expanded.set(!expanded())"
+          [pTooltip]="expanded() ? 'Vista normal' : 'Vista expandida'"
+          tooltipPosition="top">
+        </p-button>
+        <p-button
+          label="Eliminados"
+          icon="pi pi-trash"
+          severity="danger"
+          [outlined]="true"
+          (onClick)="navigateToEliminados()">
+        </p-button>
+        <p-button
+          label="Nuevo Cliente"
+          icon="pi pi-plus"
+          (onClick)="openCreateDialog()"
+          severity="primary">
+        </p-button>
+      </div>
+    </div>
 
-    <ng-template pTemplate="content">
-        <p-table 
-          [value]="clients()" 
-          [paginator]="true" 
-          [rows]="pageSize"
-          [totalRecords]="totalRecords()"
-          [lazy]="true"
-          (onLazyLoad)="loadClients($event)"
-          [loading]="isLoading()"
-          [rowHover]="true"
-          [scrollable]="true"
-          scrollHeight="flex"
-          styleClass="p-datatable-sm"
-          responsiveLayout="scroll">
+    <!-- Search bar -->
+    <div class="flex align-items-center gap-2 mb-4">
+      <p-iconfield iconPosition="left" class="flex-1">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="filterBusqueda"
+          (input)="onFilterChange()"
+          placeholder="Buscar por nombre, apellido, razón social o documento..."
+          class="w-full">
+      </p-iconfield>
+      <p-button
+        icon="pi pi-refresh"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        (onClick)="loadClients()"
+        [loading]="isLoading()"
+        pTooltip="Actualizar"
+        tooltipPosition="top">
+      </p-button>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="clients()"
+      [paginator]="true"
+      [rows]="pageSize"
+      [totalRecords]="totalRecords()"
+      [lazy]="true"
+      (onLazyLoad)="loadClients($event)"
+      [loading]="isLoading()"
+      [rowHover]="true"
+      [scrollable]="true"
+      scrollHeight="flex"
+      styleClass="p-datatable-sm p-datatable-gridlines"
+      responsiveLayout="scroll">
           
           <ng-template pTemplate="header">
             <tr>
               <th style="min-width: 200px;">Nombre Completo</th>
               <th style="min-width: 120px;">Documento</th>
               <th style="min-width: 200px;">Dirección Principal</th>
-              <th style="min-width: 100px;">Estado</th>
               <th class="text-center" style="min-width: 120px;">Acciones</th>
             </tr>
           </ng-template>
@@ -106,7 +93,7 @@
                 @if (client.direccionPrincipal) {
                   <div class="flex align-items-center gap-2">
                     <i class="pi pi-map-marker text-primary"></i>
-                    <span 
+                    <span
                       class="text-primary cursor-pointer hover:underline"
                       (click)="openAddressInMaps(client.direccionPrincipal); $event.stopPropagation()"
                       title="Ver en Google Maps">
@@ -116,12 +103,6 @@
                 } @else {
                   <span class="text-600">Sin dirección</span>
                 }
-              </td>
-              <td>
-                <p-tag
-                  [value]="clientService.getStatusDisplayName(client.activo)"
-                  [severity]="clientService.getStatusColor(client.activo)">
-                </p-tag>
               </td>
               <td (click)="$event.stopPropagation()">
                 <div class="flex gap-1 justify-content-center">
@@ -133,26 +114,14 @@
                     (onClick)="openEditDialog(client)"
                     title="Editar">
                   </p-button>
-
-                  @if (client.activo) {
-                    <p-button
-                      icon="pi pi-ban"
-                      severity="secondary"
-                      size="small"
-                      [text]="true"
-                      (onClick)="deactivateClient(client)"
-                      title="Dar de baja">
-                    </p-button>
-                  } @else {
-                    <p-button
-                      icon="pi pi-check"
-                      severity="success"
-                      size="small"
-                      [text]="true"
-                      (onClick)="reactivateClient(client)"
-                      title="Reactivar">
-                    </p-button>
-                  }
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    size="small"
+                    [text]="true"
+                    (onClick)="deactivateClient(client)"
+                    title="Eliminar">
+                  </p-button>
                 </div>
               </td>
             </tr>
@@ -160,7 +129,7 @@
 
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="5" class="text-center p-4">
+              <td colspan="4" class="text-center p-4">
                 <div class="flex flex-column align-items-center gap-3">
                   <i class="pi pi-users text-4xl text-400"></i>
                   <div>
@@ -177,11 +146,11 @@
               </td>
             </tr>
           </ng-template>
-        </p-table>
-    </ng-template>
-  </p-card>
+    </p-table>
+  </div>
+</div>
 
-  <!-- Create/Edit Client Dialog -->
+<!-- Create/Edit Client Dialog -->
   <p-dialog 
     [header]="isEditMode() ? 'Editar Cliente' : 'Crear Cliente'"
     [visible]="showClientDialog()"
@@ -612,8 +581,6 @@
       </div>
     </ng-template>
   </p-dialog>
-
-</div>
 
 <!-- Toast and Confirmation Dialog -->
 <p-toast></p-toast>

@@ -1,5 +1,6 @@
 package com.sigret.services;
 
+import com.sigret.dtos.presupuesto.PresupuestoActualizarReenviarDto;
 import com.sigret.dtos.presupuesto.PresupuestoCreateDto;
 import com.sigret.dtos.presupuesto.PresupuestoListDto;
 import com.sigret.dtos.presupuesto.PresupuestoResponseDto;
@@ -92,4 +93,9 @@ public interface PresupuestoService {
      * Generar número de presupuesto automático
      */
     String generarNumeroPresupuesto();
+
+    /**
+     * Actualizar presupuesto enviado (fecha, precios) y opcionalmente reenviar al cliente
+     */
+    PresupuestoResponseDto actualizarYReenviar(Long id, PresupuestoActualizarReenviarDto dto);
 }

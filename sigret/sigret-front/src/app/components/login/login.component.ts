@@ -1,4 +1,4 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -26,10 +26,11 @@ import { LoginRequest } from '../../models/auth.model';
   templateUrl: './login.component.html',
   styleUrl: './login.component.scss'
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   protected readonly loginForm: FormGroup;
   protected readonly errorMessage = signal<string>('');
   protected readonly isLoading = computed(() => this.authService.isLoading());
+  protected readonly showSplash = signal(true);
 
   constructor(
     private fb: FormBuilder,
@@ -40,6 +41,10 @@ export class LoginComponent {
       username: ['', [Validators.required, Validators.minLength(3)]],
       password: ['', [Validators.required, Validators.minLength(3)]]
     });
+  }
+
+  ngOnInit(): void {
+    setTimeout(() => this.showSplash.set(false), 3000);
   }
 
   protected onSubmit(): void {

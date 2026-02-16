@@ -236,6 +236,13 @@ public class ClienteServiceImpl implements ClienteService {
         return convertirAClienteResponseDto(cliente);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ClienteListDto> obtenerClientesInactivos(Pageable pageable) {
+        Page<Cliente> clientes = clienteRepository.findByActivoFalse(pageable);
+        return clientes.map(this::convertirAClienteListDto);
+    }
+
     /**
      * Crear contactos para una persona
      */

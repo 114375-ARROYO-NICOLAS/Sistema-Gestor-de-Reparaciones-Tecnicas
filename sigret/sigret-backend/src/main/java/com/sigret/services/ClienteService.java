@@ -60,4 +60,9 @@ public interface ClienteService {
      * Obtener cliente con sus equipos
      */
     ClienteResponseDto obtenerClienteConEquipos(Long id);
+
+    /**
+     * Obtener clientes inactivos (eliminados lógicamente) con paginación
+     */
+    Page<ClienteListDto> obtenerClientesInactivos(Pageable pageable);
 }

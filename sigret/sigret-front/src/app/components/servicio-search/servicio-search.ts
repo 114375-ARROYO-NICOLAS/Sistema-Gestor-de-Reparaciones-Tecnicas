@@ -8,16 +8,21 @@ import { EmployeeService } from '../../services/employee.service';
 import { TipoEquipoService } from '../../services/tipo-equipo.service';
 import { ServicioList, EstadoServicio } from '../../models/servicio.model';
 import { MessageService } from 'primeng/api';
-import { Table, TableModule } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { Button } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Tag } from 'primeng/tag';
 import { InputText } from 'primeng/inputtext';
-import { MultiSelect } from 'primeng/multiselect';
 import { AutoComplete } from 'primeng/autocomplete';
 import { Divider } from 'primeng/divider';
 import { ProgressSpinner } from 'primeng/progressspinner';
-import { Accordion, AccordionPanel } from 'primeng/accordion';
+import { Checkbox } from 'primeng/checkbox';
+import { DatePicker } from 'primeng/datepicker';
+
+interface FilterOption {
+  label: string;
+  value: string;
+}
 
 @Component({
   selector: 'app-servicio-search',
@@ -29,12 +34,11 @@ import { Accordion, AccordionPanel } from 'primeng/accordion';
     Card,
     Tag,
     InputText,
-    MultiSelect,
     AutoComplete,
     Divider,
     ProgressSpinner,
-    Accordion,
-    AccordionPanel
+    Checkbox,
+    DatePicker
   ],
   templateUrl: './servicio-search.html',
   styleUrl: './servicio-search.scss'
@@ -47,35 +51,50 @@ export class ServicioSearch implements OnInit {
   private readonly tipoEquipoService = inject(TipoEquipoService);
   private readonly messageService = inject(MessageService);
 
+  private readonly MAX_VISIBLE = 4;
+
   // Signals
+  readonly showMobileFilters = signal(false);
   readonly loading = signal<boolean>(true);
   readonly servicios = signal<ServicioList[]>([]);
 
-  // Opciones para filtros
-  readonly clientesSugerencias = signal<any[]>([]);
-  readonly empleados = signal<any[]>([]);
-  readonly tiposEquipo = signal<any[]>([]);
-  readonly estadosOptions = signal<{ label: string; value: EstadoServicio }[]>([
-    { label: 'Recibido', value: EstadoServicio.RECIBIDO },
-    { label: 'Presupuestado', value: EstadoServicio.PRESUPUESTADO },
-    { label: 'Aprobado', value: EstadoServicio.APROBADO },
-    { label: 'En Reparación', value: EstadoServicio.EN_REPARACION },
-    { label: 'Terminado', value: EstadoServicio.TERMINADO },
-    { label: 'Rechazado', value: EstadoServicio.RECHAZADO }
-  ]);
+  // Opciones para filtros (cargadas del backend)
+  readonly clientesSugerencias = signal<string[]>([]);
+  readonly estadosOptions = signal<FilterOption[]>([]);
+  readonly empleadosOptions = signal<FilterOption[]>([]);
+  readonly tiposEquipoOptions = signal<FilterOption[]>([]);
+
   readonly garantiaOptions = signal<{ label: string; value: boolean | null }[]>([
     { label: 'Todos', value: null },
     { label: 'Solo Garantías', value: true },
     { label: 'Sin Garantías', value: false }
   ]);
 
+  // "Ver más" toggles
+  readonly showAllEstados = signal(false);
+  readonly showAllEmpleados = signal(false);
+  readonly showAllTiposEquipo = signal(false);
+
+  // Opciones visibles (primeras 4 o todas)
+  readonly estadosVisibles = computed(() =>
+    this.showAllEstados() ? this.estadosOptions() : this.estadosOptions().slice(0, this.MAX_VISIBLE)
+  );
+  readonly empleadosVisibles = computed(() =>
+    this.showAllEmpleados() ? this.empleadosOptions() : this.empleadosOptions().slice(0, this.MAX_VISIBLE)
+  );
+  readonly tiposEquipoVisibles = computed(() =>
+    this.showAllTiposEquipo() ? this.tiposEquipoOptions() : this.tiposEquipoOptions().slice(0, this.MAX_VISIBLE)
+  );
+
   // Filtros actuales como signals
   readonly busqueda = signal<string>('');
-  readonly estadosFiltro = signal<EstadoServicio[]>([]);
-  readonly clienteFiltro = signal<string>(''); // Cambiado a string para AutoComplete
-  readonly empleadosFiltro = signal<string[]>([]); // Cambiado a string[] para filtrar por nombre
-  readonly tiposEquipoFiltro = signal<string[]>([]); // Cambiado a string[] para filtrar por descripción
+  readonly estadosFiltro = signal<string[]>([]);
+  readonly clienteFiltro = signal<string>('');
+  readonly empleadosFiltro = signal<string[]>([]);
+  readonly tiposEquipoFiltro = signal<string[]>([]);
   readonly garantiaFiltro = signal<boolean | null>(null);
+  readonly fechaDesde = signal<Date | null>(null);
+  readonly fechaHasta = signal<Date | null>(null);
 
   // Computed para servicios filtrados
   readonly serviciosFiltrados = computed(() => {
@@ -114,18 +133,35 @@ export class ServicioSearch implements OnInit {
     // Filtro por tipos de equipo (busca en la descripción del equipo)
     const tiposEquipo = this.tiposEquipoFiltro();
     if (tiposEquipo.length > 0) {
-      servicios = servicios.filter(s => {
-        // Buscar si algún tipo seleccionado está en la descripción del equipo
-        return tiposEquipo.some(tipo =>
+      servicios = servicios.filter(s =>
+        tiposEquipo.some(tipo =>
           s.equipoDescripcion.toLowerCase().includes(tipo.toLowerCase())
-        );
-      });
+        )
+      );
     }
 
     // Filtro por garantía
     const garantia = this.garantiaFiltro();
     if (garantia !== null) {
       servicios = servicios.filter(s => s.esGarantia === garantia);
+    }
+
+    // Filtro por rango de fecha de creación
+    const desde = this.fechaDesde();
+    const hasta = this.fechaHasta();
+    if (desde) {
+      const desdeTime = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate()).getTime();
+      servicios = servicios.filter(s => {
+        const fechaCreacion = new Date(s.fechaCreacion).getTime();
+        return fechaCreacion >= desdeTime;
+      });
+    }
+    if (hasta) {
+      const hastaTime = new Date(hasta.getFullYear(), hasta.getMonth(), hasta.getDate(), 23, 59, 59, 999).getTime();
+      servicios = servicios.filter(s => {
+        const fechaCreacion = new Date(s.fechaCreacion).getTime();
+        return fechaCreacion <= hastaTime;
+      });
     }
 
     return servicios;
@@ -157,33 +193,69 @@ export class ServicioSearch implements OnInit {
   }
 
   private cargarOpcionesFiltros(): void {
-    // Ya no cargamos clientes aquí, se cargan dinámicamente en buscarClientes()
+    // Cargar estados desde el backend
+    this.servicioService.obtenerEstados().subscribe({
+      next: (estados) => {
+        this.estadosOptions.set(estados);
+      },
+      error: (err) => console.error('Error al cargar estados:', err)
+    });
 
-    // Cargar empleados - usar nombreCompleto como value para filtrar
+    // Cargar empleados
     this.employeeService.getEmployees({ size: 1000 }).subscribe({
       next: (response) => {
-        this.empleados.set(response.content.map(e => ({
+        this.empleadosOptions.set(response.content.map(e => ({
           label: e.nombreCompleto,
-          value: e.nombreCompleto  // Usar nombre como valor para filtrar
+          value: e.nombreCompleto
         })));
       },
       error: (err) => console.error('Error al cargar empleados:', err)
     });
 
-    // Cargar tipos de equipo - usar descripcion como value para filtrar
+    // Cargar tipos de equipo
     this.tipoEquipoService.getAllTiposEquipo().subscribe({
       next: (tipos) => {
-        this.tiposEquipo.set(tipos.map(t => ({
+        this.tiposEquipoOptions.set(tipos.map(t => ({
           label: t.descripcion,
-          value: t.descripcion  // Usar descripción como valor para filtrar
+          value: t.descripcion
         })));
       },
       error: (err) => console.error('Error al cargar tipos de equipo:', err)
     });
   }
 
+  // Toggle helpers para checkboxes
+  toggleEstado(value: string): void {
+    this.estadosFiltro.update(current =>
+      current.includes(value) ? current.filter(v => v !== value) : [...current, value]
+    );
+  }
+
+  toggleEmpleado(value: string): void {
+    this.empleadosFiltro.update(current =>
+      current.includes(value) ? current.filter(v => v !== value) : [...current, value]
+    );
+  }
+
+  toggleTipoEquipo(value: string): void {
+    this.tiposEquipoFiltro.update(current =>
+      current.includes(value) ? current.filter(v => v !== value) : [...current, value]
+    );
+  }
+
+  isEstadoSelected(value: string): boolean {
+    return this.estadosFiltro().includes(value);
+  }
+
+  isEmpleadoSelected(value: string): boolean {
+    return this.empleadosFiltro().includes(value);
+  }
+
+  isTipoEquipoSelected(value: string): boolean {
+    return this.tiposEquipoFiltro().includes(value);
+  }
+
   aplicarFiltros(): void {
-    // Los filtros se aplican automáticamente mediante el computed signal
     const totalFiltrados = this.serviciosFiltrados().length;
     const totalServicios = this.servicios().length;
 
@@ -208,7 +280,7 @@ export class ServicioSearch implements OnInit {
     }
   }
 
-  buscarClientes(event: any): void {
+  buscarClientes(event: { query: string }): void {
     const query = event.query;
     if (query && query.length >= 2) {
       this.clientService.getClients({ filtro: query, size: 20 }).subscribe({
@@ -229,6 +301,8 @@ export class ServicioSearch implements OnInit {
     this.empleadosFiltro.set([]);
     this.tiposEquipoFiltro.set([]);
     this.garantiaFiltro.set(null);
+    this.fechaDesde.set(null);
+    this.fechaHasta.set(null);
 
     this.messageService.add({
       severity: 'info',
@@ -247,7 +321,8 @@ export class ServicioSearch implements OnInit {
       [EstadoServicio.TERMINADO]: 'success',
       [EstadoServicio.RECHAZADO]: 'danger',
       [EstadoServicio.GARANTIA_SIN_REPARACION]: 'secondary',
-      [EstadoServicio.GARANTIA_RECHAZADA]: 'danger'
+      [EstadoServicio.GARANTIA_RECHAZADA]: 'danger',
+      [EstadoServicio.FINALIZADO]: 'success'
     };
     return severityMap[estado] || 'secondary';
   }

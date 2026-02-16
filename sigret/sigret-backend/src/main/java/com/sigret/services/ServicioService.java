@@ -60,10 +60,20 @@ public interface ServicioService {
     ServicioResponseDto cambiarEstadoServicio(Long id, EstadoServicio nuevoEstado);
     
     /**
-     * Eliminar un servicio
+     * Eliminar un servicio (soft delete)
      */
     void eliminarServicio(Long id);
-    
+
+    /**
+     * Obtener servicios eliminados
+     */
+    Page<ServicioListDto> obtenerServiciosEliminados(Pageable pageable);
+
+    /**
+     * Restaurar un servicio eliminado
+     */
+    ServicioResponseDto restaurarServicio(Long id);
+
     /**
      * Generar número de servicio automático
      */
@@ -84,4 +94,9 @@ public interface ServicioService {
      * Se usa para mostrar en la evaluación de garantía
      */
     List<ItemServicioOriginalDto> obtenerItemsServicioOriginal(Long servicioGarantiaId);
+
+    /**
+     * Finalizar un servicio: registrar firma de conformidad y cambiar estado a FINALIZADO
+     */
+    ServicioResponseDto finalizarServicio(Long id, String firmaConformidad);
 }

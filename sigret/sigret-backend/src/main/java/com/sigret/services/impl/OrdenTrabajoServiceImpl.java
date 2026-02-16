@@ -21,6 +21,7 @@ import com.sigret.repositories.PresupuestoRepository;
 import com.sigret.repositories.RepuestoRepository;
 import com.sigret.repositories.ServicioRepository;
 import com.sigret.services.OrdenTrabajoService;
+import com.sigret.services.ServicioService;
 import com.sigret.services.WebSocketNotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -50,6 +51,9 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
 
     @Autowired
     private RepuestoRepository repuestoRepository;
+
+    @Autowired
+    private ServicioService servicioService;
 
     @Autowired
     private WebSocketNotificationService notificationService;
@@ -203,6 +207,14 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
 
     @Override
     public OrdenTrabajoResponseDto cambiarEstadoOrdenTrabajo(Long id, EstadoOrdenTrabajo nuevoEstado) {
+        // Delegar a métodos especializados que también actualizan el servicio
+        if (nuevoEstado == EstadoOrdenTrabajo.EN_PROGRESO) {
+            return iniciarOrdenTrabajo(id);
+        }
+        if (nuevoEstado == EstadoOrdenTrabajo.TERMINADA) {
+            return finalizarOrdenTrabajo(id);
+        }
+
         OrdenTrabajo ordenTrabajo = ordenTrabajoRepository.findById(id)
                 .orElseThrow(() -> new OrdenTrabajoNotFoundException("Orden de trabajo no encontrada con ID: " + id));
 
@@ -251,12 +263,11 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
         ordenTrabajo.setFechaComienzo(LocalDate.now());
         OrdenTrabajo ordenTrabajoActualizada = ordenTrabajoRepository.save(ordenTrabajo);
 
-        // Cambiar estado del servicio a EN_REPARACION
+        // Cambiar estado del servicio a EN_REPARACION (también envía notificación WebSocket a /topic/servicios)
         Servicio servicio = ordenTrabajo.getServicio();
-        servicio.setEstado(EstadoServicio.EN_REPARACION);
-        servicioRepository.save(servicio);
+        servicioService.cambiarEstadoServicio(servicio.getId(), EstadoServicio.EN_REPARACION);
 
-        // Notificar cambio de estado via WebSocket
+        // Notificar cambio de estado de la OT via WebSocket
         OrdenTrabajoEventDto evento = new OrdenTrabajoEventDto();
         evento.setTipoEvento("CAMBIO_ESTADO");
         evento.setOrdenTrabajoId(ordenTrabajo.getId());
@@ -283,12 +294,11 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
         ordenTrabajo.setFechaFin(LocalDate.now());
         OrdenTrabajo ordenTrabajoActualizada = ordenTrabajoRepository.save(ordenTrabajo);
 
-        // Cambiar estado del servicio a TERMINADO
+        // Cambiar estado del servicio a TERMINADO (también envía notificación WebSocket a /topic/servicios)
         Servicio servicio = ordenTrabajo.getServicio();
-        servicio.setEstado(EstadoServicio.TERMINADO);
-        servicioRepository.save(servicio);
+        servicioService.cambiarEstadoServicio(servicio.getId(), EstadoServicio.TERMINADO);
 
-        // Notificar cambio de estado via WebSocket
+        // Notificar cambio de estado de la OT via WebSocket
         OrdenTrabajoEventDto evento = new OrdenTrabajoEventDto();
         evento.setTipoEvento("CAMBIO_ESTADO");
         evento.setOrdenTrabajoId(ordenTrabajo.getId());

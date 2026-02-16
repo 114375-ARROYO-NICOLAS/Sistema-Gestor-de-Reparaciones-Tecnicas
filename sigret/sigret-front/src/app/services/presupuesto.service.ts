@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Presupuesto, EstadoPresupuesto, EnvioPresupuestoDto } from '../models/presupuesto.model';
+import { Presupuesto, EstadoPresupuesto, EnvioPresupuestoDto, PresupuestoActualizarReenviarDto } from '../models/presupuesto.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -63,6 +63,10 @@ export class PresupuestoService {
 
   enviarPresupuestoACliente(dto: EnvioPresupuestoDto): Observable<Presupuesto> {
     return this.http.post<Presupuesto>(`${this.apiUrl}/${dto.presupuestoId}/enviar`, dto);
+  }
+
+  actualizarYReenviar(id: number, dto: PresupuestoActualizarReenviarDto): Observable<Presupuesto> {
+    return this.http.put<Presupuesto>(`${this.apiUrl}/${id}/actualizar-y-reenviar`, dto);
   }
 
   crearOrdenDeTrabajo(presupuestoId: number): Observable<{ message: string; ordenTrabajoId: number }> {

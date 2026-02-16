@@ -1,4 +1,4 @@
-import { Component, OnInit, AfterViewInit, signal, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, signal, inject, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -10,7 +10,8 @@ import { ServicioUpdateDto } from '../../models/servicio-update.dto';
 import { Presupuesto } from '../../models/presupuesto.model';
 import { OrdenTrabajo } from '../../models/orden-trabajo.model';
 import { ItemServicioOriginal } from '../../models/item-evaluacion-garantia.model';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Button, ButtonModule } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { Tag } from 'primeng/tag';
@@ -25,6 +26,7 @@ import { RadioButton } from 'primeng/radiobutton';
 import { TextareaModule } from 'primeng/textarea';
 import { Dialog } from 'primeng/dialog';
 import { AuthService } from '../../services/auth.service';
+import { FinalizarTrabajoDialogComponent } from '../finalizar-trabajo-dialog/finalizar-trabajo-dialog';
 
 @Component({
   selector: 'app-servicio-detail',
@@ -49,8 +51,11 @@ import { AuthService } from '../../services/auth.service';
     Checkbox,
     RadioButton,
     TextareaModule,
-    Dialog
+    Dialog,
+    ConfirmDialog,
+    FinalizarTrabajoDialogComponent
   ],
+  providers: [ConfirmationService],
   templateUrl: './servicio-detail.html',
   styleUrl: './servicio-detail.scss'
 })
@@ -63,6 +68,7 @@ export class ServicioDetail implements OnInit, AfterViewInit {
   private readonly ordenTrabajoService = inject(OrdenTrabajoService);
   private readonly messageService = inject(MessageService);
   private readonly authService = inject(AuthService);
+  private readonly confirmationService = inject(ConfirmationService);
   private readonly cdr = inject(ChangeDetectorRef);
 
   // Signals
@@ -79,6 +85,10 @@ export class ServicioDetail implements OnInit, AfterViewInit {
   // Signals para modo edición
   readonly modoEdicion = signal<boolean>(false);
   readonly guardando = signal<boolean>(false);
+  readonly eliminando = signal<boolean>(false);
+
+  // Dialog de finalizar trabajo
+  @ViewChild(FinalizarTrabajoDialogComponent) finalizarDialog!: FinalizarTrabajoDialogComponent;
 
   // Variables para modal de evaluación de garantía
   mostrarModalEvaluacion = false;
@@ -107,7 +117,8 @@ export class ServicioDetail implements OnInit, AfterViewInit {
     { label: 'Aprobado', value: 'APROBADO' },
     { label: 'En Reparación', value: 'EN_REPARACION' },
     { label: 'Terminado', value: 'TERMINADO' },
-    { label: 'Rechazado', value: 'RECHAZADO' }
+    { label: 'Rechazado', value: 'RECHAZADO' },
+    { label: 'Finalizado', value: 'FINALIZADO' }
   ];
 
   readonly tiposIngresoOptions = [
@@ -398,6 +409,46 @@ export class ServicioDetail implements OnInit, AfterViewInit {
     }
   }
 
+  confirmarEliminacion(): void {
+    const servicio = this.servicio();
+    if (!servicio) return;
+
+    this.confirmationService.confirm({
+      message: `¿Está seguro de que desea eliminar el servicio ${servicio.numeroServicio}? Se desactivará junto con todos sus presupuestos y órdenes de trabajo asociados.`,
+      header: 'Confirmar Eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => this.eliminarServicio()
+    });
+  }
+
+  private eliminarServicio(): void {
+    const servicio = this.servicio();
+    if (!servicio) return;
+
+    this.eliminando.set(true);
+    this.servicioService.eliminarServicio(servicio.id).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Servicio Eliminado',
+          detail: `El servicio ${servicio.numeroServicio} fue eliminado correctamente`
+        });
+        this.router.navigate(['/servicios']);
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: error.error?.message || 'Error al eliminar el servicio'
+        });
+        this.eliminando.set(false);
+      }
+    });
+  }
+
   getEstadoSeverity(estado: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
     const severityMap: Record<string, 'success' | 'info' | 'warn' | 'danger' | 'secondary'> = {
       'RECIBIDO': 'info',
@@ -410,7 +461,8 @@ export class ServicioDetail implements OnInit, AfterViewInit {
       'EN_PROGRESO': 'info',
       'EN_CURSO': 'info',
       'TERMINADA': 'success',
-      'CANCELADA': 'danger'
+      'CANCELADA': 'danger',
+      'FINALIZADO': 'success'
     };
     return severityMap[estado] || 'secondary';
   }
@@ -660,6 +712,18 @@ export class ServicioDetail implements OnInit, AfterViewInit {
         });
       }
     });
+  }
+
+  // Métodos para finalizar trabajo
+  abrirDialogFinalizar(): void {
+    this.finalizarDialog.showDialog();
+  }
+
+  onServicioFinalizado(): void {
+    const servicio = this.servicio();
+    if (servicio) {
+      this.cargarServicio(servicio.id);
+    }
   }
 
   private getEstadoLabel(estado: string): string {

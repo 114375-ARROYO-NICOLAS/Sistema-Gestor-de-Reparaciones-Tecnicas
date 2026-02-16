@@ -8,18 +8,18 @@
       </p-button>
 
       <!-- Logo -->
-      <div class="flex align-items-center justify-content-center bg-primary border-round w-2rem h-2rem flex-shrink-0">
-        <i class="pi pi-wrench text-white text-sm"></i>
-      </div>
-
-      <!-- App Name -->
-      <div class="overflow-hidden">
-        <h1 class="font-bold text-900 m-0 white-space-nowrap text-base lg:text-xl">SiGReT</h1>
-      </div>
+      <img
+        [src]="isDarkMode() ? 'logos/logo-horizontal-blanco.png' : 'logos/logo-horizontal-original.png'"
+        alt="Arroyo Electromecánica"
+        class="h-2rem flex-shrink-0"
+      >
     </div>
 
-    <!-- Right Section: Theme + User Menu -->
+    <!-- Right Section: Notifications + Theme + User Menu -->
     <div class="flex align-items-center gap-1 flex-shrink-0">
+      <!-- Notification Bell -->
+      <app-notification-bell />
+
       <!-- Theme Toggle -->
       <p-button [icon]="isDarkMode() ? 'pi pi-sun' : 'pi pi-moon'" [text]="true" [rounded]="true"
         (click)="toggleTheme()" [title]="isDarkMode() ? 'Modo Claro' : 'Modo Oscuro'">
@@ -67,17 +67,39 @@
   <!-- Menu Content -->
   <div class="flex flex-column gap-1 pt-2">
     @for (item of menuItems; track item.label) {
-      <a [routerLink]="item.routerLink"
-         routerLinkActive="surface-200 text-primary font-semibold"
-         class="flex align-items-center no-underline text-color p-3 border-round-lg hover:surface-50 transition-colors transition-duration-200">
-        <i [class]="item.icon" class="mr-3 text-lg text-primary"></i>
-        <span class="flex-1 font-medium">{{ item.label }}</span>
-        @if (item.badge) {
-          <span class="inline-flex align-items-center justify-content-center bg-primary text-white border-round px-2 py-1 text-xs font-semibold ml-2">
-            {{ item.badge }}
-          </span>
-        }
-      </a>
+      @if (isGroup(item)) {
+        <!-- Grupo desplegable -->
+        <div>
+          <div
+            class="flex align-items-center cursor-pointer p-3 border-round-lg hover:surface-50 transition-colors transition-duration-200 select-none"
+            (click)="toggleGroup(item.label)">
+            <i [class]="item.icon" class="mr-3 text-lg text-primary"></i>
+            <span class="flex-1 font-medium text-color">{{ item.label }}</span>
+            <i class="pi pi-chevron-down text-sm text-600 transition-transform"
+               [class.rotate-180]="isGroupExpanded(item.label)"></i>
+          </div>
+          <div class="submenu-container" [class.expanded]="isGroupExpanded(item.label)">
+            <div class="flex flex-column gap-1 ml-3">
+              @for (child of item.children; track child.label) {
+                <a [routerLink]="child.routerLink"
+                   routerLinkActive="surface-200 text-primary font-semibold"
+                   class="flex align-items-center no-underline text-color p-2 pl-4 border-round-lg hover:surface-50 transition-colors transition-duration-200">
+                  <i [class]="child.icon" class="mr-3 text-base text-primary"></i>
+                  <span class="font-medium text-sm">{{ child.label }}</span>
+                </a>
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <!-- Link directo -->
+        <a [routerLink]="item.routerLink"
+           routerLinkActive="surface-200 text-primary font-semibold"
+           class="flex align-items-center no-underline text-color p-3 border-round-lg hover:surface-50 transition-colors transition-duration-200">
+          <i [class]="item.icon" class="mr-3 text-lg text-primary"></i>
+          <span class="flex-1 font-medium">{{ item.label }}</span>
+        </a>
+      }
     }
   </div>
 </p-drawer>

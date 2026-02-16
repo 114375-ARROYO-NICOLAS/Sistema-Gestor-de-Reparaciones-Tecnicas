@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { PresupuestoPublicoService } from '../../services/presupuesto-publico.service';
@@ -38,6 +38,11 @@ export class PresupuestoPublicoComponent implements OnInit {
   readonly accion = signal<'aprobar' | 'rechazar' | null>(null);
   readonly accionCompletada = signal<boolean>(false);
   readonly mensajeExito = signal<string>('');
+  readonly estaVencido = computed(() => this.presupuesto()?.vencido === true);
+  readonly yaRespondido = computed(() => {
+    const estado = this.presupuesto()?.estado;
+    return estado === 'APROBADO' || estado === 'RECHAZADO';
+  });
 
   ngOnInit(): void {
     const token = this.route.snapshot.paramMap.get('token');
@@ -102,5 +107,11 @@ export class PresupuestoPublicoComponent implements OnInit {
       style: 'currency',
       currency: 'ARS'
     }).format(value);
+  }
+
+  formatFecha(fecha: string | undefined): string {
+    if (!fecha) return '';
+    const date = new Date(fecha + 'T00:00:00');
+    return date.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' });
   }
 }

@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(powershell -Command:*)",
-      "Bash(./mvnw clean compile:*)"
+      "Bash(./mvnw clean compile:*)",
+      "Bash(mvn test:*)",
+      "Bash(findstr:*)"
     ],
     "deny": [],
     "ask": []

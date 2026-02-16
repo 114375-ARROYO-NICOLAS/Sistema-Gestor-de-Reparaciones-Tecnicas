@@ -5,7 +5,8 @@ import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, For
 import { PresupuestoService } from '../../services/presupuesto.service';
 import { ServicioService } from '../../services/servicio.service';
 import { RepuestoService } from '../../services/repuesto.service';
-import { Presupuesto, EstadoPresupuesto, DetallePresupuesto, PresupuestoCreateDto, EnvioPresupuestoDto } from '../../models/presupuesto.model';
+import { Presupuesto, EstadoPresupuesto, DetallePresupuesto, PresupuestoCreateDto, EnvioPresupuestoDto, PresupuestoActualizarReenviarDto } from '../../models/presupuesto.model';
+import { ActualizarPresupuestoDialog, ActualizarPresupuestoResult } from '../actualizar-presupuesto-dialog/actualizar-presupuesto-dialog';
 import { finalize } from 'rxjs';
 import { ServicioResponse } from '../../models/servicio.model';
 import { Repuesto } from '../../models/repuesto.model';
@@ -42,7 +43,8 @@ import { CheckboxModule } from 'primeng/checkbox';
     TableModule,
     AutoCompleteModule,
     DialogModule,
-    CheckboxModule
+    CheckboxModule,
+    ActualizarPresupuestoDialog
   ],
   templateUrl: './presupuesto-detail.html',
   styleUrl: './presupuesto-detail.scss'
@@ -64,6 +66,9 @@ export class PresupuestoDetail implements OnInit {
   readonly modoCreacion = signal<boolean>(false);
 
   readonly EstadoPresupuesto = EstadoPresupuesto;
+
+  // Fecha mínima para el datepicker de vencimiento (mañana)
+  readonly minFechaVencimiento = new Date(new Date().setDate(new Date().getDate() + 1));
 
   formularioPresupuesto!: FormGroup;
 
@@ -110,6 +115,11 @@ export class PresupuestoDetail implements OnInit {
     return p?.estado === EstadoPresupuesto.LISTO;
   });
 
+  readonly puedeActualizar = computed(() => {
+    const p = this.presupuesto();
+    return p?.estado === EstadoPresupuesto.ENVIADO || p?.estado === EstadoPresupuesto.VENCIDO;
+  });
+
   readonly puedeCrearOrden = computed(() => {
     const p = this.presupuesto();
     // Puede crear orden si está aprobado y no tiene órdenes de trabajo
@@ -122,6 +132,7 @@ export class PresupuestoDetail implements OnInit {
     return p.estado === EstadoPresupuesto.PENDIENTE ||
            p.estado === EstadoPresupuesto.LISTO ||
            p.estado === EstadoPresupuesto.ENVIADO ||
+           p.estado === EstadoPresupuesto.VENCIDO ||
            p.estado === EstadoPresupuesto.APROBADO ||
            p.estado === EstadoPresupuesto.RECHAZADO;
   });
@@ -194,7 +205,7 @@ export class PresupuestoDetail implements OnInit {
     this.formularioPresupuesto = this.fb.group({
       diagnostico: ['', Validators.required],
       manoObra: [0, [Validators.required, Validators.min(0)]],
-      fechaVencimiento: [null],
+      fechaVencimiento: [null, Validators.required],
       detalles: this.fb.array([])
     });
   }
@@ -502,6 +513,8 @@ export class PresupuestoDetail implements OnInit {
         return 'secondary';
       case EstadoPresupuesto.ENVIADO:
         return 'contrast';
+      case EstadoPresupuesto.VENCIDO:
+        return 'warn';
       case EstadoPresupuesto.APROBADO:
         return 'success';
       case EstadoPresupuesto.RECHAZADO:
@@ -521,6 +534,8 @@ export class PresupuestoDetail implements OnInit {
         return 'Listo';
       case EstadoPresupuesto.ENVIADO:
         return 'Enviado';
+      case EstadoPresupuesto.VENCIDO:
+        return 'Vencido';
       case EstadoPresupuesto.APROBADO:
         return 'Aprobado';
       case EstadoPresupuesto.RECHAZADO:
@@ -693,6 +708,18 @@ export class PresupuestoDetail implements OnInit {
 
   cerrarDialogoEnvio(): void {
     this.dialogEnvioVisible.set(false);
+  }
+
+  // Dialog de actualizar presupuesto
+  readonly dialogActualizarVisible = signal<boolean>(false);
+
+  abrirModalActualizar(): void {
+    this.dialogActualizarVisible.set(true);
+  }
+
+  onPresupuestoActualizado(result: ActualizarPresupuestoResult): void {
+    this.presupuesto.set(result.presupuesto);
+    this.dialogActualizarVisible.set(false);
   }
 
   confirmarEnvio(): void {

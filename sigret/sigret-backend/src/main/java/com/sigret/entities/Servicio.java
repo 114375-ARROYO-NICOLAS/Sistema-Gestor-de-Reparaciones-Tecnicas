@@ -116,6 +116,9 @@ public class Servicio {
     @Column(name = "fecha_devolucion_real")
     private LocalDate fechaDevolucionReal;
 
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
+
     // RELACIONES INVERSAS
     @OneToMany(mappedBy = "servicio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Presupuesto> presupuestos = new ArrayList<>();

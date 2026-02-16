@@ -28,6 +28,7 @@ public class PresupuestoListDto {
     private BigDecimal montoTotalAlternativo;
     private TipoConfirmacion tipoConfirmado;
     private LocalDate fechaVencimiento;
+    private Boolean vencido;
     private EstadoPresupuesto estado;
     private LocalDateTime fechaCreacion;
     private Boolean tieneOrdenTrabajo;

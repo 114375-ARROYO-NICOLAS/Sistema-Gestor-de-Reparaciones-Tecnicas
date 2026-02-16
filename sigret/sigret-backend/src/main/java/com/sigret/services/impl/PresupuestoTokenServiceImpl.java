@@ -36,9 +36,15 @@ public class PresupuestoTokenServiceImpl implements PresupuestoTokenService {
         Presupuesto presupuesto = presupuestoRepository.findById(presupuestoId)
                 .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado"));
 
+        // Validar que el presupuesto tenga fecha de vencimiento
+        if (presupuesto.getFechaVencimiento() == null) {
+            throw new RuntimeException("El presupuesto debe tener una fecha de vencimiento para generar el token");
+        }
+
         String token = UUID.randomUUID().toString();
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime expiracion = now.plusDays(tokenExpirationDays);
+        // Sincronizar expiración del token con la fecha de vencimiento del presupuesto
+        LocalDateTime expiracion = presupuesto.getFechaVencimiento().atTime(23, 59, 59);
 
         PresupuestoToken presupuestoToken = new PresupuestoToken();
         presupuestoToken.setToken(token);

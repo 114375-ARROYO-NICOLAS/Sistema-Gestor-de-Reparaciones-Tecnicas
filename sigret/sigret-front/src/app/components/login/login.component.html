@@ -1,13 +1,23 @@
-<div class="min-h-screen flex align-items-center justify-content-center p-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+<!-- Splash Screen -->
+@if (showSplash()) {
+  <div class="splash-screen">
+    <div class="splash-content">
+      <img src="logos/icono-blanco.png" alt="Arroyo Electromecánica" class="splash-logo">
+      <h1 class="splash-title">Arroyo Electromecánica</h1>
+    </div>
+  </div>
+}
+
+<!-- Login Form -->
+<div class="min-h-screen flex align-items-center justify-content-center p-4"
+     [class.login-enter]="!showSplash()"
+     style="background: linear-gradient(135deg, #1c6091 0%, #7b1a2d 100%);">
   <div class="surface-card p-6 shadow-5 border-round-3xl w-full max-w-25rem">
     <div class="text-center mb-6">
       <div class="flex justify-content-center mb-4">
-        <div class="flex align-items-center justify-content-center bg-primary border-round-2xl shadow-3" style="width: 4rem; height: 4rem;">
-          <i class="pi pi-wrench text-primary-50 text-2xl"></i>
-        </div>
+        <img src="logos/icono-original.png" alt="Arroyo Electromecánica" style="width: 4rem; height: 4rem; object-fit: contain;">
       </div>
-      <h1 class="text-3xl font-bold text-900 mb-2">SIGRET</h1>
-      <p class="text-600 font-medium">Sistema Gestor de Reparaciones Técnicas</p>
+      <h1 class="text-2xl font-bold text-900 mb-2">Arroyo Electromecánica</h1>
     </div>
 
     <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">

@@ -29,6 +29,10 @@ export const routes: Routes = [
             loadComponent: () => import('./components/client-management/client-management.component').then(m => m.ClientManagementComponent)
           },
           {
+            path: 'eliminados',
+            loadComponent: () => import('./components/clientes-eliminados/clientes-eliminados').then(m => m.ClientesEliminadosComponent)
+          },
+          {
             path: ':id',
             loadComponent: () => import('./components/client-detail/client-detail.component').then(m => m.ClientDetailComponent)
           }
@@ -90,6 +94,10 @@ export const routes: Routes = [
           {
             path: 'nuevo',
             loadComponent: () => import('./components/servicio-create/servicio-create').then(m => m.ServicioCreateComponent)
+          },
+          {
+            path: 'eliminados',
+            loadComponent: () => import('./components/servicios-eliminados/servicios-eliminados').then(m => m.ServiciosEliminadosComponent)
           },
           {
             path: ':id',

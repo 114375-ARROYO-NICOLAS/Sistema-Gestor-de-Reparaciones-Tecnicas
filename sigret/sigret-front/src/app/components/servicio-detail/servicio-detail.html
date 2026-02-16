@@ -16,14 +16,31 @@
         }
       </h2>
     </div>
-    @if (!modoEdicion() && servicio()) {
-      <p-button
-        label="Editar"
-        icon="pi pi-pencil"
-        severity="info"
-        (onClick)="activarModoEdicion()">
-      </p-button>
-    }
+    <div class="flex gap-2">
+      @if (!modoEdicion() && servicio()?.estado === 'TERMINADO') {
+        <p-button
+          label="Finalizar Trabajo"
+          icon="pi pi-check-circle"
+          severity="success"
+          (onClick)="abrirDialogFinalizar()">
+        </p-button>
+      }
+      @if (!modoEdicion() && servicio()) {
+        <p-button
+          label="Editar"
+          icon="pi pi-pencil"
+          severity="info"
+          (onClick)="activarModoEdicion()">
+        </p-button>
+        <p-button
+          label="Eliminar"
+          icon="pi pi-trash"
+          severity="danger"
+          [loading]="eliminando()"
+          (onClick)="confirmarEliminacion()">
+        </p-button>
+      }
+    </div>
   </div>
 
   <!-- Loading State -->
@@ -544,7 +561,7 @@
           <p-card class="mb-3">
             <ng-template pTemplate="header">
               <div class="p-3 pb-0">
-                <h3 class="text-lg font-semibold m-0">Firma del Cliente</h3>
+                <h3 class="text-lg font-semibold m-0">Firma de Ingreso</h3>
               </div>
             </ng-template>
 
@@ -554,6 +571,33 @@
                 alt="Firma del cliente"
                 class="border-round border-1 surface-border"
                 style="max-width: 100%; height: auto;">
+            </div>
+          </p-card>
+        }
+
+        <!-- Firma de Conformidad -->
+        @if (servicio()!.firmaConformidad) {
+          <p-card class="mb-3">
+            <ng-template pTemplate="header">
+              <div class="p-3 pb-0">
+                <h3 class="text-lg font-semibold m-0 flex align-items-center gap-2">
+                  <i class="pi pi-check-circle text-green-600"></i>
+                  Firma de Conformidad
+                </h3>
+              </div>
+            </ng-template>
+
+            <div class="flex flex-column gap-2">
+              <p class="text-sm text-color-secondary m-0">
+                El cliente declaró haber recibido el equipo en condiciones satisfactorias.
+              </p>
+              <div class="flex justify-content-center">
+                <img
+                  [src]="'data:image/png;base64,' + servicio()!.firmaConformidad"
+                  alt="Firma de conformidad"
+                  class="border-round border-1 surface-border"
+                  style="max-width: 100%; height: auto;">
+              </div>
             </div>
           </p-card>
         }
@@ -750,6 +794,15 @@
     </div>
   }
 
+  <!-- Dialog Finalizar Trabajo -->
+  @if (servicio()) {
+    <app-finalizar-trabajo-dialog
+      [servicioId]="servicio()!.id"
+      [servicioNumero]="servicio()!.numeroServicio"
+      (confirmed)="onServicioFinalizado()">
+    </app-finalizar-trabajo-dialog>
+  }
+
   <!-- Modal de Evaluación de Garantía -->
   <p-dialog
     header="Evaluación de Garantía"
@@ -895,4 +948,5 @@
     </ng-template>
   </p-dialog>
 
+  <p-confirmDialog />
 </div>

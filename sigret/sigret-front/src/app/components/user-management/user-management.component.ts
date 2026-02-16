@@ -17,6 +17,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { BadgeModule } from 'primeng/badge';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { UserService } from '../../services/user.service';
 import { 
@@ -46,7 +47,8 @@ import {
     ProgressSpinnerModule,
     CardModule,
     DividerModule,
-    BadgeModule
+    BadgeModule,
+    TooltipModule
   ],
   templateUrl: './user-management.component.html',
   styleUrl: './user-management.component.scss',
@@ -66,6 +68,7 @@ export class UserManagementComponent implements OnInit {
   public readonly isSaving = signal(false);
   public readonly showUserDialog = signal(false);
   public readonly showPasswordDialog = signal(false);
+  public readonly expanded = signal(false);
   public readonly isEditMode = signal(false);
   public readonly selectedUser = signal<User | null>(null);
   public readonly totalRecords = signal(0);

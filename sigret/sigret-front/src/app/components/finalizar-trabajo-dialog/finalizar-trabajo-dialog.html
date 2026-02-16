@@ -1,0 +1,121 @@
+<p-dialog
+  header="Finalizar Trabajo"
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [closable]="!finalizando()"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '600px', maxWidth: '95vw' }"
+  (onHide)="onDialogHide()">
+
+  <div class="flex flex-column gap-4">
+    <!-- Información del servicio -->
+    <div class="p-3 border-round surface-100">
+      <div class="flex align-items-center gap-2 mb-2">
+        <i class="pi pi-info-circle text-primary"></i>
+        <span class="font-semibold">Servicio {{ servicioNumero() }}</span>
+      </div>
+      <p class="text-sm text-color-secondary m-0">
+        Al finalizar el trabajo, el cliente confirma la recepción del equipo en condiciones satisfactorias.
+      </p>
+    </div>
+
+    <!-- Checkbox de conformidad -->
+    <div class="flex align-items-start gap-3 p-3 border-round border-1 surface-border">
+      <p-checkbox
+        [(ngModel)]="aceptaConformidad"
+        [binary]="true"
+        inputId="conformidad"
+        [disabled]="finalizando()">
+      </p-checkbox>
+      <label for="conformidad" class="cursor-pointer line-height-3">
+        Declaro haber recibido el equipo en condiciones satisfactorias y de conformidad con el servicio realizado.
+      </label>
+    </div>
+
+    <!-- Firma -->
+    <div class="flex flex-column gap-2">
+      <div class="flex justify-content-between align-items-center">
+        <label class="font-semibold">Firma del Cliente</label>
+        <div class="flex align-items-center gap-2">
+          @if (hasSignature()) {
+            <p-tag value="Firmado" severity="success" icon="pi pi-check"></p-tag>
+          }
+          <p-button
+            label="Limpiar"
+            icon="pi pi-eraser"
+            [text]="true"
+            size="small"
+            severity="secondary"
+            (onClick)="clearSignature()"
+            [disabled]="!aceptaConformidad || finalizando()">
+          </p-button>
+        </div>
+      </div>
+
+      <canvas
+        #signatureCanvas
+        class="signature-canvas"
+        [class.pointer-events-none]="!aceptaConformidad || finalizando()">
+      </canvas>
+
+      @if (!aceptaConformidad) {
+        <small class="text-color-secondary">
+          <i class="pi pi-lock mr-1"></i>
+          Acepte la declaración de conformidad para poder firmar
+        </small>
+      }
+    </div>
+
+    <!-- Opciones de envío -->
+    <div class="flex flex-column gap-2">
+      <label class="font-semibold">Envío del comprobante final</label>
+      <div class="flex flex-column gap-3 p-3 border-round border-1 surface-border">
+        <div class="flex align-items-center gap-3">
+          <p-checkbox
+            [(ngModel)]="enviarEmail"
+            [binary]="true"
+            inputId="enviarEmail"
+            [disabled]="finalizando()">
+          </p-checkbox>
+          <label for="enviarEmail" class="cursor-pointer flex align-items-center gap-2">
+            <i class="pi pi-envelope text-color-secondary"></i>
+            Enviar por Email al cliente
+          </label>
+        </div>
+        <div class="flex align-items-center gap-3">
+          <p-checkbox
+            [(ngModel)]="descargarPdfCheck"
+            [binary]="true"
+            inputId="descargarPdf"
+            [disabled]="finalizando()">
+          </p-checkbox>
+          <label for="descargarPdf" class="cursor-pointer flex align-items-center gap-2">
+            <i class="pi pi-download text-color-secondary"></i>
+            Descargar PDF
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botón Confirmar -->
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        [outlined]="true"
+        severity="secondary"
+        (onClick)="cerrar()"
+        [disabled]="finalizando()">
+      </p-button>
+      <p-button
+        label="Confirmar"
+        icon="pi pi-check-circle"
+        severity="success"
+        (onClick)="finalizar()"
+        [loading]="finalizando()"
+        [disabled]="!aceptaConformidad || !hasSignature()">
+      </p-button>
+    </div>
+  </div>
+</p-dialog>

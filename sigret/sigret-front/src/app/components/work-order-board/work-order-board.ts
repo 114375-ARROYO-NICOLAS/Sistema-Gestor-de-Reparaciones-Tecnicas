@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { CdkDragDrop, CdkDrag, CdkDropList, CdkDropListGroup, transferArrayItem } from '@angular/cdk/drag-drop';
 import { OrdenTrabajoService } from '../../services/orden-trabajo.service';
 import { WebSocketService } from '../../services/websocket.service';
@@ -264,8 +264,17 @@ export class WorkOrderBoardComponent implements OnInit, OnDestroy {
       );
     }
 
-    // Update state in backend
-    this.orderService.cambiarEstadoOrdenTrabajo(order.id, targetState).subscribe({
+    // Update state in backend using specialized endpoints when applicable
+    let request$: Observable<any>;
+    if (targetState === 'EN_PROGRESO') {
+      request$ = this.orderService.iniciarOrdenTrabajo(order.id);
+    } else if (targetState === 'TERMINADA') {
+      request$ = this.orderService.finalizarOrdenTrabajo(order.id);
+    } else {
+      request$ = this.orderService.cambiarEstadoOrdenTrabajo(order.id, targetState);
+    }
+
+    request$.subscribe({
       next: () => {
         order.estado = targetState;
         this.messageService.add({

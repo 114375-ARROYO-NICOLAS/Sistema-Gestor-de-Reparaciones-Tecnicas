@@ -55,7 +55,7 @@
 
           <div class="faqs-container">
             @for (faq of module.faqs; track $index) {
-              <div class="faq-card">
+              <div class="faq-card" [class.has-diagram]="!!faq.diagram">
                 <div class="faq-question">
                   <i class="pi pi-question-circle question-icon"></i>
                   <h3>{{ faq.question }}</h3>
@@ -63,6 +63,9 @@
                 <div class="faq-answer">
                   <p>{{ faq.answer }}</p>
                 </div>
+                @if (faq.diagram) {
+                  <div class="faq-diagram" [innerHTML]="sanitizeDiagram(faq.diagram)"></div>
+                }
               </div>
             }
           </div>

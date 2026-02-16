@@ -29,6 +29,7 @@ export interface Presupuesto {
   fechaConfirmacion?: Date;
   canalConfirmacion?: string;
   fechaVencimiento?: Date;
+  vencido?: boolean;
   fechaSolicitud?: Date;
   fechaPactada?: Date;
   estado: EstadoPresupuesto;
@@ -60,6 +61,7 @@ export enum EstadoPresupuesto {
   EN_CURSO = 'EN_CURSO',
   LISTO = 'LISTO',
   ENVIADO = 'ENVIADO',
+  VENCIDO = 'VENCIDO',
   APROBADO = 'APROBADO',
   RECHAZADO = 'RECHAZADO'
 }
@@ -95,4 +97,16 @@ export interface PresupuestoPublico {
   mostrarAlternativo: boolean;
   estado: string;
   fechaCreacion: string;
+  fechaVencimiento?: string;
+  vencido?: boolean;
+}
+
+export interface PresupuestoActualizarReenviarDto {
+  fechaVencimiento: string;
+  detalles?: DetallePresupuesto[];
+  manoObra?: number;
+  mostrarOriginal?: boolean;
+  mostrarAlternativo?: boolean;
+  reenviarEmail?: boolean;
+  mensajeAdicional?: string;
 }

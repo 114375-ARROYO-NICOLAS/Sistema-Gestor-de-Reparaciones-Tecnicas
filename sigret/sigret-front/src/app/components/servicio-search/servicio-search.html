@@ -9,9 +9,20 @@
     </div>
   </div>
 
+  <!-- Botón de filtros para mobile -->
+  <div class="mobile-filter-toggle mb-3">
+    <p-button
+      [label]="showMobileFilters() ? 'Ocultar Filtros' : 'Mostrar Filtros'"
+      [icon]="showMobileFilters() ? 'pi pi-times' : 'pi pi-filter'"
+      [outlined]="true"
+      (onClick)="showMobileFilters.set(!showMobileFilters())"
+      class="w-full">
+    </p-button>
+  </div>
+
   <div class="grid">
     <!-- Panel de Filtros (Izquierda) -->
-    <div class="col-12 lg:col-3">
+    <div class="col-12 lg:col-3 filtros-panel" [class.filtros-panel--visible]="showMobileFilters()">
       <p-card class="filtros-card">
         <ng-template pTemplate="header">
           <div class="p-3">
@@ -20,7 +31,7 @@
         </ng-template>
 
         <div class="flex flex-column gap-4">
-          <!-- Búsqueda rápida -->
+          <!-- Búsqueda rápida por Nº de Servicio -->
           <div>
             <label class="block text-sm font-medium mb-2">Buscar por Nº de Servicio</label>
             <input
@@ -35,94 +46,165 @@
 
           <p-divider></p-divider>
 
-          <!-- Accordion de filtros -->
-          <p-accordion [multiple]="true">
-            <!-- Estado -->
-            <p-accordionpanel header="Estado" [value]="'0'">
-              <p-multiselect
-                [ngModel]="estadosFiltro()"
-                (ngModelChange)="estadosFiltro.set($event)"
-                [options]="estadosOptions()"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Seleccionar estados"
-                [showClear]="true"
-                class="w-full"
-                display="chip">
-              </p-multiselect>
-            </p-accordionpanel>
-
-            <!-- Garantía -->
-            <p-accordionpanel header="Garantía" [value]="'1'">
-              <div class="flex flex-column gap-2">
-                @for (option of garantiaOptions(); track option.value) {
-                  <div class="flex align-items-center">
-                    <input
-                      type="radio"
-                      [id]="'garantia-' + option.value"
-                      [value]="option.value"
-                      [ngModel]="garantiaFiltro()"
-                      (ngModelChange)="garantiaFiltro.set($event)"
-                      class="mr-2"
-                    />
-                    <label [for]="'garantia-' + option.value" class="cursor-pointer">
-                      {{ option.label }}
-                    </label>
-                  </div>
-                }
-              </div>
-            </p-accordionpanel>
-
-            <!-- Clientes -->
-            <p-accordionpanel header="Clientes" [value]="'2'">
-              <p-autocomplete
-                [ngModel]="clienteFiltro()"
-                (ngModelChange)="clienteFiltro.set($event)"
-                [suggestions]="clientesSugerencias()"
-                (completeMethod)="buscarClientes($event)"
-                placeholder="Buscar cliente..."
-                [minLength]="2"
+          <!-- Fecha de Creación (rango) -->
+          <div>
+            <label class="block text-sm font-medium mb-2">Fecha de Creación</label>
+            <div class="flex flex-column gap-2">
+              <p-datepicker
+                [ngModel]="fechaDesde()"
+                (ngModelChange)="fechaDesde.set($event)"
+                placeholder="Desde"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
                 [showClear]="true"
                 appendTo="body"
-                class="w-full">
-              </p-autocomplete>
-              <small class="text-color-secondary mt-1 block">Escribe al menos 2 caracteres para buscar</small>
-            </p-accordionpanel>
-
-            <!-- Empleados -->
-            <p-accordionpanel header="Empleado de Recepción" [value]="'3'">
-              <p-multiselect
-                [ngModel]="empleadosFiltro()"
-                (ngModelChange)="empleadosFiltro.set($event)"
-                [options]="empleados()"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Seleccionar empleados"
-                [filter]="true"
-                [showClear]="true"
                 class="w-full"
-                display="chip"
-                [virtualScroll]="true"
-                [virtualScrollItemSize]="34">
-              </p-multiselect>
-            </p-accordionpanel>
-
-            <!-- Tipo de Equipo -->
-            <p-accordionpanel header="Tipo de Equipo" [value]="'4'">
-              <p-multiselect
-                [ngModel]="tiposEquipoFiltro()"
-                (ngModelChange)="tiposEquipoFiltro.set($event)"
-                [options]="tiposEquipo()"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Seleccionar tipos"
-                [filter]="true"
+              />
+              <p-datepicker
+                [ngModel]="fechaHasta()"
+                (ngModelChange)="fechaHasta.set($event)"
+                placeholder="Hasta"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
                 [showClear]="true"
+                appendTo="body"
                 class="w-full"
-                display="chip">
-              </p-multiselect>
-            </p-accordionpanel>
-          </p-accordion>
+              />
+            </div>
+          </div>
+
+          <p-divider></p-divider>
+
+          <!-- Estado (checkboxes) -->
+          <div class="filter-section">
+            <label class="block text-sm font-medium mb-2">Estado</label>
+            <div class="flex flex-column gap-2">
+              @for (option of estadosVisibles(); track option.value) {
+                <div class="filter-checkbox-item">
+                  <p-checkbox
+                    [binary]="true"
+                    [ngModel]="isEstadoSelected(option.value)"
+                    (ngModelChange)="toggleEstado(option.value)"
+                    [inputId]="'estado-' + option.value"
+                  />
+                  <label [for]="'estado-' + option.value" class="ml-2 cursor-pointer">
+                    {{ option.label }}
+                  </label>
+                </div>
+              }
+            </div>
+            @if (estadosOptions().length > 4) {
+              <button
+                class="ver-mas-btn mt-2"
+                (click)="showAllEstados.set(!showAllEstados())"
+              >
+                {{ showAllEstados() ? 'Ver menos' : 'Ver más...' }}
+              </button>
+            }
+          </div>
+
+          <p-divider></p-divider>
+
+          <!-- Garantía (radio buttons) -->
+          <div class="filter-section">
+            <label class="block text-sm font-medium mb-2">Garantía</label>
+            <div class="flex flex-column gap-2">
+              @for (option of garantiaOptions(); track option.value) {
+                <div class="flex align-items-center">
+                  <input
+                    type="radio"
+                    [id]="'garantia-' + option.value"
+                    [value]="option.value"
+                    [ngModel]="garantiaFiltro()"
+                    (ngModelChange)="garantiaFiltro.set($event)"
+                    class="mr-2"
+                  />
+                  <label [for]="'garantia-' + option.value" class="cursor-pointer">
+                    {{ option.label }}
+                  </label>
+                </div>
+              }
+            </div>
+          </div>
+
+          <p-divider></p-divider>
+
+          <!-- Clientes (autocomplete) -->
+          <div>
+            <label class="block text-sm font-medium mb-2">Cliente</label>
+            <p-autocomplete
+              [ngModel]="clienteFiltro()"
+              (ngModelChange)="clienteFiltro.set($event)"
+              [suggestions]="clientesSugerencias()"
+              (completeMethod)="buscarClientes($event)"
+              placeholder="Buscar cliente..."
+              [minLength]="2"
+              [showClear]="true"
+              appendTo="body"
+              class="w-full">
+            </p-autocomplete>
+            <small class="text-color-secondary mt-1 block">Escribe al menos 2 caracteres</small>
+          </div>
+
+          <p-divider></p-divider>
+
+          <!-- Empleado de Recepción (checkboxes) -->
+          <div class="filter-section">
+            <label class="block text-sm font-medium mb-2">Empleado de Recepción</label>
+            <div class="flex flex-column gap-2">
+              @for (option of empleadosVisibles(); track option.value) {
+                <div class="filter-checkbox-item">
+                  <p-checkbox
+                    [binary]="true"
+                    [ngModel]="isEmpleadoSelected(option.value)"
+                    (ngModelChange)="toggleEmpleado(option.value)"
+                    [inputId]="'empleado-' + option.value"
+                  />
+                  <label [for]="'empleado-' + option.value" class="ml-2 cursor-pointer">
+                    {{ option.label }}
+                  </label>
+                </div>
+              }
+            </div>
+            @if (empleadosOptions().length > 4) {
+              <button
+                class="ver-mas-btn mt-2"
+                (click)="showAllEmpleados.set(!showAllEmpleados())"
+              >
+                {{ showAllEmpleados() ? 'Ver menos' : 'Ver más...' }}
+              </button>
+            }
+          </div>
+
+          <p-divider></p-divider>
+
+          <!-- Tipo de Equipo (checkboxes) -->
+          <div class="filter-section">
+            <label class="block text-sm font-medium mb-2">Tipo de Equipo</label>
+            <div class="flex flex-column gap-2">
+              @for (option of tiposEquipoVisibles(); track option.value) {
+                <div class="filter-checkbox-item">
+                  <p-checkbox
+                    [binary]="true"
+                    [ngModel]="isTipoEquipoSelected(option.value)"
+                    (ngModelChange)="toggleTipoEquipo(option.value)"
+                    [inputId]="'tipo-' + option.value"
+                  />
+                  <label [for]="'tipo-' + option.value" class="ml-2 cursor-pointer">
+                    {{ option.label }}
+                  </label>
+                </div>
+              }
+            </div>
+            @if (tiposEquipoOptions().length > 4) {
+              <button
+                class="ver-mas-btn mt-2"
+                (click)="showAllTiposEquipo.set(!showAllTiposEquipo())"
+              >
+                {{ showAllTiposEquipo() ? 'Ver menos' : 'Ver más...' }}
+              </button>
+            }
+          </div>
         </div>
 
         <ng-template pTemplate="footer">
@@ -157,7 +239,7 @@
           <p class="text-lg text-color-secondary mt-3">Cargando servicios...</p>
         </div>
       } @else {
-        <div class="border-round-lg shadow-2 overflow-hidden">
+        <div class="border-round-lg shadow-2">
           <p-table
             [value]="serviciosFiltrados()"
             [paginator]="true"

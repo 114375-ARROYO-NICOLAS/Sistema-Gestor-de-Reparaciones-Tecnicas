@@ -104,7 +104,8 @@
               <div
                 cdkDrag
                 [cdkDragData]="budget"
-                class="surface-card border-round shadow-1 p-2 mb-2 cursor-move hover:shadow-3 transition-duration-200 border-1 surface-border"
+                class="surface-card border-round shadow-1 p-2 mb-2 cursor-move hover:shadow-3 transition-duration-200"
+                [class]="budget.estado === 'VENCIDO' ? 'border-2 border-orange-500' : 'border-1 surface-border'"
                 (click)="viewBudgetDetail(budget.id, $event)">
 
                 <!-- Header de la card -->
@@ -133,6 +134,12 @@
                       <div class="flex align-items-center gap-1">
                         <i class="pi pi-clock text-xs"></i>
                         <span>{{ budget.fechaVencimiento | date: 'dd/MM/yy' }}</span>
+                      </div>
+                    }
+                    @if (budget.estado === 'VENCIDO') {
+                      <div class="flex align-items-center gap-1">
+                        <i class="pi pi-exclamation-triangle text-orange-600 text-xs"></i>
+                        <span class="text-orange-600 text-xs font-semibold">Vencido</span>
                       </div>
                     }
                   </div>

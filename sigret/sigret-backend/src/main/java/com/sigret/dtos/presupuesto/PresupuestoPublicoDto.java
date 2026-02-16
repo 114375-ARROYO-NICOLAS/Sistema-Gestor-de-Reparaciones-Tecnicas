@@ -28,4 +28,6 @@ public class PresupuestoPublicoDto {
     private Boolean mostrarAlternativo;
     private String estado;
     private LocalDate fechaCreacion;
+    private LocalDate fechaVencimiento;
+    private Boolean vencido;
 }

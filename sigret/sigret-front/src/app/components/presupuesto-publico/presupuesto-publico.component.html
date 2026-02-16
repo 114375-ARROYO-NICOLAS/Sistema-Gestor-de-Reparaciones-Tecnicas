@@ -71,6 +71,17 @@
                 <p>{{ presupuesto()!.diagnostico }}</p>
               </div>
             }
+            @if (presupuesto()!.fechaVencimiento) {
+              <div class="col-12">
+                <p class="text-sm text-600 mb-1">Válido hasta:</p>
+                <p class="font-semibold" [class.text-orange-600]="estaVencido()">
+                  {{ formatFecha(presupuesto()!.fechaVencimiento) }}
+                  @if (estaVencido()) {
+                    <span class="ml-2 text-orange-600">(Vencido)</span>
+                  }
+                </p>
+              </div>
+            }
           </div>
         </p-card>
 
@@ -139,42 +150,66 @@
 
         <!-- Action Card -->
         <p-card>
-          <div class="text-center">
-            <h3 class="text-xl font-semibold mb-4">
-              {{ accion() === 'aprobar' ? '¿Desea aprobar este presupuesto?' : '¿Desea rechazar este presupuesto?' }}
-            </h3>
+          @if (yaRespondido()) {
+            <div class="text-center py-4">
+              <i class="pi pi-info-circle text-6xl text-blue-500 mb-4"></i>
+              <h3 class="text-xl font-semibold mb-3">Presupuesto Ya Respondido</h3>
+              <p class="text-color-secondary">
+                Este presupuesto ya fue
+                <strong>{{ presupuesto()!.estado === 'APROBADO' ? 'aprobado' : 'rechazado' }}</strong>.
+                No es posible realizar otra acción.
+              </p>
+            </div>
+          } @else if (estaVencido()) {
+            <div class="text-center py-4">
+              <i class="pi pi-exclamation-triangle text-6xl text-orange-500 mb-4"></i>
+              <h3 class="text-xl font-semibold mb-3 text-orange-700">Presupuesto Vencido</h3>
+              <p class="text-color-secondary">
+                Este presupuesto ha vencido. Por favor contacte al técnico.
+              </p>
+            </div>
+          } @else {
+            <div class="text-center">
+              <h3 class="text-xl font-semibold mb-4">
+                {{ accion() === 'aprobar' ? '¿Desea aprobar este presupuesto?' : '¿Desea rechazar este presupuesto?' }}
+              </h3>
 
-            @if (accion() === 'aprobar') {
-              <p class="text-color-secondary mb-4">
-                Al aprobar, el taller comenzará con la reparación de su equipo.
-              </p>
-              <p-button
-                label="Confirmar Aprobación"
-                icon="pi pi-check"
-                severity="success"
-                size="large"
-                [loading]="procesando()"
-                (onClick)="confirmarAccion()">
-              </p-button>
-            } @else {
-              <p class="text-color-secondary mb-4">
-                Al rechazar, el presupuesto será cancelado. Si desea hacer consultas, contacte al taller.
-              </p>
-              <p-button
-                label="Confirmar Rechazo"
-                icon="pi pi-times"
-                severity="danger"
-                size="large"
-                [loading]="procesando()"
-                (onClick)="confirmarAccion()">
-              </p-button>
-            }
-          </div>
+              @if (accion() === 'aprobar') {
+                <p class="text-color-secondary mb-4">
+                  Al aprobar, el taller comenzará con la reparación de su equipo.
+                </p>
+                <p-button
+                  label="Confirmar Aprobación"
+                  icon="pi pi-check"
+                  severity="success"
+                  size="large"
+                  [loading]="procesando()"
+                  (onClick)="confirmarAccion()">
+                </p-button>
+              } @else {
+                <p class="text-color-secondary mb-4">
+                  Al rechazar, el presupuesto será cancelado. Si desea hacer consultas, contacte al taller.
+                </p>
+                <p-button
+                  label="Confirmar Rechazo"
+                  icon="pi pi-times"
+                  severity="danger"
+                  size="large"
+                  [loading]="procesando()"
+                  (onClick)="confirmarAccion()">
+                </p-button>
+              }
+            </div>
+          }
         </p-card>
 
         <!-- Footer Info -->
         <div class="text-center text-sm text-500 mt-4">
-          <p>Este link es de un solo uso y expirará en 7 días.</p>
+          @if (presupuesto()!.fechaVencimiento) {
+            <p>Este link es válido hasta el {{ formatFecha(presupuesto()!.fechaVencimiento) }}.</p>
+          } @else {
+            <p>Este link es de un solo uso.</p>
+          }
           <p>Si tiene alguna consulta, por favor responda al email recibido.</p>
         </div>
 

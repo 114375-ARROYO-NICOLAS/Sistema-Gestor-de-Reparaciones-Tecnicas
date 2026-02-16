@@ -1,6 +1,7 @@
 package com.sigret.services.impl;
 
 import com.sigret.dtos.presupuesto.DetallePresupuestoDto;
+import com.sigret.dtos.presupuesto.PresupuestoActualizarReenviarDto;
 import com.sigret.dtos.presupuesto.PresupuestoCreateDto;
 import com.sigret.dtos.presupuesto.PresupuestoEventDto;
 import com.sigret.dtos.presupuesto.PresupuestoListDto;
@@ -21,7 +22,9 @@ import com.sigret.repositories.OrdenTrabajoRepository;
 import com.sigret.repositories.PresupuestoRepository;
 import com.sigret.repositories.ServicioRepository;
 import com.sigret.repositories.UsuarioRepository;
+import com.sigret.services.EmailService;
 import com.sigret.services.PresupuestoService;
+import com.sigret.services.PresupuestoTokenService;
 import com.sigret.services.WebSocketNotificationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -63,6 +66,12 @@ public class PresupuestoServiceImpl implements PresupuestoService {
 
     @Autowired
     private WebSocketNotificationService notificationService;
+
+    @Autowired
+    private EmailService emailService;
+
+    @Autowired
+    private PresupuestoTokenService tokenService;
 
     @Override
     public PresupuestoResponseDto crearPresupuesto(PresupuestoCreateDto presupuestoCreateDto) {
@@ -177,10 +186,23 @@ public class PresupuestoServiceImpl implements PresupuestoService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public Page<PresupuestoListDto> obtenerPresupuestos(Pageable pageable) {
+        // Marcar como VENCIDO los presupuestos ENVIADOS cuya fecha de vencimiento ya pasó
+        marcarVencidos();
+
         Page<Presupuesto> presupuestos = presupuestoRepository.findAll(pageable);
         return presupuestos.map(this::convertirAPresupuestoListDto);
+    }
+
+    private void marcarVencidos() {
+        List<Presupuesto> vencidos = presupuestoRepository
+                .findByEstadoAndFechaVencimientoBefore(EstadoPresupuesto.ENVIADO, LocalDate.now());
+
+        for (Presupuesto p : vencidos) {
+            p.setEstado(EstadoPresupuesto.VENCIDO);
+            presupuestoRepository.save(p);
+        }
     }
 
     @Override
@@ -308,7 +330,7 @@ public class PresupuestoServiceImpl implements PresupuestoService {
 
         // Sincronizar estado del servicio cuando el presupuesto está LISTO o ENVIADO
         Servicio servicio = presupuesto.getServicio();
-        if (nuevoEstado == EstadoPresupuesto.LISTO || nuevoEstado == EstadoPresupuesto.ENVIADO) {
+        if (nuevoEstado == EstadoPresupuesto.LISTO || nuevoEstado == EstadoPresupuesto.ENVIADO || nuevoEstado == EstadoPresupuesto.VENCIDO) {
             servicio.setEstado(EstadoServicio.PRESUPUESTADO);
             servicioRepository.save(servicio);
         }
@@ -488,6 +510,74 @@ public class PresupuestoServiceImpl implements PresupuestoService {
     }
 
     @Override
+    public PresupuestoResponseDto actualizarYReenviar(Long id, PresupuestoActualizarReenviarDto dto) {
+        Presupuesto presupuesto = presupuestoRepository.findById(id)
+                .orElseThrow(() -> new PresupuestoNotFoundException("Presupuesto no encontrado con ID: " + id));
+
+        if (presupuesto.getEstado() != EstadoPresupuesto.ENVIADO && presupuesto.getEstado() != EstadoPresupuesto.VENCIDO) {
+            throw new RuntimeException("Solo se pueden actualizar presupuestos en estado ENVIADO o VENCIDO");
+        }
+
+        // Validar fecha de vencimiento
+        if (dto.getFechaVencimiento().isBefore(LocalDate.now())) {
+            throw new RuntimeException("La fecha de vencimiento no puede ser anterior a hoy");
+        }
+
+        // Actualizar fecha de vencimiento y volver a ENVIADO
+        presupuesto.setFechaVencimiento(dto.getFechaVencimiento());
+        presupuesto.setEstado(EstadoPresupuesto.ENVIADO);
+
+        // Actualizar mano de obra
+        if (dto.getManoObra() != null) {
+            presupuesto.setManoObra(dto.getManoObra());
+        }
+
+        // Actualizar detalles si se proporcionan
+        if (dto.getDetalles() != null && !dto.getDetalles().isEmpty()) {
+            presupuesto.getDetallePresupuestos().clear();
+
+            for (DetallePresupuestoDto detalleDto : dto.getDetalles()) {
+                DetallePresupuesto detalle = new DetallePresupuesto();
+                detalle.setItem(detalleDto.getItem());
+                detalle.setCantidad(detalleDto.getCantidad());
+                detalle.setPrecioOriginal(detalleDto.getPrecioOriginal());
+                detalle.setPrecioAlternativo(detalleDto.getPrecioAlternativo());
+                detalle.setPresupuesto(presupuesto);
+                presupuesto.getDetallePresupuestos().add(detalle);
+            }
+        }
+
+        // Recalcular montos
+        presupuesto.recalcularMontos();
+
+        Presupuesto presupuestoActualizado = presupuestoRepository.save(presupuesto);
+
+        // Invalidar tokens anteriores
+        tokenService.invalidarTokensAnteriores(id);
+
+        // Reenviar email si se solicita
+        if (Boolean.TRUE.equals(dto.getReenviarEmail())) {
+            emailService.enviarPresupuestoACliente(
+                    id,
+                    dto.getMostrarOriginal(),
+                    dto.getMostrarAlternativo(),
+                    dto.getMensajeAdicional()
+            );
+        }
+
+        // Notificar via WebSocket
+        PresupuestoEventDto evento = new PresupuestoEventDto();
+        evento.setTipoEvento("ACTUALIZADO");
+        evento.setPresupuestoId(presupuesto.getId());
+        evento.setServicioId(presupuesto.getServicio().getId());
+        evento.setNumeroServicio(presupuesto.getServicio().getNumeroServicio());
+        evento.setPresupuesto(convertirAPresupuestoListDto(presupuestoActualizado));
+        notificationService.notificarPresupuesto(evento);
+
+        return convertirAPresupuestoResponseDto(presupuestoActualizado);
+    }
+
+    @Override
     public void eliminarPresupuesto(Long id) {
         if (!presupuestoRepository.existsById(id)) {
             throw new PresupuestoNotFoundException("Presupuesto no encontrado con ID: " + id);
@@ -605,6 +695,7 @@ public class PresupuestoServiceImpl implements PresupuestoService {
                 presupuesto.getMontoTotalAlternativo(),
                 presupuesto.getTipoConfirmado(),
                 presupuesto.getFechaVencimiento(),
+                presupuesto.getEstado() == EstadoPresupuesto.VENCIDO,
                 presupuesto.getEstado(),
                 presupuesto.getFechaCreacion(),
                 !presupuesto.getOrdenesTrabajo().isEmpty() // tieneOrdenTrabajo

@@ -373,6 +373,11 @@ export class TableroServiciosComponent implements OnInit, OnDestroy {
     this.router.navigate(['/servicios/buscar']);
   }
 
+  // Navegación a servicios eliminados
+  irAEliminados(): void {
+    this.router.navigate(['/servicios/eliminados']);
+  }
+
   // Navegación al detalle del servicio
   verDetalleServicio(servicioId: number, event?: MouseEvent): void {
     // Prevenir que el click se propague al drag and drop
