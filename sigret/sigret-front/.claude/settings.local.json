@@ -9,9 +9,23 @@
       "Bash(dir /s /b \"d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\repositories\\*Presupuesto*.java\")",
       "Bash(npx ng generate component:*)",
       "Bash(dir:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(mvn clean compile:*)",
+      "Bash(npm run build:*)",
+      "Bash(xargs cat:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)",
+      "Bash(npx ng serve:*)",
+      "Bash(npx --yes png-to-ico:*)",
+      "Bash(npx --yes to-ico:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\services",
+      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\repositories",
+      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\controllers\\publico"
+    ]
   }
 }

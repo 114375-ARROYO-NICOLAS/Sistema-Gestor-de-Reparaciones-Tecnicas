@@ -7,24 +7,30 @@ import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
 import { MenuModule } from 'primeng/menu';
 import { PopoverModule } from 'primeng/popover';
+import { NotificationBellComponent } from '../notification-bell/notification-bell';
 import { AuthService } from '../../services/auth.service';
 import { ThemeService } from '../../services/theme.service';
 import { MenuItem } from 'primeng/api';
 import { filter, map } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 
-interface MenuSection {
+interface MenuLink {
   label: string;
   icon: string;
-  items?: MenuItemWithChildren[];
+  routerLink: string;
+  badge?: string;
 }
 
-interface MenuItemWithChildren {
+interface MenuGroup {
   label: string;
   icon: string;
-  routerLink?: string;
-  badge?: string;
-  children?: MenuItemWithChildren[];
+  children: MenuLink[];
+}
+
+type SidebarItem = MenuLink | MenuGroup;
+
+function isGroup(item: SidebarItem): item is MenuGroup {
+  return 'children' in item;
 }
 
 @Component({
@@ -39,7 +45,8 @@ interface MenuItemWithChildren {
     AvatarModule,
     BadgeModule,
     MenuModule,
-    PopoverModule
+    PopoverModule,
+    NotificationBellComponent
   ],
   templateUrl: './main-layout.component.html',
   styleUrl: './main-layout.component.scss'
@@ -52,7 +59,6 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
 
   // Reactive state
   protected readonly currentRoute = signal('Dashboard');
-  protected readonly openSubmenus = signal<Set<string>>(new Set());
   protected isSidebarVisible = signal(false);
 
   // Computed properties
@@ -63,98 +69,54 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   // Subscriptions
   private routerSubscription?: Subscription;
 
-  // Configuración del menú - Solo opciones implementadas
-  protected readonly menuItems: MenuSection[] = [
+  // Estado de grupos expandidos
+  protected readonly expandedGroups = signal<Set<string>>(new Set());
+
+  // Configuración del menú con grupos desplegables
+  protected readonly menuItems: SidebarItem[] = [
     {
-      label: 'Principal',
-      icon: 'pi pi-home',
-      items: [
-        {
-          label: 'Dashboard',
-          icon: 'pi pi-chart-bar',
-          routerLink: '/dashboard'
-        }
+      label: 'Dashboard',
+      icon: 'pi pi-chart-bar',
+      routerLink: '/dashboard'
+    },
+    {
+      label: 'Tableros',
+      icon: 'pi pi-th-large',
+      children: [
+        { label: 'Servicios', icon: 'pi pi-list', routerLink: '/servicios' },
+        { label: 'Garantías', icon: 'pi pi-shield', routerLink: '/garantias' },
+        { label: 'Presupuestos', icon: 'pi pi-dollar', routerLink: '/presupuestos' },
+        { label: 'Órdenes de Trabajo', icon: 'pi pi-wrench', routerLink: '/ordenes-trabajo' }
       ]
     },
     {
-      label: 'Operaciones',
-      icon: 'pi pi-wrench',
-      items: [
-        {
-          label: 'Servicios',
-          icon: 'pi pi-list',
-          routerLink: '/servicios'
-        },
-        {
-          label: 'Garantías',
-          icon: 'pi pi-shield',
-          routerLink: '/garantias'
-        },
-        {
-          label: 'Buscar Servicios',
-          icon: 'pi pi-search',
-          routerLink: '/servicios/buscar'
-        },
-        {
-          label: 'Presupuestos',
-          icon: 'pi pi-dollar',
-          routerLink: '/presupuestos'
-        },
-        {
-          label: 'Órdenes de Trabajo',
-          icon: 'pi pi-wrench',
-          routerLink: '/ordenes-trabajo'
-        }
-      ]
-    },
-    {
-      label: 'Gestión',
-      icon: 'pi pi-cog',
-      items: [
-        {
-          label: 'Clientes',
-          icon: 'pi pi-users',
-          routerLink: '/clientes'
-        },
-        {
-          label: 'Empleados',
-          icon: 'pi pi-id-card',
-          routerLink: '/empleados'
-        },
-        {
-          label: 'Equipos',
-          icon: 'pi pi-desktop',
-          routerLink: '/equipos'
-        },
-        {
-          label: 'Usuarios',
-          icon: 'pi pi-user',
-          routerLink: '/usuarios'
-        }
+      label: 'Administración',
+      icon: 'pi pi-briefcase',
+      children: [
+        { label: 'Clientes', icon: 'pi pi-users', routerLink: '/clientes' },
+        { label: 'Capital Humano', icon: 'pi pi-id-card', routerLink: '/empleados' },
+        { label: 'Equipos', icon: 'pi pi-desktop', routerLink: '/equipos' },
+        { label: 'Usuarios', icon: 'pi pi-user', routerLink: '/usuarios' }
       ]
     },
     {
       label: 'Configuración',
-      icon: 'pi pi-sliders-h',
-      items: [
-        {
-          label: 'Tipos de Equipo',
-          icon: 'pi pi-tag',
-          routerLink: '/configuracion/tipos-equipo'
-        },
-        {
-          label: 'Marcas',
-          icon: 'pi pi-bookmark',
-          routerLink: '/configuracion/marcas'
-        },
-        {
-          label: 'Modelos',
-          icon: 'pi pi-database',
-          routerLink: '/configuracion/modelos'
-        }
+      icon: 'pi pi-cog',
+      children: [
+        { label: 'Tipos de Equipo', icon: 'pi pi-tag', routerLink: '/configuracion/tipos-equipo' },
+        { label: 'Marcas', icon: 'pi pi-bookmark', routerLink: '/configuracion/marcas' },
+        { label: 'Modelos', icon: 'pi pi-database', routerLink: '/configuracion/modelos' },
+        { label: 'Repuestos', icon: 'pi pi-box', routerLink: '/configuracion/repuestos' }
       ]
+    },
+    {
+      label: 'Ayuda',
+      icon: 'pi pi-question-circle',
+      routerLink: '/ayuda'
     }
   ];
+
+  protected readonly isGroup = isGroup;
 
   protected readonly userMenuItems: MenuItem[] = [
     {
@@ -192,6 +154,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
       )
       .subscribe(url => {
         this.updateCurrentRoute(url);
+        this.expandGroupForRoute(url);
         // Auto-close drawer on navigation (works for all screen sizes)
         this.isSidebarVisible.set(false);
       });
@@ -210,20 +173,12 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   private findRouteLabel(url: string): string | null {
-    for (const section of this.menuItems) {
-      if (section.items) {
-        for (const item of section.items) {
-          if (item.routerLink === url) {
-            return item.label;
-          }
-          if (item.children) {
-            for (const child of item.children) {
-              if (child.routerLink === url) {
-                return `${item.label} > ${child.label}`;
-              }
-            }
-          }
-        }
+    for (const item of this.menuItems) {
+      if (isGroup(item)) {
+        const child = item.children.find(c => c.routerLink === url);
+        if (child) return child.label;
+      } else if (item.routerLink === url) {
+        return item.label;
       }
     }
     return null;
@@ -233,44 +188,53 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
     const routeNames: { [key: string]: string } = {
       'dashboard': 'Dashboard',
       'servicios': 'Servicios',
+      'garantias': 'Garantías',
       'clientes': 'Clientes',
-      'empleados': 'Empleados',
+      'empleados': 'Capital Humano',
       'equipos': 'Equipos',
       'usuarios': 'Usuarios',
       'configuracion': 'Configuración',
       'tipos-equipo': 'Tipos de Equipo',
       'marcas': 'Marcas',
       'modelos': 'Modelos',
-      'profile': 'Perfil'
+      'repuestos': 'Repuestos',
+      'profile': 'Perfil',
+      'ayuda': 'Ayuda'
     };
 
     return routeNames[route] || route.charAt(0).toUpperCase() + route.slice(1);
   }
 
+  protected toggleGroup(label: string): void {
+    this.expandedGroups.update(groups => {
+      const next = new Set(groups);
+      if (next.has(label)) {
+        next.delete(label);
+      } else {
+        next.add(label);
+      }
+      return next;
+    });
+  }
+
+  protected isGroupExpanded(label: string): boolean {
+    return this.expandedGroups().has(label);
+  }
+
+  private expandGroupForRoute(url: string): void {
+    for (const item of this.menuItems) {
+      if (isGroup(item) && item.children.some(c => url.startsWith(c.routerLink))) {
+        this.expandedGroups.update(groups => {
+          const next = new Set(groups);
+          next.add(item.label);
+          return next;
+        });
+      }
+    }
+  }
+
   protected onMenuToggle(): void {
     this.isSidebarVisible.update(visible => !visible);
-  }
-
-  protected toggleSubmenu(label: string): void {
-    const openSubmenus = this.openSubmenus();
-    const newSet = new Set(openSubmenus);
-    
-    if (newSet.has(label)) {
-      newSet.delete(label);
-    } else {
-      newSet.add(label);
-    }
-    
-    this.openSubmenus.set(newSet);
-  }
-
-  protected isSubmenuOpen(label: string): boolean {
-    return this.openSubmenus().has(label);
-  }
-
-  protected onMenuItemClick(): void {
-    // Close sidebar when clicking a menu item (handled by dismissable=true and navigation)
-    // No need for manual logic here
   }
 
   protected toggleTheme(): void {

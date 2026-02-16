@@ -8,12 +8,19 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 public class PresupuestoUpdateDto {
+
+    private String diagnostico;
+
+    private List<DetallePresupuestoDto> detalles;
+
+    private BigDecimal manoObra;
 
     private BigDecimal montoTotal;
 

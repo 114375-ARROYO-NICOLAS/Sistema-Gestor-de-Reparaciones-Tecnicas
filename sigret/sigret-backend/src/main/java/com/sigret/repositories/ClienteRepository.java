@@ -49,6 +49,9 @@ public interface ClienteRepository extends JpaRepository<Cliente, Long> {
     @Query("SELECT c FROM Cliente c JOIN FETCH c.persona p JOIN FETCH p.contactos WHERE c.id = :id AND c.activo = true")
     Optional<Cliente> findByIdWithPersonaAndContactos(@Param("id") Long id);
 
+    // Obtener solo clientes inactivos (eliminados lógicamente)
+    Page<Cliente> findByActivoFalse(Pageable pageable);
+
     // Buscar por ID incluyendo inactivos
     @Query("SELECT c FROM Cliente c WHERE c.id = :id")
     Optional<Cliente> findByIdIncludingInactive(@Param("id") Long id);

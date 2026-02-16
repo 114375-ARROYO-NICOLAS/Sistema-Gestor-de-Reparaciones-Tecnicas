@@ -17,11 +17,13 @@ export class WebSocketService {
   private servicioEventSubject = new BehaviorSubject<ServicioEvent | null>(null);
   private presupuestoEventSubject = new BehaviorSubject<PresupuestoEvent | null>(null);
   private ordenTrabajoEventSubject = new BehaviorSubject<OrdenTrabajoEvent | null>(null);
+  private notificacionEventSubject = new BehaviorSubject<boolean>(false);
 
   // Observables públicos
   public servicioEvent$: Observable<ServicioEvent | null> = this.servicioEventSubject.asObservable();
   public presupuestoEvent$: Observable<PresupuestoEvent | null> = this.presupuestoEventSubject.asObservable();
   public ordenTrabajoEvent$: Observable<OrdenTrabajoEvent | null> = this.ordenTrabajoEventSubject.asObservable();
+  public notificacionEvent$: Observable<boolean> = this.notificacionEventSubject.asObservable();
 
   public isConnected = signal<boolean>(false);
 
@@ -74,6 +76,11 @@ export class WebSocketService {
         } catch (error) {
           console.error('Error parsing OrdenTrabajo WebSocket message:', error);
         }
+      });
+
+      // Suscribirse a notificaciones
+      this.client?.subscribe('/topic/notificaciones', () => {
+        this.notificacionEventSubject.next(true);
       });
     };
 

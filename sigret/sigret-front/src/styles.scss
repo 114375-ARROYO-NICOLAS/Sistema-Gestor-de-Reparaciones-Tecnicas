@@ -21,10 +21,23 @@ body {
   line-height: 1.5;
 }
 
-// Custom font configuration
+// Custom font configuration & enhanced border visibility
+// Borders are made more visible for better contrast on TN panels and low-contrast displays.
+// Light mode: surface.200 (#e2e8f0) → surface.300 (#cbd5e1)
+// Dark mode:  surface.700 (#3f3f46) → surface.600 (#52525b)
 :root {
   --font-family-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-family-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --surface-border: var(--p-surface-300);
+}
+
+.app-dark {
+  --surface-border: var(--p-surface-600);
+}
+
+// Override PrimeFlex's surface-border utility class to use stronger border color
+.surface-border {
+  border-color: var(--surface-border) !important;
 }
 
 // Typography
@@ -54,48 +67,143 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+// ===================================================================
+// Enhanced border visibility for PrimeNG components
+// Makes borders/separators more visible on TN panels and low-contrast displays
+// ===================================================================
+
+// Divider - make the line more visible
+.p-divider-horizontal:before {
+  border-top: 1px solid var(--surface-border) !important;
+}
+
+.p-divider-vertical:before {
+  border-left: 1px solid var(--surface-border) !important;
+}
+
+// DataTable - visible row borders and header separation
+.p-datatable {
+  .p-datatable-thead > tr > th {
+    border-bottom: 1px solid var(--surface-border) !important;
+  }
+
+  .p-datatable-tbody > tr > td {
+    border-bottom: 1px solid var(--surface-border) !important;
+  }
+
+  .p-datatable-tbody > tr:last-child > td {
+    border-bottom: none !important;
+  }
+}
+
+// Card - visible border + shadow for depth
+.p-card {
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+// Main content containers (.surface-card divs) - add depth when used with border-round
+.surface-card.border-round {
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+// Panel - visible border + shadow
+.p-panel {
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+// Fieldset - visible border + shadow
+.p-fieldset {
+  border: 1px solid var(--surface-border);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+// Dialog - visible border for better separation from backdrop
+.p-dialog {
+  border: 1px solid var(--surface-border);
+}
+
+// Accordion - visible borders between panels
+.p-accordion-tab {
+  border-bottom: 1px solid var(--surface-border);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+// Tab menu/view - visible bottom border
+.p-tabmenu .p-tabmenu-nav {
+  border-bottom: 2px solid var(--surface-border) !important;
+}
+
+// Menu - visible separator between items in popup menus
+.p-menu .p-menu-separator {
+  border-top: 1px solid var(--surface-border) !important;
+}
+
+// Toolbar - visible border
+.p-toolbar {
+  border: 1px solid var(--surface-border);
+}
+
+// Bootstrap-style .card used in configuration pages
+.card {
+  background: var(--p-surface-0);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--p-border-radius-lg, 8px);
+  box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.08), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+
+  .card-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--surface-border);
+    font-weight: 600;
+  }
+
+  .card-body {
+    padding: 1.25rem;
+  }
+}
+
+.app-dark .card {
+  background: var(--p-surface-900);
+}
+
 // Google Maps Autocomplete Dropdown - GLOBAL STYLES
 // The .pac-container is created by Google Maps outside of Angular components
+// Note: Estilos dinámicos aplicados vía JavaScript para mejor soporte de temas
 .pac-container {
   z-index: 9999 !important;
   border-radius: 6px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25) !important;
   margin-top: 4px;
-  font-family: var(--font-family-primary, 'Inter', sans-serif);
-  border: 1px solid var(--p-surface-border);
+  font-family: var(--font-family-primary, 'Inter', sans-serif) !important;
+  border: 1px solid var(--surface-border) !important;
 
   .pac-item {
-    padding: 10px 14px;
-    cursor: pointer;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    border-top: 1px solid var(--p-surface-border);
-    transition: background-color 0.15s ease;
+    padding: 10px 14px !important;
+    cursor: pointer !important;
+    font-size: 0.95rem !important;
+    line-height: 1.5 !important;
+    border-top: 1px solid var(--surface-border) !important;
+    transition: background-color 0.15s ease !important;
 
     &:first-child {
-      border-top: none;
-    }
-
-    &:hover {
-      background-color: var(--p-surface-hover);
+      border-top: none !important;
     }
 
     .pac-icon {
-      margin-right: 10px;
+      margin-right: 10px !important;
     }
 
     .pac-item-query {
-      color: var(--p-text-color);
-      font-weight: 500;
+      font-weight: 500 !important;
     }
 
     .pac-matched {
-      font-weight: 600;
+      font-weight: 600 !important;
     }
-  }
-
-  .pac-item-selected {
-    background-color: var(--p-surface-hover);
   }
 }
 
@@ -203,6 +311,19 @@ body {
       padding: 0.5rem !important;
     }
   }
+}
+
+// Outlined danger buttons - hover fills with danger color
+.p-button-outlined.p-button-danger:hover {
+  background: var(--p-red-500) !important;
+  color: #fff !important;
+  border-color: var(--p-red-500) !important;
+}
+
+// Notification popover - stronger shadow and border for visibility on TN panels in light mode
+.notification-popover {
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 0 0 1px var(--p-surface-300) !important;
+  border-radius: 12px !important;
 }
 
 // Horizontally scrollable tables

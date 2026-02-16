@@ -1,0 +1,84 @@
+// Splash Screen
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1c6091 0%, #0d2d4c 100%);
+  animation: splashFadeOut 0.5s ease-in-out 2.5s forwards;
+}
+
+.splash-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.splash-logo {
+  width: 7rem;
+  height: 7rem;
+  object-fit: contain;
+  animation: logoEntry 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  opacity: 0;
+  transform: scale(0.6);
+}
+
+.splash-title {
+  color: #ffffff;
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.02em;
+  opacity: 0;
+  animation: titleEntry 0.8s ease-out 0.6s forwards;
+}
+
+// Login form entrance
+.login-enter {
+  animation: loginFadeIn 0.5s ease-out forwards;
+}
+
+// Keyframes
+@keyframes logoEntry {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes titleEntry {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes splashFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    pointer-events: none;
+  }
+}
+
+@keyframes loginFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}

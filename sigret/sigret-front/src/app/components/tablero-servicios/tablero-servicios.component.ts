@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
+import { Tag } from 'primeng/tag';
 
 interface Columna {
   nombre: string;
@@ -27,6 +28,7 @@ interface Columna {
     ProgressSpinnerModule,
     BadgeModule,
     CardModule,
+    Tag,
     CdkDrag,
     CdkDropList,
     CdkDropListGroup
@@ -364,6 +366,16 @@ export class TableroServiciosComponent implements OnInit, OnDestroy {
   // Navegación a creación de servicio
   openCreateDialog(): void {
     this.router.navigate(['/servicios/nuevo']);
+  }
+
+  // Navegación al buscador de servicios
+  irABuscarServicios(): void {
+    this.router.navigate(['/servicios/buscar']);
+  }
+
+  // Navegación a servicios eliminados
+  irAEliminados(): void {
+    this.router.navigate(['/servicios/eliminados']);
   }
 
   // Navegación al detalle del servicio

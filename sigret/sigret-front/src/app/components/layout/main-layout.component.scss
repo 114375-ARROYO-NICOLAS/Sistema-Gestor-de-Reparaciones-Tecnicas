@@ -36,6 +36,21 @@ a[routerlinkactive="surface-100 text-primary font-semibold"].active-route {
   transition: all 0.3s ease;
 }
 
+// Submenu slide animation
+.submenu-container {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 0.25s ease;
+
+  > div {
+    overflow: hidden;
+  }
+
+  &.expanded {
+    grid-template-rows: 1fr;
+  }
+}
+
 // Custom scrollbar for drawer
 ::ng-deep .p-drawer {
   .p-drawer-content {

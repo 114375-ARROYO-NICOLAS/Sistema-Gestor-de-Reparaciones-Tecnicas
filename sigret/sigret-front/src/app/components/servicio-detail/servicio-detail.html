@@ -16,14 +16,31 @@
         }
       </h2>
     </div>
-    @if (!modoEdicion() && servicio()) {
-      <p-button
-        label="Editar"
-        icon="pi pi-pencil"
-        severity="info"
-        (onClick)="activarModoEdicion()">
-      </p-button>
-    }
+    <div class="flex gap-2">
+      @if (!modoEdicion() && servicio()?.estado === 'TERMINADO') {
+        <p-button
+          label="Finalizar Trabajo"
+          icon="pi pi-check-circle"
+          severity="success"
+          (onClick)="abrirDialogFinalizar()">
+        </p-button>
+      }
+      @if (!modoEdicion() && servicio()) {
+        <p-button
+          label="Editar"
+          icon="pi pi-pencil"
+          severity="info"
+          (onClick)="activarModoEdicion()">
+        </p-button>
+        <p-button
+          label="Eliminar"
+          icon="pi pi-trash"
+          severity="danger"
+          [loading]="eliminando()"
+          (onClick)="confirmarEliminacion()">
+        </p-button>
+      }
+    </div>
   </div>
 
   <!-- Loading State -->
@@ -370,13 +387,25 @@
               }
 
               <!-- Evaluación de Garantía -->
-              @if (servicio()!.tecnicoEvaluacionNombre || servicio()!.fechaEvaluacionGarantia || servicio()!.observacionesEvaluacionGarantia) {
-                <p-divider></p-divider>
+              <p-divider></p-divider>
 
-                <h4 class="text-lg font-semibold mt-0 mb-3">Evaluación Técnica</h4>
+              <div class="flex justify-content-between align-items-center mb-3">
+                <h4 class="text-lg font-semibold m-0">Evaluación Técnica</h4>
+                @if (servicio()!.estado === 'ESPERANDO_EVALUACION_GARANTIA') {
+                  <p-button
+                    label="Evaluar Garantía"
+                    icon="pi pi-clipboard"
+                    severity="warn"
+                    size="small"
+                    (onClick)="activarModoEdicionEvaluacion()">
+                  </p-button>
+                }
+              </div>
 
-                <div class="grid">
-                  @if (servicio()!.tecnicoEvaluacionNombre) {
+              <!-- Información de evaluación (solo lectura) -->
+              @if (servicio()!.tecnicoEvaluacionNombre) {
+                <div class="p-3 border-round surface-100">
+                  <div class="grid mb-3">
                     <div class="col-12 md:col-6">
                       <label class="block text-sm font-medium text-color-secondary mb-1">Técnico Evaluador</label>
                       <div class="flex align-items-center gap-2">
@@ -384,24 +413,48 @@
                         <span>{{ servicio()!.tecnicoEvaluacionNombre }}</span>
                       </div>
                     </div>
-                  }
-
-                  @if (servicio()!.fechaEvaluacionGarantia) {
-                    <div class="col-12 md:col-6">
-                      <label class="block text-sm font-medium text-color-secondary mb-1">Fecha de Evaluación</label>
-                      <div class="flex align-items-center gap-2">
-                        <i class="pi pi-calendar text-color-secondary"></i>
-                        <span>{{ formatFecha(servicio()!.fechaEvaluacionGarantia) }}</span>
+                    @if (servicio()!.fechaEvaluacionGarantia) {
+                      <div class="col-12 md:col-6">
+                        <label class="block text-sm font-medium text-color-secondary mb-1">Fecha de Evaluación</label>
+                        <div class="flex align-items-center gap-2">
+                          <i class="pi pi-calendar text-color-secondary"></i>
+                          <span>{{ formatFecha(servicio()!.fechaEvaluacionGarantia) }}</span>
+                        </div>
                       </div>
-                    </div>
-                  }
+                    }
+                  </div>
+
+                  <div class="mb-3">
+                    <label class="block text-sm font-medium text-color-secondary mb-2">Resultado</label>
+                    @if (servicio()!.estado === 'EN_REPARACION' && servicio()!.garantiaCumpleCondiciones) {
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-check-circle text-green-600"></i>
+                        <span class="text-green-700 font-semibold">Cumple garantía - En reparación</span>
+                      </div>
+                    } @else if (servicio()!.estado === 'GARANTIA_RECHAZADA') {
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-times-circle text-red-600"></i>
+                        <span class="text-red-700 font-semibold">No cumple garantía - Rechazada</span>
+                      </div>
+                    } @else if (servicio()!.estado === 'GARANTIA_SIN_REPARACION') {
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-info-circle text-cyan-600"></i>
+                        <span class="text-cyan-700 font-semibold">Sin reparación necesaria</span>
+                      </div>
+                    }
+                  </div>
 
                   @if (servicio()!.observacionesEvaluacionGarantia) {
-                    <div class="col-12">
-                      <label class="block text-sm font-medium text-color-secondary mb-2">Observaciones de Evaluación</label>
-                      <p class="m-0 p-3 border-round surface-100 white-space-pre-line">{{ servicio()!.observacionesEvaluacionGarantia }}</p>
+                    <div>
+                      <label class="block text-sm font-medium text-color-secondary mb-2">Observaciones</label>
+                      <p class="m-0 white-space-pre-line">{{ servicio()!.observacionesEvaluacionGarantia }}</p>
                     </div>
                   }
+                </div>
+              } @else {
+                <div class="p-3 border-round surface-100 text-center text-color-secondary">
+                  <i class="pi pi-info-circle mr-2"></i>
+                  Pendiente de evaluación técnica
                 </div>
               }
             </div>
@@ -508,7 +561,7 @@
           <p-card class="mb-3">
             <ng-template pTemplate="header">
               <div class="p-3 pb-0">
-                <h3 class="text-lg font-semibold m-0">Firma del Cliente</h3>
+                <h3 class="text-lg font-semibold m-0">Firma de Ingreso</h3>
               </div>
             </ng-template>
 
@@ -518,6 +571,33 @@
                 alt="Firma del cliente"
                 class="border-round border-1 surface-border"
                 style="max-width: 100%; height: auto;">
+            </div>
+          </p-card>
+        }
+
+        <!-- Firma de Conformidad -->
+        @if (servicio()!.firmaConformidad) {
+          <p-card class="mb-3">
+            <ng-template pTemplate="header">
+              <div class="p-3 pb-0">
+                <h3 class="text-lg font-semibold m-0 flex align-items-center gap-2">
+                  <i class="pi pi-check-circle text-green-600"></i>
+                  Firma de Conformidad
+                </h3>
+              </div>
+            </ng-template>
+
+            <div class="flex flex-column gap-2">
+              <p class="text-sm text-color-secondary m-0">
+                El cliente declaró haber recibido el equipo en condiciones satisfactorias.
+              </p>
+              <div class="flex justify-content-center">
+                <img
+                  [src]="'data:image/png;base64,' + servicio()!.firmaConformidad"
+                  alt="Firma de conformidad"
+                  class="border-round border-1 surface-border"
+                  style="max-width: 100%; height: auto;">
+              </div>
             </div>
           </p-card>
         }
@@ -598,7 +678,7 @@
                     <div class="flex flex-column gap-2">
                       <div class="flex align-items-center gap-2">
                         <i class="pi pi-dollar text-color-secondary"></i>
-                        <span class="text-xl font-bold text-green-600">{{ formatMonto(presupuesto.montoTotal) }}</span>
+                        <span class="text-xl font-bold text-green-600">{{ formatMonto(getMontoConfirmado(presupuesto)) }}</span>
                       </div>
 
                       <div class="flex align-items-center gap-2">
@@ -650,7 +730,7 @@
                   <p-card class="cursor-pointer hover:surface-100" (click)="verOrdenTrabajo(orden.id)">
                     <div class="flex justify-content-between align-items-start mb-3">
                       <div>
-                        <h4 class="text-lg font-semibold m-0 mb-1">OT #{{ orden.id }}</h4>
+                        <h4 class="text-lg font-semibold m-0 mb-1">{{ orden.numeroOrdenTrabajo }}</h4>
                         <span class="text-sm text-color-secondary">{{ orden.empleadoNombre }}</span>
                       </div>
                       <p-tag [value]="orden.estado" [severity]="getEstadoSeverity(orden.estado)"></p-tag>
@@ -713,4 +793,160 @@
       </p-tabs>
     </div>
   }
+
+  <!-- Dialog Finalizar Trabajo -->
+  @if (servicio()) {
+    <app-finalizar-trabajo-dialog
+      [servicioId]="servicio()!.id"
+      [servicioNumero]="servicio()!.numeroServicio"
+      (confirmed)="onServicioFinalizado()">
+    </app-finalizar-trabajo-dialog>
+  }
+
+  <!-- Modal de Evaluación de Garantía -->
+  <p-dialog
+    header="Evaluación de Garantía"
+    [(visible)]="mostrarModalEvaluacion"
+    [modal]="true"
+    [closable]="true"
+    [draggable]="false"
+    [resizable]="false"
+    [style]="{ width: '650px', maxWidth: '90vw' }"
+    (onHide)="cerrarModalEvaluacion()">
+
+    <div class="flex flex-column gap-4">
+      <div class="flex flex-column gap-2">
+        <label class="font-medium">Resultado de la evaluación</label>
+        <div class="flex flex-column gap-3">
+          <div class="flex align-items-center gap-2">
+            <p-radioButton
+              name="resultadoEvaluacionModal"
+              value="CUMPLE"
+              [(ngModel)]="resultadoEvaluacion"
+              inputId="cumpleModal">
+            </p-radioButton>
+            <label for="cumpleModal" class="cursor-pointer">
+              <i class="pi pi-check-circle text-green-600 mr-1"></i>
+              Cumple garantía - Pasa a reparación
+            </label>
+          </div>
+          <div class="flex align-items-center gap-2">
+            <p-radioButton
+              name="resultadoEvaluacionModal"
+              value="NO_CUMPLE"
+              [(ngModel)]="resultadoEvaluacion"
+              inputId="noCumpleModal">
+            </p-radioButton>
+            <label for="noCumpleModal" class="cursor-pointer">
+              <i class="pi pi-times-circle text-red-600 mr-1"></i>
+              No cumple garantía - Rechazada
+            </label>
+          </div>
+          <div class="flex align-items-center gap-2">
+            <p-radioButton
+              name="resultadoEvaluacionModal"
+              value="SIN_REPARACION"
+              [(ngModel)]="resultadoEvaluacion"
+              inputId="sinReparacionModal">
+            </p-radioButton>
+            <label for="sinReparacionModal" class="cursor-pointer">
+              <i class="pi pi-info-circle text-cyan-600 mr-1"></i>
+              Sin reparación necesaria
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Items de la orden de trabajo original (solo si CUMPLE) -->
+      @if (resultadoEvaluacion === 'CUMPLE') {
+        <div class="flex flex-column gap-2">
+          <label class="font-medium">Items del servicio original</label>
+
+          @if (cargandoItems()) {
+            <div class="flex align-items-center justify-content-center py-3 gap-2">
+              <p-progressSpinner [style]="{ width: '20px', height: '20px' }" strokeWidth="4"></p-progressSpinner>
+              <span class="text-sm text-color-secondary">Cargando items...</span>
+            </div>
+          }
+
+          @if (!cargandoItems() && itemsEvaluacion().length === 0) {
+            <div class="p-3 border-round surface-100 text-center text-color-secondary">
+              <i class="pi pi-info-circle mr-2"></i>
+              No hay items registrados en la orden de trabajo original
+            </div>
+          }
+
+          @if (!cargandoItems() && itemsEvaluacion().length > 0) {
+            <div class="flex flex-column gap-2">
+              <p class="text-sm text-color-secondary m-0">
+                Seleccione los items que identificó como causa de la falla de garantía:
+              </p>
+
+              @for (item of itemsEvaluacion(); track item.repuestoId; let idx = $index) {
+                <div class="p-3 border-round surface-100 border-1 surface-border">
+                  <div class="flex align-items-start gap-3">
+                    <p-checkbox
+                      [(ngModel)]="item.seleccionado"
+                      [binary]="true"
+                      [inputId]="'item-' + idx">
+                    </p-checkbox>
+                    <div class="flex-1">
+                      <label [for]="'item-' + idx" class="cursor-pointer font-semibold block mb-1">
+                        {{ item.item }}
+                      </label>
+                      @if (item.comentario) {
+                        <p class="text-sm text-color-secondary m-0 mb-2">
+                          <i class="pi pi-info-circle mr-1"></i>
+                          {{ item.comentario }}
+                        </p>
+                      }
+                      @if (item.seleccionado) {
+                        <textarea
+                          pTextarea
+                          [(ngModel)]="item.comentarioEvaluacion"
+                          [rows]="2"
+                          placeholder="Comentario adicional sobre este item (opcional)"
+                          class="w-full text-sm mt-2"></textarea>
+                      }
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      }
+
+      <div class="flex flex-column gap-2">
+        <label for="observacionesModal" class="font-medium">Observaciones</label>
+        <textarea
+          pTextarea
+          id="observacionesModal"
+          [(ngModel)]="evaluacionObservaciones"
+          [rows]="4"
+          placeholder="Ingrese observaciones sobre el estado del equipo, diagnóstico inicial, etc..."
+          class="w-full"></textarea>
+      </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="flex justify-content-end gap-2">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          [outlined]="true"
+          severity="secondary"
+          (onClick)="cerrarModalEvaluacion()">
+        </p-button>
+        <p-button
+          label="Guardar"
+          icon="pi pi-check"
+          (onClick)="guardarEvaluacion()"
+          [loading]="guardandoEvaluacion">
+        </p-button>
+      </div>
+    </ng-template>
+  </p-dialog>
+
+  <p-confirmDialog />
 </div>

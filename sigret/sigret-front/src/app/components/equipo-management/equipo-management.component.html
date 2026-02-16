@@ -1,4 +1,4 @@
-<div class="equipo-management-container">
+<div class="equipo-management-container" [class.expanded]="expanded()">
   <div class="surface-card p-4 shadow-2 border-round">
     <!-- Header -->
     <div class="flex justify-content-between align-items-center mb-4">
@@ -6,12 +6,23 @@
         <h2 class="text-900 font-bold text-4xl m-0 mb-2">Gestión de Equipos</h2>
         <p class="text-600 m-0">Administra los equipos del sistema</p>
       </div>
-      <p-button
-        label="Nuevo Equipo"
-        icon="pi pi-plus"
-        (onClick)="createEquipo()"
-        styleClass="p-button-primary">
-      </p-button>
+      <div class="flex align-items-center gap-2">
+        <p-button
+          [icon]="expanded() ? 'pi pi-arrows-h' : 'pi pi-arrows-alt'"
+          [text]="true"
+          [rounded]="true"
+          severity="secondary"
+          (onClick)="expanded.set(!expanded())"
+          [pTooltip]="expanded() ? 'Vista normal' : 'Vista expandida'"
+          tooltipPosition="top">
+        </p-button>
+        <p-button
+          label="Nuevo Equipo"
+          icon="pi pi-plus"
+          (onClick)="createEquipo()"
+          severity="primary">
+        </p-button>
+      </div>
     </div>
 
     <!-- Search bar -->
@@ -44,7 +55,7 @@
       [rows]="10"
       [rowsPerPageOptions]="[10, 25, 50]"
       [tableStyle]="{ 'min-width': '60rem' }"
-      [globalFilterFields]="['descripcionCompleta', 'numeroSerie', 'marca', 'modelo']"
+      [globalFilterFields]="['descripcionCompleta', 'numeroSerie', 'marca', 'modelo', 'clienteNombre']"
       styleClass="p-datatable-sm p-datatable-gridlines">
 
       <ng-template pTemplate="header">
@@ -69,6 +80,10 @@
             Color
             <p-sortIcon field="color" />
           </th>
+          <th pSortableColumn="clienteNombre">
+            Cliente
+            <p-sortIcon field="clienteNombre" />
+          </th>
           <th style="width: 12rem">Acciones</th>
         </tr>
       </ng-template>
@@ -91,6 +106,16 @@
             }
           </td>
           <td>{{ equipo.color || '-' }}</td>
+          <td>
+            @if (equipo.clienteNombre) {
+              <div class="flex align-items-center gap-2">
+                <i class="pi pi-user text-primary"></i>
+                <span>{{ equipo.clienteNombre }}</span>
+              </div>
+            } @else {
+              <span class="text-500">Sin asignar</span>
+            }
+          </td>
           <td>
             <div class="flex gap-2">
               <p-button
@@ -127,7 +152,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="6" class="text-center py-5">
+          <td colspan="7" class="text-center py-5">
             <div class="flex flex-column align-items-center gap-3">
               <i class="pi pi-inbox text-6xl text-400"></i>
               <span class="text-600 text-xl">No se encontraron equipos</span>

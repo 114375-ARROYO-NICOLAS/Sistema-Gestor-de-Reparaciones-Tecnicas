@@ -1,61 +1,44 @@
-// Estilos específicos para el dashboard
 :host {
   display: block;
   width: 100%;
 }
 
-// Ajustes responsive para el dashboard
-@media (max-width: 768px) {
-  .text-4xl {
-    font-size: 2rem !important;
+.kpi-card {
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+
+  &:hover,
+  &:focus-visible {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   }
-  
+
+  &:focus-visible {
+    outline: 2px solid var(--p-primary-color);
+    outline-offset: 2px;
+  }
+}
+
+.chart-container {
+  position: relative;
+  height: 320px;
+}
+
+@media (max-width: 768px) {
   .text-3xl {
     font-size: 1.75rem !important;
   }
-  
-  .text-lg {
-    font-size: 1rem !important;
-  }
-  
-  // Reducir padding en cards
-  :host ::ng-deep {
-    .p-card .p-card-body {
-      padding: 1rem !important;
-    }
+
+  .chart-container {
+    height: 280px;
   }
 }
 
 @media (max-width: 576px) {
-  .text-4xl {
-    font-size: 1.5rem !important;
-  }
-  
   .text-3xl {
     font-size: 1.5rem !important;
   }
-  
-  .text-xl {
-    font-size: 1.125rem !important;
-  }
-  
-  .text-lg {
-    font-size: 0.9375rem !important;
-  }
-  
-  // Iconos más pequeños
-  .text-xl i {
-    font-size: 1rem !important;
-  }
-  
-  // Reducir aún más el padding
-  :host ::ng-deep {
-    .p-card .p-card-body {
-      padding: 0.75rem !important;
-    }
-    
-    .p-card .p-card-header {
-      padding: 0.75rem !important;
-    }
+
+  .chart-container {
+    height: 240px;
   }
 }

@@ -1,5 +1,6 @@
 package com.sigret.services;
 
+import com.sigret.dtos.servicio.ItemServicioOriginalDto;
 import com.sigret.dtos.servicio.ServicioCreateDto;
 import com.sigret.dtos.servicio.ServicioListDto;
 import com.sigret.dtos.servicio.ServicioResponseDto;
@@ -59,10 +60,20 @@ public interface ServicioService {
     ServicioResponseDto cambiarEstadoServicio(Long id, EstadoServicio nuevoEstado);
     
     /**
-     * Eliminar un servicio
+     * Eliminar un servicio (soft delete)
      */
     void eliminarServicio(Long id);
-    
+
+    /**
+     * Obtener servicios eliminados
+     */
+    Page<ServicioListDto> obtenerServiciosEliminados(Pageable pageable);
+
+    /**
+     * Restaurar un servicio eliminado
+     */
+    ServicioResponseDto restaurarServicio(Long id);
+
     /**
      * Generar número de servicio automático
      */
@@ -77,4 +88,15 @@ public interface ServicioService {
      * Crear servicio de garantía
      */
     ServicioResponseDto crearServicioGarantia(Long servicioOriginalId, ServicioCreateDto servicioGarantiaDto);
+
+    /**
+     * Obtener items (repuestos) de la orden de trabajo del servicio original
+     * Se usa para mostrar en la evaluación de garantía
+     */
+    List<ItemServicioOriginalDto> obtenerItemsServicioOriginal(Long servicioGarantiaId);
+
+    /**
+     * Finalizar un servicio: registrar firma de conformidad y cambiar estado a FINALIZADO
+     */
+    ServicioResponseDto finalizarServicio(Long id, String firmaConformidad);
 }

@@ -4,6 +4,7 @@ import com.sigret.dtos.ordenTrabajo.OrdenTrabajoCreateDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoListDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoResponseDto;
 import com.sigret.dtos.ordenTrabajo.OrdenTrabajoUpdateDto;
+import com.sigret.dtos.servicio.ItemEvaluacionGarantiaDto;
 
 import com.sigret.enums.EstadoOrdenTrabajo;
 import org.springframework.data.domain.Page;
@@ -83,4 +84,25 @@ public interface OrdenTrabajoService {
      * Obtener órdenes de trabajo sin costo (garantías)
      */
     List<OrdenTrabajoListDto> obtenerOrdenesTrabajoSinCosto();
+
+    /**
+     * Generar número de orden de trabajo automático
+     */
+    String generarNumeroOrdenTrabajo();
+
+    /**
+     * Crear orden de trabajo para garantía que cumple condiciones
+     * Crea una orden sin costo con los items seleccionados de la evaluación
+     */
+    OrdenTrabajoResponseDto crearOrdenTrabajoGarantia(Long servicioId, Long empleadoId, String observaciones, List<ItemEvaluacionGarantiaDto> itemsEvaluacion);
+
+    /**
+     * Actualizar un detalle de orden de trabajo (marcar completado y/o agregar comentario)
+     */
+    OrdenTrabajoResponseDto actualizarDetalleOrdenTrabajo(Long ordenTrabajoId, Long detalleId, String comentario, Boolean completado);
+
+    /**
+     * Verificar si todos los detalles de una orden están completados
+     */
+    boolean todosLosDetallesCompletados(Long ordenTrabajoId);
 }

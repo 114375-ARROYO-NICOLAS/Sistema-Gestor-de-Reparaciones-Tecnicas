@@ -1,0 +1,91 @@
+<div class="p-4">
+  <div class="flex align-items-center justify-content-between mb-4">
+    <div class="flex align-items-center gap-3">
+      <p-button
+        icon="pi pi-arrow-left"
+        [text]="true"
+        [rounded]="true"
+        severity="secondary"
+        (onClick)="volver()"
+        pTooltip="Volver a clientes"
+        tooltipPosition="top">
+      </p-button>
+      <h2 class="text-3xl font-semibold m-0 text-color">
+        <i class="pi pi-trash mr-2"></i>Clientes Eliminados
+      </h2>
+    </div>
+  </div>
+
+  <p-table
+    [value]="clientes()"
+    [paginator]="true"
+    [rows]="10"
+    [totalRecords]="totalRecords()"
+    [lazy]="true"
+    [loading]="loading()"
+    (onLazyLoad)="cargarClientes($event)"
+    [showCurrentPageReport]="true"
+    currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} clientes"
+    styleClass="p-datatable-striped p-datatable-hoverable-rows">
+    <ng-template #header>
+      <tr>
+        <th>Nombre Completo</th>
+        <th>Documento</th>
+        <th>Dirección Principal</th>
+        <th>Acciones</th>
+      </tr>
+    </ng-template>
+    <ng-template #body let-cliente>
+      <tr>
+        <td>
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-user text-primary"></i>
+            <span class="font-medium">{{ cliente.nombreCompleto }}</span>
+          </div>
+        </td>
+        <td>{{ cliente.documento }}</td>
+        <td>
+          @if (cliente.direccionPrincipal) {
+            <span>{{ cliente.direccionPrincipal }}</span>
+          } @else {
+            <span class="text-600">Sin dirección</span>
+          }
+        </td>
+        <td>
+          <div class="flex gap-2">
+            <p-button
+              icon="pi pi-refresh"
+              [rounded]="true"
+              [text]="true"
+              severity="success"
+              pTooltip="Restaurar"
+              [loading]="restaurando() === cliente.id"
+              (onClick)="confirmarRestauracion(cliente)">
+            </p-button>
+            <p-button
+              icon="pi pi-eye"
+              [rounded]="true"
+              [text]="true"
+              severity="info"
+              pTooltip="Ver detalle"
+              (onClick)="verDetalle(cliente.id)">
+            </p-button>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+    <ng-template #emptymessage>
+      <tr>
+        <td colspan="4">
+          <div class="flex flex-column align-items-center justify-content-center py-6 gap-2">
+            <i class="pi pi-check-circle text-4xl text-color-secondary"></i>
+            <p class="text-lg text-color-secondary m-0">No hay clientes eliminados</p>
+          </div>
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+
+  <p-toast />
+  <p-confirmDialog />
+</div>

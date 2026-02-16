@@ -1,11 +1,16 @@
 .user-management-container {
-    padding: 1.5rem;
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  transition: max-width 0.3s ease;
+
+  &.expanded {
+    max-width: 100%;
+  }
 }
 
-.p-datatable-sm .p-datatable-tbody>tr>td {
+@media (max-width: 768px) {
+  .user-management-container {
     padding: 0.5rem;
-}
-
-.p-dialog-content {
-    padding: 1.5rem;
+  }
 }

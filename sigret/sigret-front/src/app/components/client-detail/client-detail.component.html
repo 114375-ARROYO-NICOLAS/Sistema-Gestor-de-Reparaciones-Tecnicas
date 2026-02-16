@@ -16,13 +16,12 @@
           title="Volver a la lista">
         </p-button>
         <div class="flex-1 min-width-0">
-          <h2 class="text-xl md:text-2xl font-bold text-900 m-0 overflow-hidden text-overflow-ellipsis">{{ client()!.nombreCompleto }}</h2>
-          <div class="flex align-items-center gap-2 mt-2 flex-wrap">
-            <p-tag 
+          <div class="flex align-items-center gap-3 flex-wrap">
+            <h2 class="text-xl md:text-2xl font-bold text-900 m-0 overflow-hidden text-overflow-ellipsis">{{ client()!.nombreCompleto }}</h2>
+            <p-tag
               [value]="clientService.getStatusDisplayName(client()!.activo)"
               [severity]="clientService.getStatusColor(client()!.activo)">
             </p-tag>
-            <span class="text-sm md:text-base text-600">{{ client()!.tipoPersona }}</span>
           </div>
         </div>
       </div>
@@ -35,6 +34,11 @@
         (onClick)="editClient()">
       </p-button>
     </div>
+
+    <!-- Layout principal: 2 columnas en desktop -->
+    <div class="grid">
+      <!-- Columna izquierda: Datos, Contactos, Direcciones -->
+      <div class="col-12 lg:col-7">
 
     <!-- Información General -->
     <div class="mb-4">
@@ -92,16 +96,6 @@
                   </div>
                 </div>
               }
-
-              <div class="col-12 md:col-6">
-                <div class="mb-3">
-                  <label class="text-sm text-600 mb-1 block">Estado</label>
-                  <p-tag 
-                    [value]="clientService.getStatusDisplayName(client()!.activo)"
-                    [severity]="clientService.getStatusColor(client()!.activo)">
-                  </p-tag>
-                </div>
-              </div>
             </div>
           </ng-template>
         </p-card>
@@ -298,6 +292,87 @@
           </ng-template>
         </p-card>
     </div>
+
+      </div><!-- fin columna izquierda -->
+
+      <!-- Columna derecha: Mapa y Equipos -->
+      <div class="col-12 lg:col-5">
+        <!-- Mapa de Direcciones -->
+        <div class="mb-4">
+          <p-card>
+            <ng-template pTemplate="content">
+              <h3 class="text-lg font-semibold text-primary mb-3">
+                <i class="pi pi-map mr-2"></i>Ubicación
+              </h3>
+              @if (getMapUrl(); as mapUrl) {
+                <iframe
+                  [src]="mapUrl"
+                  class="w-full border-round"
+                  style="height: 280px; border: 0;"
+                  allowfullscreen
+                  loading="lazy"
+                  referrerpolicy="no-referrer-when-downgrade">
+                </iframe>
+              } @else {
+                <div class="text-center text-600 py-4">
+                  <i class="pi pi-map-marker text-3xl mb-2"></i>
+                  <p class="text-sm">No hay direcciones con ubicación disponible</p>
+                </div>
+              }
+            </ng-template>
+          </p-card>
+        </div>
+
+        <!-- Equipos del Cliente -->
+        <div class="mb-4">
+          <p-card>
+            <ng-template pTemplate="content">
+              <h3 class="text-lg font-semibold text-primary mb-3">
+                <i class="pi pi-desktop mr-2"></i>Equipos del Cliente
+              </h3>
+              @if (isLoadingEquipos()) {
+                <div class="flex justify-content-center py-4">
+                  <p-progressSpinner [style]="{ width: '40px', height: '40px' }"></p-progressSpinner>
+                </div>
+              } @else if (equipos().length > 0) {
+                <div class="flex flex-column gap-2">
+                  @for (equipo of equipos(); track equipo.id) {
+                    <div
+                      class="surface-50 border-round p-3 cursor-pointer hover:surface-100 transition-colors transition-duration-200"
+                      (click)="navigateToEquipo(equipo.id)">
+                      <div class="flex align-items-center gap-3">
+                        <i class="pi pi-desktop text-primary text-xl"></i>
+                        <div class="flex-1 min-w-0">
+                          <div class="font-medium text-900 white-space-nowrap overflow-hidden text-overflow-ellipsis">
+                            {{ equipo.descripcionCompleta }}
+                          </div>
+                          <div class="flex align-items-center gap-2 mt-1 text-sm text-600">
+                            <span>{{ equipo.tipoEquipo }}</span>
+                            <span>&middot;</span>
+                            <span>{{ equipo.marca }}</span>
+                            @if (equipo.numeroSerie) {
+                              <span>&middot;</span>
+                              <span>S/N: {{ equipo.numeroSerie }}</span>
+                            }
+                          </div>
+                        </div>
+                        <i class="pi pi-chevron-right text-400"></i>
+                      </div>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <div class="text-center text-600 py-4">
+                  <i class="pi pi-desktop text-3xl mb-2"></i>
+                  <p class="text-sm">No hay equipos registrados para este cliente</p>
+                </div>
+              }
+            </ng-template>
+          </p-card>
+        </div>
+      </div><!-- fin columna derecha -->
+
+    </div><!-- fin grid -->
   }
 </div>
 

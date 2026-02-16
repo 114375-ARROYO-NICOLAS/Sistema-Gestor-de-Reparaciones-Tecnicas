@@ -18,4 +18,5 @@ public class ClienteListDto {
     private String telefono;
     private String direccionPrincipal;
     private Boolean esPersonaJuridica;
+    private Boolean activo;
 }

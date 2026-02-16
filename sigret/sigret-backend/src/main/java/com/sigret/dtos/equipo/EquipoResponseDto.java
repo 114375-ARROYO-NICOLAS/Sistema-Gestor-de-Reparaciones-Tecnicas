@@ -16,7 +16,34 @@ public class EquipoResponseDto {
     private String numeroSerie;
     private String color;
     private String observaciones;
-    private String tipoEquipo;
-    private String marca;
-    private String modelo;
+    private TipoEquipoDto tipoEquipo;
+    private MarcaDto marca;
+    private ModeloDto modelo;
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class TipoEquipoDto {
+        private Long id;
+        private String descripcion;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class MarcaDto {
+        private Long id;
+        private String descripcion;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class ModeloDto {
+        private Long id;
+        private String descripcion;
+    }
 }

@@ -1,39 +1,16 @@
-// Estilos específicos para el componente de gestión de empleados
 .employee-management-container {
-  width: 100%;
-  
-  // Asegurar que las cards se vean bien en móvil
-  @media (max-width: 768px) {
-    .p-card {
-      margin-bottom: 0.75rem;
-    }
-    
-    // Stats cards más compactas
-    .text-3xl {
-      font-size: 1.75rem !important;
-    }
-  }
-  
-  @media (max-width: 576px) {
-    // Ajustar aún más en móviles pequeños
-    .text-3xl {
-      font-size: 1.5rem !important;
-    }
-    
-    .text-2xl {
-      font-size: 1.25rem !important;
-    }
+  padding: 1rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  transition: max-width 0.3s ease;
+
+  &.expanded {
+    max-width: 100%;
   }
 }
 
-// Mejorar la responsividad de la tabla
-:host ::ng-deep {
-  @media (max-width: 768px) {
-    .p-datatable {
-      .p-datatable-wrapper {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-    }
+@media (max-width: 768px) {
+  .employee-management-container {
+    padding: 0.5rem;
   }
 }

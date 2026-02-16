@@ -236,6 +236,13 @@ public class ClienteServiceImpl implements ClienteService {
         return convertirAClienteResponseDto(cliente);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ClienteListDto> obtenerClientesInactivos(Pageable pageable) {
+        Page<Cliente> clientes = clienteRepository.findByActivoFalse(pageable);
+        return clientes.map(this::convertirAClienteListDto);
+    }
+
     /**
      * Crear contactos para una persona
      */
@@ -394,10 +401,11 @@ public class ClienteServiceImpl implements ClienteService {
                 cliente.getPrimerTelefono(),
                 cliente.getComentarios(),
                 cliente.esPersonaJuridica(),
+                cliente.getActivo(),
                 contactosDto,
                 direccionesDto
         );
-        
+
         return response;
     }
 
@@ -420,7 +428,7 @@ public class ClienteServiceImpl implements ClienteService {
     private ClienteListDto convertirAClienteListDto(Cliente cliente) {
         // Obtener dirección principal formateada
         String direccionPrincipal = obtenerDireccionPrincipalFormateada(cliente.getPersona().getId());
-        
+
         return new ClienteListDto(
                 cliente.getId(),
                 cliente.getNombreCompleto(),
@@ -428,7 +436,8 @@ public class ClienteServiceImpl implements ClienteService {
                 cliente.getPrimerEmail(),
                 cliente.getPrimerTelefono(),
                 direccionPrincipal,
-                cliente.esPersonaJuridica()
+                cliente.esPersonaJuridica(),
+                cliente.getActivo()
         );
     }
 

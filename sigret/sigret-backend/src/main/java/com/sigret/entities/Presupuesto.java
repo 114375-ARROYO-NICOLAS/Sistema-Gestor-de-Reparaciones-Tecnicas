@@ -28,12 +28,12 @@ public class Presupuesto {
     @Column(name = "id_presupuesto")
     private Long id;
 
+    @Column(name = "numero_presupuesto", unique = true, nullable = false, length = 20)
+    private String numeroPresupuesto;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_servicio", nullable = false)
     private Servicio servicio;
-
-    @Column(name = "problema", columnDefinition = "TEXT")
-    private String problema;
 
     @Column(name = "diagnostico", columnDefinition = "TEXT")
     private String diagnostico;
@@ -78,7 +78,7 @@ public class Presupuesto {
     private CanalConfirmacion canalConfirmacion;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @Column(name = "estado", nullable = false, length = 20)
     private EstadoPresupuesto estado = EstadoPresupuesto.PENDIENTE;
 
     @Column(name = "fecha_creacion", nullable = false)
@@ -94,7 +94,7 @@ public class Presupuesto {
     private LocalDate fechaVencimiento;
 
     // RELACIONES INVERSAS
-    @OneToMany(mappedBy = "presupuesto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "presupuesto", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<DetallePresupuesto> detallePresupuestos = new ArrayList<>();
 
     @OneToMany(mappedBy = "presupuesto", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
@@ -106,6 +106,41 @@ public class Presupuesto {
         if (this.montoRepuestosAlternativo != null) {
             this.montoTotalAlternativo = this.montoRepuestosAlternativo.add(this.manoObra);
         }
+    }
+
+    public void recalcularMontos() {
+        // Recalcular montos de repuestos desde los detalles
+        this.montoRepuestosOriginal = BigDecimal.ZERO;
+        this.montoRepuestosAlternativo = null;
+
+        boolean tieneAlternativos = false;
+        BigDecimal sumaAlternativos = BigDecimal.ZERO;
+
+        for (DetallePresupuesto detalle : this.detallePresupuestos) {
+            // Sumar precios originales
+            BigDecimal subtotalOriginal = detalle.getPrecioOriginal()
+                    .multiply(BigDecimal.valueOf(detalle.getCantidad()));
+            this.montoRepuestosOriginal = this.montoRepuestosOriginal.add(subtotalOriginal);
+
+            // Sumar precios alternativos si existen
+            if (detalle.getPrecioAlternativo() != null) {
+                tieneAlternativos = true;
+                BigDecimal subtotalAlternativo = detalle.getPrecioAlternativo()
+                        .multiply(BigDecimal.valueOf(detalle.getCantidad()));
+                sumaAlternativos = sumaAlternativos.add(subtotalAlternativo);
+            }
+        }
+
+        if (tieneAlternativos) {
+            this.montoRepuestosAlternativo = sumaAlternativos;
+        }
+
+        // Recalcular totales
+        calcularTotales();
+    }
+
+    public List<DetallePresupuesto> getDetalles() {
+        return this.detallePresupuestos;
     }
 
     public BigDecimal getMontoConfirmado() {

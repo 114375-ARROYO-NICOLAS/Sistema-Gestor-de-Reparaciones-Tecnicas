@@ -7,7 +7,8 @@ export enum EstadoServicio {
   TERMINADO = 'TERMINADO',
   RECHAZADO = 'RECHAZADO',
   GARANTIA_SIN_REPARACION = 'GARANTIA_SIN_REPARACION',
-  GARANTIA_RECHAZADA = 'GARANTIA_RECHAZADA'
+  GARANTIA_RECHAZADA = 'GARANTIA_RECHAZADA',
+  FINALIZADO = 'FINALIZADO'
 }
 
 export interface DetalleServicio {
@@ -33,6 +34,10 @@ export interface ServicioList {
   esGarantia: boolean;
   servicioGarantiaId?: number;
   servicioGarantiaNumero?: string;
+  tecnicoEvaluacionId?: number;
+  tecnicoEvaluacionNombre?: string;
+  tecnicoAsignadoId?: number;
+  tecnicoAsignadoNombre?: string;
   abonaVisita: boolean;
   montoVisita: number;
   montoPagado: number;
@@ -41,6 +46,7 @@ export interface ServicioList {
   fechaRecepcion: string;
   fechaDevolucionPrevista?: string;
   fechaDevolucionReal?: string;
+  activo?: boolean;
 }
 
 export interface ServicioResponse {
@@ -78,6 +84,8 @@ export interface ServicioResponse {
   fechaDevolucionReal?: string;
   detalles: DetalleServicio[];
   firmaIngreso?: string; // Base64 de la firma del cliente
+  firmaConformidad?: string; // Base64 de la firma de conformidad
+  activo?: boolean;
 }
 
 export interface ServicioCreateDto {

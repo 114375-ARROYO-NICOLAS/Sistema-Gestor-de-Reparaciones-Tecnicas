@@ -14,13 +14,15 @@ import { Badge } from 'primeng/badge';
 import { Toast } from 'primeng/toast';
 import { Message } from 'primeng/message';
 import { MessageService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 import SignaturePad from 'signature_pad';
+import { TerminosCondicionesDialogComponent } from '../terminos-condiciones-dialog/terminos-condiciones-dialog';
 
 import { ServicioService } from '../../services/servicio.service';
 import { ClientService } from '../../services/client.service';
 import { EmployeeService } from '../../services/employee.service';
 import { EquipoService } from '../../services/equipo.service';
-import { ServicioCreateDto, DetalleServicio, ServicioList } from '../../models/servicio.model';
+import { ServicioCreateDto, DetalleServicio, ServicioList, ServicioResponse } from '../../models/servicio.model';
 import { ClientListDto } from '../../models/client.model';
 import { EmployeeListDto } from '../../models/employee.model';
 import { EquipoListDto } from '../../models/equipo.model';
@@ -45,7 +47,9 @@ import { EquipoListDto } from '../../models/equipo.model';
     Step,
     Badge,
     Toast,
-    Message
+    Message,
+    Dialog,
+    TerminosCondicionesDialogComponent
   ],
   templateUrl: './servicio-create.html',
   styleUrl: './servicio-create.scss',
@@ -64,6 +68,9 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
   // Canvas para la firma
   @ViewChild('signatureCanvas') signatureCanvas!: ElementRef<HTMLCanvasElement>;
   private signaturePad!: SignaturePad;
+
+  // Diálogo de términos y condiciones
+  @ViewChild('terminosDialog') terminosDialog!: TerminosCondicionesDialogComponent;
 
   // Signals
   readonly clientes = signal<ClientListDto[]>([]);
@@ -88,6 +95,16 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
 
   // Firma digital
   readonly hasSignature = signal(false);
+
+  // Términos y condiciones
+  readonly aceptaTerminos = signal(false);
+
+  // Diálogo de opciones PDF
+  readonly mostrarDialogoPdf = signal(false);
+  readonly servicioCreado = signal<number | null>(null);
+  readonly servicioResponse = signal<ServicioResponse | null>(null);
+  readonly clienteEmail = signal<string | null>(null);
+  readonly clienteTelefono = signal<string | null>(null);
 
   // Form
   servicioForm: FormGroup;
@@ -540,6 +557,11 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
 
     // Detectar cuando el usuario empieza a firmar
     this.signaturePad.addEventListener('beginStroke', () => {
+      // Solo permitir firmar si se aceptaron los términos
+      if (!this.aceptaTerminos()) {
+        this.signaturePad.clear();
+        return;
+      }
       this.hasSignature.set(true);
     });
 
@@ -648,6 +670,13 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
     this.router.navigate(['/servicios']);
   }
 
+  // Mostrar diálogo de términos y condiciones
+  mostrarTerminos(): void {
+    if (this.terminosDialog) {
+      this.terminosDialog.showDialog();
+    }
+  }
+
   // Guardar servicio
   saveServicio(): void {
     if (!this.servicioForm.valid) {
@@ -721,10 +750,19 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
           detail: `Número de servicio: ${response.numeroServicio}`,
           life: 5000
         });
-        setTimeout(() => {
-          this.router.navigate(['/servicios']);
-        }, 1500);
+
+        // Guardar información del servicio creado
+        this.servicioCreado.set(response.id);
+        this.servicioResponse.set(response);
+
+        // Obtener email y teléfono del cliente
+        const cliente = this.selectedCliente();
+        this.clienteEmail.set(cliente?.email || null);
+        this.clienteTelefono.set(cliente?.telefono || null);
+
+        // Mostrar diálogo de opciones
         this.isSaving.set(false);
+        this.mostrarDialogoPdf.set(true);
       },
       error: (error) => {
         this.messageService.add({
@@ -735,5 +773,145 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
         this.isSaving.set(false);
       }
     });
+  }
+
+  // Métodos para manejar las opciones de PDF
+  private generarNombrePdf(): string {
+    const response = this.servicioResponse();
+    if (!response) {
+      return `servicio-${this.servicioCreado()}.pdf`;
+    }
+
+    // Limpiar el número de servicio (remover guiones y caracteres especiales)
+    const numeroServicio = response.numeroServicio.replace(/[-\s]/g, '');
+
+    // Limpiar el nombre del cliente (remover caracteres especiales)
+    const nombreCliente = response.clienteNombre
+      .replace(/[^a-zA-Z0-9\s]/g, '')
+      .replace(/\s+/g, '_');
+
+    // Formatear la fecha (yyyy-MM-dd)
+    const fechaRecepcion = response.fechaRecepcion.split('T')[0];
+
+    // Formato: numServicio_nombreCliente_fechaRecepcion.pdf
+    return `${numeroServicio}_${nombreCliente}_${fechaRecepcion}.pdf`;
+  }
+
+  descargarPdf(): void {
+    const servicioId = this.servicioCreado();
+    if (!servicioId) return;
+
+    this.servicioService.descargarPdfServicio(servicioId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = this.generarNombrePdf();
+        link.click();
+        window.URL.revokeObjectURL(url);
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'PDF descargado',
+          detail: 'El PDF se ha descargado correctamente'
+        });
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al descargar el PDF'
+        });
+      }
+    });
+  }
+
+  enviarPorEmail(): void {
+    const servicioId = this.servicioCreado();
+    if (!servicioId) return;
+
+    const email = this.clienteEmail();
+    if (!email) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Sin email',
+        detail: 'El cliente no tiene un email registrado'
+      });
+      return;
+    }
+
+    this.servicioService.enviarPdfPorEmail(servicioId).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Email enviado',
+          detail: `El PDF se ha enviado a ${email}`
+        });
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al enviar el email'
+        });
+      }
+    });
+  }
+
+  enviarPorWhatsApp(): void {
+    const servicioId = this.servicioCreado();
+    if (!servicioId) return;
+
+    const telefono = this.clienteTelefono();
+
+    if (!telefono) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Sin teléfono',
+        detail: 'El cliente no tiene un teléfono registrado.'
+      });
+      return;
+    }
+
+    // Primero descargar el PDF
+    this.servicioService.descargarPdfServicio(servicioId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = this.generarNombrePdf();
+        link.click();
+        window.URL.revokeObjectURL(url);
+
+        // Eliminar caracteres no numéricos del teléfono
+        const telefonoLimpio = telefono.replace(/\D/g, '');
+
+        // Crear mensaje con el nombre del archivo
+        const nombreArchivo = this.generarNombrePdf();
+        const mensaje = encodeURIComponent(`Hola, te envío el comprobante del servicio técnico.\n\nArchivo: ${nombreArchivo}`);
+
+        // Abrir WhatsApp Web en nueva pestaña
+        const whatsappUrl = `https://web.whatsapp.com/send?phone=${telefonoLimpio}&text=${mensaje}`;
+        window.open(whatsappUrl, '_blank');
+
+        this.messageService.add({
+          severity: 'success',
+          summary: 'WhatsApp',
+          detail: 'PDF descargado. Se ha abierto WhatsApp Web para enviar el archivo.'
+        });
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Error al descargar el PDF'
+        });
+      }
+    });
+  }
+
+  cerrarDialogoYVolver(): void {
+    this.mostrarDialogoPdf.set(false);
+    this.router.navigate(['/servicios']);
   }
 }

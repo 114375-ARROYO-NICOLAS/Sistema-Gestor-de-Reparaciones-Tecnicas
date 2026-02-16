@@ -1,0 +1,192 @@
+<p-dialog
+  [visible]="visible()"
+  (visibleChange)="onHide()"
+  header="Actualizar Presupuesto"
+  [modal]="true"
+  [style]="{ width: '700px', maxHeight: '90vh' }"
+  [draggable]="false"
+  [resizable]="false"
+  (onShow)="onShow()">
+
+  @if (presupuesto() && formulario) {
+    <div class="flex flex-column gap-4">
+      <!-- Info del presupuesto -->
+      <div class="p-3 surface-100 border-round">
+        <div class="flex align-items-center gap-2 mb-2">
+          <i class="pi pi-file-edit text-primary text-xl"></i>
+          <span class="font-semibold text-lg">{{ presupuesto()!.numeroPresupuesto }}</span>
+        </div>
+        <p class="text-600 m-0 text-sm">{{ presupuesto()!.clienteNombre }}</p>
+      </div>
+
+      <form [formGroup]="formulario" class="flex flex-column gap-4">
+
+        <!-- Fecha de Vencimiento -->
+        <div class="flex flex-column gap-2">
+          <label for="actualizarFechaVenc" class="font-semibold text-sm">
+            Fecha de Vencimiento <span class="text-red-600">*</span>
+          </label>
+          <p-datepicker
+            inputId="actualizarFechaVenc"
+            formControlName="fechaVencimiento"
+            [showIcon]="true"
+            [minDate]="minFechaVencimiento"
+            dateFormat="dd/mm/yy"
+            placeholder="Seleccionar fecha"
+            styleClass="w-full">
+          </p-datepicker>
+          <small class="text-color-secondary">
+            <i class="pi pi-info-circle mr-1"></i>
+            El token del cliente expirara en esta fecha
+          </small>
+        </div>
+
+        <!-- Items del Presupuesto -->
+        <div>
+          <label class="font-semibold text-sm mb-2 block">Items del Presupuesto</label>
+          <div class="flex flex-column gap-2" formArrayName="detalles">
+            @for (detalle of detalles.controls; track $index) {
+              <div [formGroupName]="$index" class="p-3 surface-50 border-round border-1 surface-border">
+                <div class="mb-2">
+                  <span class="font-medium text-sm">{{ detalle.get('item')?.value }}</span>
+                </div>
+                <div class="grid">
+                  <div class="col-4">
+                    <label class="text-xs text-500 block mb-1">Cantidad</label>
+                    <p-inputNumber
+                      formControlName="cantidad"
+                      [min]="1"
+                      [showButtons]="true"
+                      styleClass="w-full"
+                      inputStyleClass="w-full text-sm">
+                    </p-inputNumber>
+                  </div>
+                  <div class="col-4">
+                    <label class="text-xs text-500 block mb-1">Precio Original</label>
+                    <p-inputNumber
+                      formControlName="precioOriginal"
+                      mode="currency"
+                      currency="ARS"
+                      locale="es-AR"
+                      [min]="0"
+                      styleClass="w-full"
+                      inputStyleClass="w-full text-sm">
+                    </p-inputNumber>
+                  </div>
+                  <div class="col-4">
+                    <label class="text-xs text-500 block mb-1">Precio Alternativo</label>
+                    <p-inputNumber
+                      formControlName="precioAlternativo"
+                      mode="currency"
+                      currency="ARS"
+                      locale="es-AR"
+                      [min]="0"
+                      styleClass="w-full"
+                      inputStyleClass="w-full text-sm">
+                    </p-inputNumber>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Mano de Obra -->
+        <div class="flex flex-column gap-2">
+          <label for="actualizarManoObra" class="font-semibold text-sm">Mano de Obra</label>
+          <p-inputNumber
+            inputId="actualizarManoObra"
+            formControlName="manoObra"
+            mode="currency"
+            currency="ARS"
+            locale="es-AR"
+            [min]="0"
+            styleClass="w-full">
+          </p-inputNumber>
+        </div>
+
+        <!-- Totales calculados -->
+        <div class="p-3 surface-100 border-round">
+          <div class="flex justify-content-between mb-2">
+            <span class="text-sm">Total Original:</span>
+            <span class="font-bold text-green-600">{{ formatCurrency(calcularMontoTotalOriginal()) }}</span>
+          </div>
+          @if (calcularMontoTotalAlternativo() !== null) {
+            <div class="flex justify-content-between">
+              <span class="text-sm">Total Alternativo:</span>
+              <span class="font-bold text-blue-600">{{ formatCurrency(calcularMontoTotalAlternativo()!) }}</span>
+            </div>
+          }
+        </div>
+      </form>
+
+      <!-- Opciones de reenvio -->
+      <div class="p-3 border-1 surface-border border-round">
+        <div class="flex align-items-center gap-2 mb-3">
+          <p-checkbox
+            [(ngModel)]="reenviarEmail"
+            [binary]="true"
+            inputId="reenviarEmailCheck">
+          </p-checkbox>
+          <label for="reenviarEmailCheck" class="cursor-pointer font-semibold text-sm">
+            Reenviar presupuesto al cliente
+          </label>
+        </div>
+
+        @if (reenviarEmail()) {
+          <div class="flex flex-column gap-3 pl-4">
+            <div class="flex gap-3">
+              <div class="flex align-items-center">
+                <p-checkbox
+                  [(ngModel)]="mostrarOriginal"
+                  [binary]="true"
+                  inputId="mostrarOriginalCheck">
+                </p-checkbox>
+                <label for="mostrarOriginalCheck" class="ml-2 text-sm">Mostrar Original</label>
+              </div>
+              <div class="flex align-items-center">
+                <p-checkbox
+                  [(ngModel)]="mostrarAlternativo"
+                  [binary]="true"
+                  inputId="mostrarAlternativoCheck">
+                </p-checkbox>
+                <label for="mostrarAlternativoCheck" class="ml-2 text-sm">Mostrar Alternativo</label>
+              </div>
+            </div>
+
+            <div class="flex flex-column gap-2">
+              <label class="text-sm text-600">Mensaje adicional (opcional)</label>
+              <textarea
+                pTextarea
+                [(ngModel)]="mensajeAdicional"
+                rows="2"
+                [maxlength]="500"
+                placeholder="Agregue un mensaje para el cliente..."
+                class="w-full">
+              </textarea>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="onHide()">
+      </p-button>
+      <p-button
+        [label]="reenviarEmail() ? 'Actualizar y Reenviar' : 'Actualizar'"
+        [icon]="reenviarEmail() ? 'pi pi-send' : 'pi pi-check'"
+        severity="success"
+        (onClick)="onConfirm()"
+        [loading]="guardando()"
+        [disabled]="formulario.invalid">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>

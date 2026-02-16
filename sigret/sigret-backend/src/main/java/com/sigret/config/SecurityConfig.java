@@ -68,6 +68,7 @@ public class SecurityConfig {
                         // Endpoints públicos
                         .requestMatchers("/auth/login", "/auth/refresh", "/auth/logout").permitAll()
                         .requestMatchers("/public/**").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
 
                         // Endpoints para Actuator (opcional)
                         .requestMatchers("/actuator/health").permitAll()

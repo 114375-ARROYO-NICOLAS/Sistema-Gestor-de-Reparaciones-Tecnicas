@@ -11,6 +11,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { Badge } from 'primeng/badge';
 import { IconField } from 'primeng/iconfield';
 import { InputIcon } from 'primeng/inputicon';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { EquipoService } from '../../services/equipo.service';
 import { EquipoListDto } from '../../models/equipo.model';
@@ -27,7 +28,8 @@ import { EquipoListDto } from '../../models/equipo.model';
     ConfirmDialog,
     Badge,
     IconField,
-    InputIcon
+    InputIcon,
+    TooltipModule
   ],
   templateUrl: './equipo-management.component.html',
   styleUrl: './equipo-management.component.scss',
@@ -43,6 +45,7 @@ export class EquipoManagementComponent implements OnInit {
   readonly equipos = signal<EquipoListDto[]>([]);
   readonly loading = signal(true);
   readonly searchTerm = signal('');
+  readonly expanded = signal(false);
 
   ngOnInit(): void {
     this.loadEquipos();

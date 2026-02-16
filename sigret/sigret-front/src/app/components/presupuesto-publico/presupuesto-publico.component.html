@@ -1,0 +1,220 @@
+<div class="min-h-screen bg-gray-50 py-6">
+  <div class="container mx-auto px-4 max-w-4xl">
+
+    <!-- Loading State -->
+    @if (cargando()) {
+      <div class="flex justify-content-center align-items-center" style="min-height: 400px;">
+        <p-progressSpinner></p-progressSpinner>
+      </div>
+    }
+
+    <!-- Error State -->
+    @else if (error()) {
+      <p-card>
+        <div class="text-center py-6">
+          <i class="pi pi-exclamation-triangle text-6xl text-red-500 mb-4"></i>
+          <h2 class="text-2xl font-bold mb-3">Error al Cargar el Presupuesto</h2>
+          <p class="text-color-secondary mb-4">{{ error() }}</p>
+          <p class="text-sm text-500">
+            Si el problema persiste, por favor contacte al taller.
+          </p>
+        </div>
+      </p-card>
+    }
+
+    <!-- Success State - Action Completed -->
+    @else if (accionCompletada()) {
+      <p-card>
+        <div class="text-center py-6">
+          <i class="pi pi-check-circle text-6xl text-green-500 mb-4"></i>
+          <h2 class="text-2xl font-bold mb-3">¡Operación Exitosa!</h2>
+          <p class="text-lg text-color-secondary mb-4">{{ mensajeExito() }}</p>
+          <p class="text-sm text-500">
+            El taller ha sido notificado de su decisión.
+          </p>
+        </div>
+      </p-card>
+    }
+
+    <!-- Main Content - Presupuesto Details -->
+    @else if (presupuesto()) {
+      <div class="flex flex-column gap-4">
+
+        <!-- Header Card -->
+        <p-card>
+          <div class="text-center">
+            <h1 class="text-3xl font-bold mb-2">Presupuesto {{ presupuesto()!.numeroPresupuesto }}</h1>
+            <p class="text-lg text-color-secondary">SIGRET - Sistema de Gestión de Reparaciones</p>
+          </div>
+        </p-card>
+
+        <!-- Client & Service Info -->
+        <p-card header="Información del Servicio">
+          <div class="grid">
+            <div class="col-12 md:col-6">
+              <p class="text-sm text-600 mb-1">Cliente:</p>
+              <p class="font-semibold text-lg">{{ presupuesto()!.nombreCliente }}</p>
+            </div>
+            <div class="col-12 md:col-6">
+              <p class="text-sm text-600 mb-1">Equipo:</p>
+              <p class="font-semibold text-lg">{{ presupuesto()!.equipoDescripcion }}</p>
+            </div>
+            @if (presupuesto()!.fallaReportada) {
+              <div class="col-12">
+                <p class="text-sm text-600 mb-1">Falla Reportada:</p>
+                <p>{{ presupuesto()!.fallaReportada }}</p>
+              </div>
+            }
+            @if (presupuesto()!.diagnostico) {
+              <div class="col-12">
+                <p class="text-sm text-600 mb-1">Diagnóstico Técnico:</p>
+                <p>{{ presupuesto()!.diagnostico }}</p>
+              </div>
+            }
+            @if (presupuesto()!.fechaVencimiento) {
+              <div class="col-12">
+                <p class="text-sm text-600 mb-1">Válido hasta:</p>
+                <p class="font-semibold" [class.text-orange-600]="estaVencido()">
+                  {{ formatFecha(presupuesto()!.fechaVencimiento) }}
+                  @if (estaVencido()) {
+                    <span class="ml-2 text-orange-600">(Vencido)</span>
+                  }
+                </p>
+              </div>
+            }
+          </div>
+        </p-card>
+
+        <!-- Budget Details Table -->
+        <p-card header="Detalle del Presupuesto">
+          <p-table [value]="presupuesto()!.detalles" [tableStyle]="{ 'min-width': '100%' }">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Ítem</th>
+                <th class="text-center" style="width: 100px;">Cantidad</th>
+                @if (presupuesto()!.mostrarOriginal && presupuesto()!.mostrarAlternativo) {
+                  <th class="text-right" style="width: 150px;">Precio Original</th>
+                  <th class="text-right" style="width: 150px;">Precio Alternativo</th>
+                } @else {
+                  <th class="text-right" style="width: 150px;">Precio Unit.</th>
+                  <th class="text-right" style="width: 150px;">Subtotal</th>
+                }
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-detalle>
+              <tr>
+                <td>{{ detalle.item }}</td>
+                <td class="text-center">{{ detalle.cantidad }}</td>
+                @if (presupuesto()!.mostrarOriginal && presupuesto()!.mostrarAlternativo) {
+                  <td class="text-right">{{ formatCurrency(detalle.precioOriginal * detalle.cantidad) }}</td>
+                  <td class="text-right">{{ detalle.precioAlternativo ? formatCurrency(detalle.precioAlternativo * detalle.cantidad) : '-' }}</td>
+                } @else if (presupuesto()!.mostrarOriginal) {
+                  <td class="text-right">{{ formatCurrency(detalle.precioOriginal) }}</td>
+                  <td class="text-right">{{ formatCurrency(detalle.precioOriginal * detalle.cantidad) }}</td>
+                } @else {
+                  <td class="text-right">{{ formatCurrency(detalle.precioAlternativo || detalle.precioOriginal) }}</td>
+                  <td class="text-right">{{ formatCurrency((detalle.precioAlternativo || detalle.precioOriginal) * detalle.cantidad) }}</td>
+                }
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="footer">
+              @if (presupuesto()!.manoObra > 0) {
+                <tr>
+                  <td colspan="3" class="text-right font-semibold">Mano de Obra:</td>
+                  <td class="text-right font-semibold">{{ formatCurrency(presupuesto()!.manoObra) }}</td>
+                </tr>
+              }
+              @if (presupuesto()!.mostrarOriginal) {
+                <tr class="bg-primary-50">
+                  <td colspan="3" class="text-right font-bold text-lg">
+                    Total {{ presupuesto()!.mostrarAlternativo ? '(Opción Original)' : '' }}:
+                  </td>
+                  <td class="text-right font-bold text-lg text-primary">
+                    {{ formatCurrency(presupuesto()!.montoTotalOriginal) }}
+                  </td>
+                </tr>
+              }
+              @if (presupuesto()!.mostrarAlternativo && presupuesto()!.montoTotalAlternativo) {
+                <tr class="bg-green-50">
+                  <td colspan="3" class="text-right font-bold text-lg">
+                    Total (Opción Alternativa):
+                  </td>
+                  <td class="text-right font-bold text-lg text-green-600">
+                    {{ formatCurrency(presupuesto()!.montoTotalAlternativo) }}
+                  </td>
+                </tr>
+              }
+            </ng-template>
+          </p-table>
+        </p-card>
+
+        <!-- Action Card -->
+        <p-card>
+          @if (yaRespondido()) {
+            <div class="text-center py-4">
+              <i class="pi pi-info-circle text-6xl text-blue-500 mb-4"></i>
+              <h3 class="text-xl font-semibold mb-3">Presupuesto Ya Respondido</h3>
+              <p class="text-color-secondary">
+                Este presupuesto ya fue
+                <strong>{{ presupuesto()!.estado === 'APROBADO' ? 'aprobado' : 'rechazado' }}</strong>.
+                No es posible realizar otra acción.
+              </p>
+            </div>
+          } @else if (estaVencido()) {
+            <div class="text-center py-4">
+              <i class="pi pi-exclamation-triangle text-6xl text-orange-500 mb-4"></i>
+              <h3 class="text-xl font-semibold mb-3 text-orange-700">Presupuesto Vencido</h3>
+              <p class="text-color-secondary">
+                Este presupuesto ha vencido. Por favor contacte al técnico.
+              </p>
+            </div>
+          } @else {
+            <div class="text-center">
+              <h3 class="text-xl font-semibold mb-4">
+                {{ accion() === 'aprobar' ? '¿Desea aprobar este presupuesto?' : '¿Desea rechazar este presupuesto?' }}
+              </h3>
+
+              @if (accion() === 'aprobar') {
+                <p class="text-color-secondary mb-4">
+                  Al aprobar, el taller comenzará con la reparación de su equipo.
+                </p>
+                <p-button
+                  label="Confirmar Aprobación"
+                  icon="pi pi-check"
+                  severity="success"
+                  size="large"
+                  [loading]="procesando()"
+                  (onClick)="confirmarAccion()">
+                </p-button>
+              } @else {
+                <p class="text-color-secondary mb-4">
+                  Al rechazar, el presupuesto será cancelado. Si desea hacer consultas, contacte al taller.
+                </p>
+                <p-button
+                  label="Confirmar Rechazo"
+                  icon="pi pi-times"
+                  severity="danger"
+                  size="large"
+                  [loading]="procesando()"
+                  (onClick)="confirmarAccion()">
+                </p-button>
+              }
+            </div>
+          }
+        </p-card>
+
+        <!-- Footer Info -->
+        <div class="text-center text-sm text-500 mt-4">
+          @if (presupuesto()!.fechaVencimiento) {
+            <p>Este link es válido hasta el {{ formatFecha(presupuesto()!.fechaVencimiento) }}.</p>
+          } @else {
+            <p>Este link es de un solo uso.</p>
+          }
+          <p>Si tiene alguna consulta, por favor responda al email recibido.</p>
+        </div>
+
+      </div>
+    }
+
+  </div>
+</div>

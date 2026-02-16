@@ -1,0 +1,26 @@
+.signature-canvas {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  cursor: crosshair;
+  display: block;
+  width: 100% !important;
+  height: 200px !important;
+  touch-action: none;
+  border: 1px dashed #ccc;
+  border-radius: 6px;
+  background: white;
+
+  &.pointer-events-none {
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+}
+
+@media (max-width: 768px) {
+  .signature-canvas {
+    height: 150px !important;
+  }
+}

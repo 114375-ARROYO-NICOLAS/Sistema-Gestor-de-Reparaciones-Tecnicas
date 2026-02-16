@@ -1,94 +1,81 @@
-<div class="client-management-container">
-  <!-- Header -->
-  <div class="flex flex-column md:flex-row justify-content-between align-items-start md:align-items-center gap-3 mb-4">
-    <div class="flex-1">
-      <h2 class="text-xl md:text-2xl font-bold text-900 m-0">Gestión de Clientes</h2>
-      <p class="text-sm md:text-base text-600 mt-1 md:mt-2">Administra la información de los clientes del sistema</p>
-    </div>
-    <p-button 
-      label="Nuevo Cliente" 
-      icon="pi pi-plus" 
-      (onClick)="openCreateDialog()"
-      severity="primary"
-      class="w-full md:w-auto"
-      [size]="isMobile() ? 'small' : undefined">
-    </p-button>
-  </div>
-
-  <!-- Stats Cards -->
-  <div class="grid mb-4">
-    <div class="col-12 md:col-6">
-      <p-card class="text-center">
-        <ng-template pTemplate="content">
-          <div class="text-3xl font-bold text-primary">{{ totalRecords() }}</div>
-          <div class="text-600">Total Clientes</div>
-        </ng-template>
-      </p-card>
-    </div>
-    <div class="col-12 md:col-6">
-      <p-card class="text-center">
-        <ng-template pTemplate="content">
-          <div class="text-3xl font-bold text-green-500">{{ activeClients() }}</div>
-          <div class="text-600">Clientes Activos</div>
-        </ng-template>
-      </p-card>
-    </div>
-  </div>
-
-  <!-- Clients Table -->
-  <p-card>
-    <ng-template pTemplate="header">
-      <div class="p-3 md:p-4">
-        <h3 class="text-lg md:text-xl font-semibold m-0 mb-3">Lista de Clientes</h3>
-        
-        <!-- Filters -->
-        <div class="grid">
-          <div class="col-12 md:col-10">
-            <label for="filterSearch" class="block text-900 font-medium mb-2 text-sm md:text-base">Búsqueda</label>
-            <input 
-              id="filterSearch"
-              type="text"
-              pInputText
-              [(ngModel)]="filterBusqueda"
-              (input)="onFilterChange()"
-              placeholder="Buscar por nombre, apellido, razón social o documento..."
-              class="w-full text-sm md:text-base">
-          </div>
-          <div class="col-12 md:col-2 flex align-items-end">
-            <p-button 
-              icon="pi pi-refresh" 
-              severity="secondary"
-              (onClick)="loadClients()"
-              [loading]="isLoading()"
-              title="Actualizar"
-              class="w-full">
-            </p-button>
-          </div>
-        </div>
+<div class="client-management-container" [class.expanded]="expanded()">
+  <div class="surface-card p-4 shadow-2 border-round">
+    <!-- Header -->
+    <div class="flex justify-content-between align-items-center mb-4">
+      <div>
+        <h2 class="text-900 font-bold text-4xl m-0 mb-2">Gestión de Clientes</h2>
+        <p class="text-600 m-0">Administra la información de los clientes del sistema</p>
       </div>
-    </ng-template>
+      <div class="flex align-items-center gap-2">
+        <p-button
+          [icon]="expanded() ? 'pi pi-arrows-h' : 'pi pi-arrows-alt'"
+          [text]="true"
+          [rounded]="true"
+          severity="secondary"
+          (onClick)="expanded.set(!expanded())"
+          [pTooltip]="expanded() ? 'Vista normal' : 'Vista expandida'"
+          tooltipPosition="top">
+        </p-button>
+        <p-button
+          label="Eliminados"
+          icon="pi pi-trash"
+          severity="danger"
+          [outlined]="true"
+          (onClick)="navigateToEliminados()">
+        </p-button>
+        <p-button
+          label="Nuevo Cliente"
+          icon="pi pi-plus"
+          (onClick)="openCreateDialog()"
+          severity="primary">
+        </p-button>
+      </div>
+    </div>
 
-    <ng-template pTemplate="content">
-        <p-table 
-          [value]="clients()" 
-          [paginator]="true" 
-          [rows]="pageSize"
-          [totalRecords]="totalRecords()"
-          [lazy]="true"
-          (onLazyLoad)="loadClients($event)"
-          [loading]="isLoading()"
-          [rowHover]="true"
-          [scrollable]="true"
-          scrollHeight="flex"
-          styleClass="p-datatable-sm"
-          responsiveLayout="scroll">
+    <!-- Search bar -->
+    <div class="flex align-items-center gap-2 mb-4">
+      <p-iconfield iconPosition="left" class="flex-1">
+        <p-inputicon styleClass="pi pi-search" />
+        <input
+          type="text"
+          pInputText
+          [(ngModel)]="filterBusqueda"
+          (input)="onFilterChange()"
+          placeholder="Buscar por nombre, apellido, razón social o documento..."
+          class="w-full">
+      </p-iconfield>
+      <p-button
+        icon="pi pi-refresh"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        (onClick)="loadClients()"
+        [loading]="isLoading()"
+        pTooltip="Actualizar"
+        tooltipPosition="top">
+      </p-button>
+    </div>
+
+    <!-- Table -->
+    <p-table
+      [value]="clients()"
+      [paginator]="true"
+      [rows]="pageSize"
+      [totalRecords]="totalRecords()"
+      [lazy]="true"
+      (onLazyLoad)="loadClients($event)"
+      [loading]="isLoading()"
+      [rowHover]="true"
+      [scrollable]="true"
+      scrollHeight="flex"
+      styleClass="p-datatable-sm p-datatable-gridlines"
+      responsiveLayout="scroll">
           
           <ng-template pTemplate="header">
             <tr>
               <th style="min-width: 200px;">Nombre Completo</th>
               <th style="min-width: 120px;">Documento</th>
               <th style="min-width: 200px;">Dirección Principal</th>
-              <th style="min-width: 100px;">Estado</th>
               <th class="text-center" style="min-width: 120px;">Acciones</th>
             </tr>
           </ng-template>
@@ -106,7 +93,7 @@
                 @if (client.direccionPrincipal) {
                   <div class="flex align-items-center gap-2">
                     <i class="pi pi-map-marker text-primary"></i>
-                    <span 
+                    <span
                       class="text-primary cursor-pointer hover:underline"
                       (click)="openAddressInMaps(client.direccionPrincipal); $event.stopPropagation()"
                       title="Ver en Google Maps">
@@ -117,42 +104,24 @@
                   <span class="text-600">Sin dirección</span>
                 }
               </td>
-              <td>
-                <p-tag 
-                  [value]="clientService.getStatusDisplayName(client.activo ?? true)"
-                  [severity]="clientService.getStatusColor(client.activo ?? true)">
-                </p-tag>
-              </td>
               <td (click)="$event.stopPropagation()">
                 <div class="flex gap-1 justify-content-center">
-                  <p-button 
-                    icon="pi pi-pencil" 
+                  <p-button
+                    icon="pi pi-pencil"
                     severity="secondary"
                     size="small"
                     [text]="true"
                     (onClick)="openEditDialog(client)"
                     title="Editar">
                   </p-button>
-                  
-                  @if (client.activo ?? true) {
-                    <p-button 
-                      icon="pi pi-ban" 
-                      severity="secondary"
-                      size="small"
-                      [text]="true"
-                      (onClick)="deactivateClient(client)"
-                      title="Dar de baja">
-                    </p-button>
-                  } @else {
-                    <p-button 
-                      icon="pi pi-check" 
-                      severity="success"
-                      size="small"
-                      [text]="true"
-                      (onClick)="reactivateClient(client)"
-                      title="Reactivar">
-                    </p-button>
-                  }
+                  <p-button
+                    icon="pi pi-trash"
+                    severity="danger"
+                    size="small"
+                    [text]="true"
+                    (onClick)="deactivateClient(client)"
+                    title="Eliminar">
+                  </p-button>
                 </div>
               </td>
             </tr>
@@ -160,7 +129,7 @@
 
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="5" class="text-center p-4">
+              <td colspan="4" class="text-center p-4">
                 <div class="flex flex-column align-items-center gap-3">
                   <i class="pi pi-users text-4xl text-400"></i>
                   <div>
@@ -177,11 +146,11 @@
               </td>
             </tr>
           </ng-template>
-        </p-table>
-    </ng-template>
-  </p-card>
+    </p-table>
+  </div>
+</div>
 
-  <!-- Create/Edit Client Dialog -->
+<!-- Create/Edit Client Dialog -->
   <p-dialog 
     [header]="isEditMode() ? 'Editar Cliente' : 'Crear Cliente'"
     [visible]="showClientDialog()"
@@ -223,39 +192,16 @@
           </p-select>
         </div>
 
-        <!-- Document Number -->
-        <div class="col-12">
-          <label for="documento" class="block text-900 font-medium mb-2">Número de Documento *</label>
-          <input 
-            id="documento"
-            type="text"
-            pInputText
-            formControlName="documento"
-            placeholder="Ingrese el número de documento"
-            class="w-full">
-        </div>
-
-        <!-- Name fields (for natural person) -->
+        <!-- Document Number and Sex -->
         @if (isNaturalPerson()) {
           <div class="col-12 md:col-6">
-            <label for="nombre" class="block text-900 font-medium mb-2">Nombre *</label>
-            <input 
-              id="nombre"
+            <label for="documento" class="block text-900 font-medium mb-2">Número de Documento *</label>
+            <input
+              id="documento"
               type="text"
               pInputText
-              formControlName="nombre"
-              placeholder="Ingrese el nombre"
-              class="w-full">
-          </div>
-
-          <div class="col-12 md:col-6">
-            <label for="apellido" class="block text-900 font-medium mb-2">Apellido *</label>
-            <input 
-              id="apellido"
-              type="text"
-              pInputText
-              formControlName="apellido"
-              placeholder="Ingrese el apellido"
+              formControlName="documento"
+              placeholder="Ingrese el número de documento"
               class="w-full">
           </div>
 
@@ -268,6 +214,42 @@
               placeholder="Seleccionar sexo"
               class="w-full">
             </p-select>
+          </div>
+        } @else {
+          <div class="col-12">
+            <label for="documento" class="block text-900 font-medium mb-2">Número de Documento *</label>
+            <input
+              id="documento"
+              type="text"
+              pInputText
+              formControlName="documento"
+              placeholder="Ingrese el número de documento"
+              class="w-full">
+          </div>
+        }
+
+        <!-- Name fields (for natural person) -->
+        @if (isNaturalPerson()) {
+          <div class="col-12 md:col-6">
+            <label for="nombre" class="block text-900 font-medium mb-2">Nombre *</label>
+            <input
+              id="nombre"
+              type="text"
+              pInputText
+              formControlName="nombre"
+              placeholder="Ingrese el nombre"
+              class="w-full">
+          </div>
+
+          <div class="col-12 md:col-6">
+            <label for="apellido" class="block text-900 font-medium mb-2">Apellido *</label>
+            <input
+              id="apellido"
+              type="text"
+              pInputText
+              formControlName="apellido"
+              placeholder="Ingrese el apellido"
+              class="w-full">
           </div>
         }
 
@@ -309,17 +291,30 @@
                   <label for="addressAutocomplete" class="block text-900 font-medium mb-2">
                     Buscar dirección
                   </label>
-                  <input
-                    #addressInput
-                    id="addressAutocomplete"
-                    type="text"
-                    class="w-full p-3 border-1 surface-border border-round"
+                  <p-autocomplete
+                    [(ngModel)]="selectedAddressSuggestion"
+                    [ngModelOptions]="{standalone: true}"
+                    [suggestions]="addressSuggestions()"
+                    (completeMethod)="searchAddress($event)"
+                    (onSelect)="onAddressSelected($event)"
+                    field="description"
+                    [minLength]="3"
                     placeholder="Ingresa una dirección..."
-                    autocomplete="off"
-                  />
+                    [showEmptyMessage]="true"
+                    emptyMessage="Escribe al menos 3 caracteres para buscar"
+                    styleClass="w-full"
+                    inputStyleClass="w-full"
+                    [dropdown]="false">
+                    <ng-template let-suggestion pTemplate="item">
+                      <div class="flex align-items-center gap-2 py-2">
+                        <i class="pi pi-map-marker text-primary"></i>
+                        <span>{{ suggestion.description }}</span>
+                      </div>
+                    </ng-template>
+                  </p-autocomplete>
                   <small class="text-600 block mt-2">
                     <i class="pi pi-info-circle mr-1"></i>
-                    <strong>IMPORTANTE:</strong> Escribe y luego <strong>selecciona una opción</strong> del desplegable que aparece debajo.
+                    <strong>IMPORTANTE:</strong> Escribe y luego <strong>selecciona una opción</strong> del desplegable.
                   </small>
                 </div>                
                 <div class="col-12 md:col-6">
@@ -465,6 +460,107 @@
             </div>
           }
         </div>
+
+        <!-- Contacts Section -->
+        <div class="col-12">
+          <p-divider></p-divider>
+          <div class="flex justify-content-between align-items-center mb-3">
+            <h4 class="text-lg font-semibold text-900 m-0">Contactos</h4>
+            @if (!isAddingContacto()) {
+              <p-button
+                label="Agregar Contacto"
+                icon="pi pi-plus"
+                size="small"
+                [outlined]="true"
+                (onClick)="toggleAddingContacto()">
+              </p-button>
+            }
+          </div>
+
+          <!-- Add Contact Form -->
+          @if (isAddingContacto()) {
+            <div class="surface-50 border-round p-3 mb-3">
+              <div class="grid">
+                <div class="col-12 md:col-6">
+                  <label for="tipoContacto" class="block text-900 font-medium mb-2">Tipo de Contacto *</label>
+                  <p-select
+                    id="tipoContacto"
+                    [(ngModel)]="currentContacto().tipoContactoId"
+                    [ngModelOptions]="{standalone: true}"
+                    [options]="tiposContacto()"
+                    optionLabel="descripcion"
+                    optionValue="id"
+                    placeholder="Seleccionar tipo"
+                    class="w-full">
+                  </p-select>
+                </div>
+
+                <div class="col-12 md:col-6">
+                  <label for="contactoDescripcion" class="block text-900 font-medium mb-2">Valor *</label>
+                  <input
+                    id="contactoDescripcion"
+                    type="text"
+                    pInputText
+                    [(ngModel)]="currentContacto().descripcion"
+                    [ngModelOptions]="{standalone: true}"
+                    placeholder="Ej: ejemplo@email.com, +54 9 11 1234-5678"
+                    class="w-full">
+                </div>
+
+                <div class="col-12">
+                  <div class="flex gap-2 justify-content-end">
+                    <p-button
+                      label="Cancelar"
+                      severity="secondary"
+                      [outlined]="true"
+                      size="small"
+                      (onClick)="toggleAddingContacto()">
+                    </p-button>
+                    <p-button
+                      label="Agregar"
+                      icon="pi pi-plus"
+                      size="small"
+                      (onClick)="addContacto()">
+                    </p-button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+
+          <!-- Contacts List -->
+          @if (contactos().length > 0) {
+            <div class="flex flex-column gap-2">
+              @for (contacto of contactos(); track $index) {
+                <div class="surface-50 border-round p-3">
+                  <div class="flex justify-content-between align-items-center">
+                    <div class="flex-1">
+                      <div class="flex align-items-center gap-2">
+                        <i class="pi pi-envelope text-primary"></i>
+                        <span class="font-medium">{{ getTipoContactoName(contacto.tipoContactoId) }}:</span>
+                        <span class="text-700">{{ contacto.descripcion }}</span>
+                      </div>
+                    </div>
+
+                    <p-button
+                      icon="pi pi-trash"
+                      severity="danger"
+                      size="small"
+                      [text]="true"
+                      (onClick)="removeContacto($index)"
+                      title="Eliminar">
+                    </p-button>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <div class="text-center text-600 py-3">
+              <i class="pi pi-envelope text-2xl mb-2"></i>
+              <p class="m-0">No hay contactos agregados</p>
+            </div>
+          }
+        </div>
       </div>
     </form>
 
@@ -485,8 +581,6 @@
       </div>
     </ng-template>
   </p-dialog>
-
-</div>
 
 <!-- Toast and Confirmation Dialog -->
 <p-toast></p-toast>

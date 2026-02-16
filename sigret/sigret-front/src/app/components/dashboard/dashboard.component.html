@@ -1,100 +1,304 @@
-<div class="flex flex-column gap-6">
+<div class="flex flex-column gap-4">
   <!-- Header -->
-  <div class="text-center">
-    <h1 class="text-4xl font-bold text-900 mb-2">Dashboard</h1>
-    <p class="text-lg text-600">Bienvenido al Sistema Gestor de Reparaciones Técnicas</p>
+  <div class="flex justify-content-between align-items-center flex-wrap gap-3">
+    <div>
+      <h1 class="text-3xl font-bold text-900 mb-1">Dashboard</h1>
+      <p class="text-600 m-0">Resumen general del sistema</p>
+    </div>
+    <p-button
+      icon="pi pi-refresh"
+      [loading]="loading()"
+      label="Actualizar"
+      severity="secondary"
+      (click)="cargarEstadisticas()"
+      pTooltip="Actualizar estadísticas"
+    />
   </div>
 
-  <!-- Stats Cards -->
-  <div class="grid">
-    <div class="col-12 md:col-6 lg:col-3">
-      <p-card class="surface-card shadow-2 border-round">
-        <div class="flex align-items-center justify-content-center bg-primary border-round mb-4" style="width: 3rem; height: 3rem;">
-          <i class="pi pi-wrench text-primary-50 text-xl"></i>
-        </div>
-        <div class="text-3xl font-bold text-900 mb-1">24</div>
-        <div class="text-sm font-medium text-600">Reparaciones Activas</div>
-        <div class="text-xs text-500">En Proceso</div>
-      </p-card>
-    </div>
-
-    <div class="col-12 md:col-6 lg:col-3">
-      <p-card class="surface-card shadow-2 border-round">
-        <div class="flex align-items-center justify-content-center bg-green-500 border-round mb-4" style="width: 3rem; height: 3rem;">
-          <i class="pi pi-users text-white text-xl"></i>
-        </div>
-        <div class="text-3xl font-bold text-900 mb-1">156</div>
-        <div class="text-sm font-medium text-600">Clientes</div>
-        <div class="text-xs text-500">Registrados</div>
-      </p-card>
-    </div>
-
-    <div class="col-12 md:col-6 lg:col-3">
-      <p-card class="surface-card shadow-2 border-round">
-        <div class="flex align-items-center justify-content-center bg-orange-500 border-round mb-4" style="width: 3rem; height: 3rem;">
-          <i class="pi pi-calendar text-white text-xl"></i>
-        </div>
-        <div class="text-3xl font-bold text-900 mb-1">8</div>
-        <div class="text-sm font-medium text-600">Citas Hoy</div>
-        <div class="text-xs text-500">Programadas</div>
-      </p-card>
-    </div>
-
-    <div class="col-12 md:col-6 lg:col-3">
-      <p-card class="surface-card shadow-2 border-round">
-        <div class="flex align-items-center justify-content-center bg-purple-500 border-round mb-4" style="width: 3rem; height: 3rem;">
-          <i class="pi pi-box text-white text-xl"></i>
-        </div>
-        <div class="text-3xl font-bold text-900 mb-1">342</div>
-        <div class="text-sm font-medium text-600">Inventario</div>
-        <div class="text-xs text-500">Productos</div>
-      </p-card>
+  <!-- Date Filter -->
+  <div class="surface-card shadow-1 border-round border-1 surface-border p-3">
+    <div class="flex align-items-center gap-3 flex-wrap">
+      <i class="pi pi-filter text-600"></i>
+      <span class="text-sm font-medium text-600">Filtrar por fecha:</span>
+      <p-datepicker
+        [(ngModel)]="fechaDesde"
+        placeholder="Desde"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        [showClear]="true"
+        (onSelect)="onFechaChange()"
+        (onClear)="onFechaChange()"
+      />
+      <p-datepicker
+        [(ngModel)]="fechaHasta"
+        placeholder="Hasta"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        [showClear]="true"
+        [minDate]="fechaDesde() ?? undefined"
+        (onSelect)="onFechaChange()"
+        (onClear)="onFechaChange()"
+      />
+      @if (tieneFiltroDeFechas()) {
+        <p-button
+          icon="pi pi-times"
+          label="Limpiar"
+          severity="danger"
+          [text]="true"
+          size="small"
+          (click)="limpiarFiltroFechas()"
+        />
+      }
     </div>
   </div>
 
-  <!-- Quick Actions -->
-  <p-card class="surface-card shadow-2 border-round">
-    <ng-template pTemplate="header">
-      <div class="flex align-items-center gap-3">
-        <div class="flex align-items-center justify-content-center bg-primary-100 border-round" style="width: 2rem; height: 2rem;">
-          <i class="pi pi-bolt text-primary"></i>
-        </div>
-        <h2 class="text-xl font-semibold text-900 m-0">Acciones Rápidas</h2>
+  <!-- Error State -->
+  @if (error()) {
+    <div class="surface-card shadow-1 border-round border-1 surface-border p-5">
+      <div class="flex flex-column align-items-center gap-3">
+        <i class="pi pi-exclamation-triangle text-5xl text-orange-500"></i>
+        <p class="text-600 text-lg m-0">{{ error() }}</p>
+        <p-button label="Reintentar" icon="pi pi-refresh" (click)="cargarEstadisticas()" />
       </div>
-    </ng-template>
-    
+    </div>
+  }
+
+  <!-- Loading Skeleton -->
+  @if (loading() && !estadisticas()) {
     <div class="grid">
-      <div class="col-12 md:col-6 lg:col-3">
-        <p-button 
-          label="Nueva Reparación" 
-          icon="pi pi-plus" 
-          class="w-full">
-        </p-button>
+      @for (item of skeletonCards; track item) {
+        <div class="col-12 sm:col-6 lg:col">
+          <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+            <div class="flex align-items-center gap-3">
+              <p-skeleton shape="circle" width="3rem" height="3rem" />
+              <div class="flex-1">
+                <p-skeleton width="3rem" height="2rem" class="mb-2" />
+                <p-skeleton width="8rem" height="1rem" />
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+    <div class="grid">
+      @for (item of skeletonCharts; track item) {
+        <div class="col-12 lg:col-6">
+          <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+            <p-skeleton width="12rem" height="1.25rem" class="mb-3" />
+            <p-skeleton width="100%" height="18rem" />
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- Dashboard Content -->
+  @if (estadisticas()) {
+    <!-- KPI Cards -->
+    <div class="grid">
+      <!-- Servicios Activos -->
+      <div class="col-12 sm:col-6 lg:col">
+        <div
+          class="surface-card shadow-1 border-round border-1 surface-border p-4 kpi-card"
+          (click)="navegarServicios()"
+          (keydown.enter)="navegarServicios()"
+          tabindex="0"
+          role="button"
+          aria-label="Ver servicios activos"
+        >
+          <div class="flex align-items-center gap-3">
+            <div
+              class="flex align-items-center justify-content-center border-round"
+              style="width: 3rem; height: 3rem; background-color: var(--p-primary-color)"
+            >
+              <i class="pi pi-wrench text-white text-xl"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-3xl font-bold text-900">{{ serviciosActivos() }}</div>
+              <div class="text-sm font-medium text-600">Servicios Activos</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col-12 md:col-6 lg:col-3">
-        <p-button 
-          label="Registrar Cliente" 
-          icon="pi pi-user-plus" 
-          severity="secondary"
-          class="w-full">
-        </p-button>
+
+      <!-- Presupuestos Pendientes -->
+      <div class="col-12 sm:col-6 lg:col">
+        <div
+          class="surface-card shadow-1 border-round border-1 surface-border p-4 kpi-card"
+          (click)="navegarPresupuestos()"
+          (keydown.enter)="navegarPresupuestos()"
+          tabindex="0"
+          role="button"
+          aria-label="Ver presupuestos pendientes"
+        >
+          <div class="flex align-items-center gap-3">
+            <div
+              class="flex align-items-center justify-content-center border-round"
+              style="width: 3rem; height: 3rem; background-color: #FFA726"
+            >
+              <i class="pi pi-file-edit text-white text-xl"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-3xl font-bold text-900">{{ presupuestosPendientes() }}</div>
+              <div class="text-sm font-medium text-600">Presupuestos Pendientes</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col-12 md:col-6 lg:col-3">
-        <p-button 
-          label="Ver Inventario" 
-          icon="pi pi-box" 
-          severity="help"
-          class="w-full">
-        </p-button>
+
+      <!-- Ordenes en Progreso -->
+      <div class="col-12 sm:col-6 lg:col">
+        <div
+          class="surface-card shadow-1 border-round border-1 surface-border p-4 kpi-card"
+          (click)="navegarOrdenes()"
+          (keydown.enter)="navegarOrdenes()"
+          tabindex="0"
+          role="button"
+          aria-label="Ver órdenes en progreso"
+        >
+          <div class="flex align-items-center gap-3">
+            <div
+              class="flex align-items-center justify-content-center border-round"
+              style="width: 3rem; height: 3rem; background-color: #42A5F5"
+            >
+              <i class="pi pi-cog text-white text-xl"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-3xl font-bold text-900">{{ ordenesEnProgreso() }}</div>
+              <div class="text-sm font-medium text-600">Órdenes en Progreso</div>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="col-12 md:col-6 lg:col-3">
-        <p-button 
-          label="Calendario" 
-          icon="pi pi-calendar" 
-          severity="info"
-          class="w-full">
-        </p-button>
+
+      <!-- Tasa Aprobacion -->
+      <div class="col-12 sm:col-6 lg:col">
+        <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+          <div class="flex align-items-center gap-3">
+            <div
+              class="flex align-items-center justify-content-center border-round"
+              style="width: 3rem; height: 3rem; background-color: #66BB6A"
+            >
+              <i class="pi pi-check-circle text-white text-xl"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-3xl font-bold text-900">{{ tasaAprobacion() }}%</div>
+              <div class="text-sm font-medium text-600">Tasa de Aprobación</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Servicios Completados -->
+      <div class="col-12 sm:col-6 lg:col">
+        <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+          <div class="flex align-items-center gap-3">
+            <div
+              class="flex align-items-center justify-content-center border-round"
+              style="width: 3rem; height: 3rem; background-color: #AB47BC"
+            >
+              <i class="pi pi-calendar-clock text-white text-xl"></i>
+            </div>
+            <div class="flex-1">
+              <div class="text-3xl font-bold text-900">{{ serviciosCompletadosMes() }}</div>
+              <div class="text-sm font-medium text-600">{{ labelCompletados() }}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-  </p-card>
+
+    <!-- Charts Row 1 -->
+    <div class="grid">
+      <!-- Servicios por Estado - Doughnut -->
+      <div class="col-12 lg:col-6">
+        <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+          <h3 class="text-lg font-semibold text-900 mt-0 mb-3">Servicios por Estado</h3>
+          <div class="chart-container">
+            <p-chart
+              type="doughnut"
+              [data]="serviciosDoughnutData()"
+              [options]="chartOptions()"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Presupuestos por Estado - Bar -->
+      <div class="col-12 lg:col-6">
+        <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+          <h3 class="text-lg font-semibold text-900 mt-0 mb-3">Presupuestos por Estado</h3>
+          <div class="chart-container">
+            <p-chart
+              type="bar"
+              [data]="presupuestosBarData()"
+              [options]="barChartOptions()"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="grid">
+      <!-- Tendencia Mensual - Line -->
+      <div class="col-12 lg:col-6">
+        <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+          <h3 class="text-lg font-semibold text-900 mt-0 mb-3">Tendencia Mensual de Servicios</h3>
+          <div class="chart-container">
+            <p-chart
+              type="line"
+              [data]="tendenciaLineData()"
+              [options]="barChartOptions()"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Ordenes por Estado - Pie -->
+      <div class="col-12 lg:col-6">
+        <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+          <h3 class="text-lg font-semibold text-900 mt-0 mb-3">Órdenes de Trabajo por Estado</h3>
+          <div class="chart-container">
+            <p-chart
+              type="pie"
+              [data]="ordenesPieData()"
+              [options]="chartOptions()"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 3 -->
+    <div class="grid">
+      <!-- Ordenes por Empleado - Horizontal Bar -->
+      <div class="col-12 lg:col-6">
+        <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+          <h3 class="text-lg font-semibold text-900 mt-0 mb-3">Órdenes de Trabajo por Empleado</h3>
+          <div class="chart-container">
+            <p-chart
+              type="bar"
+              [data]="ordenesPorEmpleadoData()"
+              [options]="horizontalBarOptions()"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Garantias por Tipo de Equipo - Bar -->
+      <div class="col-12 lg:col-6">
+        <div class="surface-card shadow-1 border-round border-1 surface-border p-4">
+          <h3 class="text-lg font-semibold text-900 mt-0 mb-3">Garantías por Tipo de Equipo</h3>
+          <div class="chart-container">
+            <p-chart
+              type="bar"
+              [data]="garantiasPorTipoData()"
+              [options]="barChartOptions()"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  }
 </div>

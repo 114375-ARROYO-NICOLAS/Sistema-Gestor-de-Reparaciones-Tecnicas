@@ -1,0 +1,94 @@
+<div class="p-4">
+  <div class="flex align-items-center gap-3 mb-4">
+    <h2 class="text-3xl font-semibold m-0 text-color">
+      <i class="pi pi-trash mr-2"></i>Servicios Eliminados
+    </h2>
+  </div>
+
+  @if (loading()) {
+    <div class="flex flex-column align-items-center justify-content-center py-8 gap-3">
+      <p-progressSpinner
+        [style]="{ width: '50px', height: '50px' }"
+        strokeWidth="4"
+        animationDuration="1s">
+      </p-progressSpinner>
+      <p class="text-lg text-color-secondary m-0">Cargando servicios eliminados...</p>
+    </div>
+  } @else {
+    <p-table
+      [value]="servicios()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[10, 25, 50]"
+      [showCurrentPageReport]="true"
+      currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} servicios"
+      [sortField]="'fechaCreacion'"
+      [sortOrder]="-1"
+      styleClass="p-datatable-striped p-datatable-hoverable-rows">
+      <ng-template #header>
+        <tr>
+          <th pSortableColumn="numeroServicio">Nº Servicio <p-sortIcon field="numeroServicio" /></th>
+          <th pSortableColumn="clienteNombre">Cliente <p-sortIcon field="clienteNombre" /></th>
+          <th pSortableColumn="equipoDescripcion">Equipo <p-sortIcon field="equipoDescripcion" /></th>
+          <th pSortableColumn="estado">Estado <p-sortIcon field="estado" /></th>
+          <th pSortableColumn="fechaRecepcion">Fecha Recepción <p-sortIcon field="fechaRecepcion" /></th>
+          <th>Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template #body let-servicio>
+        <tr>
+          <td>
+            <span class="font-semibold text-primary">{{ servicio.numeroServicio }}</span>
+          </td>
+          <td>{{ servicio.clienteNombre }}</td>
+          <td>
+            <div>{{ servicio.equipoDescripcion }}</div>
+            @if (servicio.equipoNumeroSerie) {
+              <small class="text-color-secondary">S/N: {{ servicio.equipoNumeroSerie }}</small>
+            }
+          </td>
+          <td>
+            <p-tag
+              [value]="getEstadoLabel(servicio.estado)"
+              [severity]="getEstadoSeverity(servicio.estado)">
+            </p-tag>
+          </td>
+          <td>{{ formatDate(servicio.fechaRecepcion) }}</td>
+          <td>
+            <div class="flex gap-2">
+              <p-button
+                icon="pi pi-refresh"
+                [rounded]="true"
+                [text]="true"
+                severity="success"
+                pTooltip="Restaurar"
+                [loading]="restaurando() === servicio.id"
+                (onClick)="confirmarRestauracion(servicio)">
+              </p-button>
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true"
+                [text]="true"
+                severity="info"
+                pTooltip="Ver detalle"
+                (onClick)="verDetalle(servicio.id)">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template #emptymessage>
+        <tr>
+          <td colspan="6">
+            <div class="flex flex-column align-items-center justify-content-center py-6 gap-2">
+              <i class="pi pi-check-circle text-4xl text-color-secondary"></i>
+              <p class="text-lg text-color-secondary m-0">No hay servicios eliminados</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  }
+
+  <p-confirmDialog />
+</div>

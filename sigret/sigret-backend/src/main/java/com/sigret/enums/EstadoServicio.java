@@ -12,7 +12,8 @@ public enum EstadoServicio {
     TERMINADO("Terminado"),
     RECHAZADO("Rechazado"),
     GARANTIA_SIN_REPARACION("Garantía Sin Reparación"),
-    GARANTIA_RECHAZADA("Garantía Rechazada");
+    GARANTIA_RECHAZADA("Garantía Rechazada"),
+    FINALIZADO("Finalizado");
 
     private final String descripcion;
 

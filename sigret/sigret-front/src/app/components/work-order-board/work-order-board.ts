@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Observable, Subscription } from 'rxjs';
 import { CdkDragDrop, CdkDrag, CdkDropList, CdkDropListGroup, transferArrayItem } from '@angular/cdk/drag-drop';
 import { OrdenTrabajoService } from '../../services/orden-trabajo.service';
 import { WebSocketService } from '../../services/websocket.service';
@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
+import { Tag } from 'primeng/tag';
 
 interface Column {
   name: string;
@@ -27,6 +28,7 @@ interface Column {
     ProgressSpinnerModule,
     BadgeModule,
     CardModule,
+    Tag,
     CdkDrag,
     CdkDropList,
     CdkDropListGroup
@@ -262,8 +264,17 @@ export class WorkOrderBoardComponent implements OnInit, OnDestroy {
       );
     }
 
-    // Update state in backend
-    this.orderService.cambiarEstadoOrdenTrabajo(order.id, targetState).subscribe({
+    // Update state in backend using specialized endpoints when applicable
+    let request$: Observable<any>;
+    if (targetState === 'EN_PROGRESO') {
+      request$ = this.orderService.iniciarOrdenTrabajo(order.id);
+    } else if (targetState === 'TERMINADA') {
+      request$ = this.orderService.finalizarOrdenTrabajo(order.id);
+    } else {
+      request$ = this.orderService.cambiarEstadoOrdenTrabajo(order.id, targetState);
+    }
+
+    request$.subscribe({
       next: () => {
         order.estado = targetState;
         this.messageService.add({
@@ -300,5 +311,13 @@ export class WorkOrderBoardComponent implements OnInit, OnDestroy {
 
   refresh(): void {
     this.loadOrders();
+  }
+
+  viewOrderDetail(orderId: number, event?: MouseEvent): void {
+    // Prevent navigation if we're dragging
+    if (event && (event.target as HTMLElement).closest('.cdk-drag-preview')) {
+      return;
+    }
+    this.router.navigate(['/ordenes-trabajo', orderId]);
   }
 }

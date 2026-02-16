@@ -1,10 +1,13 @@
 package com.sigret.controllers.presupuesto;
 
+import com.sigret.dtos.presupuesto.EnvioPresupuestoDto;
+import com.sigret.dtos.presupuesto.PresupuestoActualizarReenviarDto;
 import com.sigret.dtos.presupuesto.PresupuestoCreateDto;
 import com.sigret.dtos.presupuesto.PresupuestoListDto;
 import com.sigret.dtos.presupuesto.PresupuestoResponseDto;
 import com.sigret.dtos.presupuesto.PresupuestoUpdateDto;
 import com.sigret.enums.EstadoPresupuesto;
+import com.sigret.services.EmailService;
 import com.sigret.services.PresupuestoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -33,6 +36,9 @@ public class PresupuestoController {
 
     @Autowired
     private PresupuestoService presupuestoService;
+
+    @Autowired
+    private EmailService emailService;
 
     @PostMapping
     @Operation(summary = "Crear presupuesto", description = "Crea un nuevo presupuesto en el sistema")
@@ -185,6 +191,66 @@ public class PresupuestoController {
     public ResponseEntity<PresupuestoResponseDto> rechazarPresupuesto(
             @Parameter(description = "ID del presupuesto") @PathVariable Long id) {
         PresupuestoResponseDto presupuestoActualizado = presupuestoService.rechazarPresupuesto(id);
+        return ResponseEntity.ok(presupuestoActualizado);
+    }
+
+    @PostMapping("/{id}/crear-orden-trabajo")
+    @Operation(summary = "Crear orden de trabajo", description = "Crea una orden de trabajo desde un presupuesto aprobado")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Orden de trabajo creada exitosamente"),
+            @ApiResponse(responseCode = "400", description = "El presupuesto no está aprobado o ya tiene una orden de trabajo"),
+            @ApiResponse(responseCode = "404", description = "Presupuesto no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<?> crearOrdenDeTrabajo(
+            @Parameter(description = "ID del presupuesto") @PathVariable Long id) {
+        try {
+            Long ordenTrabajoId = presupuestoService.crearOrdenDeTrabajo(id);
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(java.util.Map.of(
+                            "message", "Orden de trabajo creada exitosamente",
+                            "ordenTrabajoId", ordenTrabajoId
+                    ));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest()
+                    .body(java.util.Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/{id}/enviar")
+    @Operation(summary = "Enviar presupuesto por email", description = "Envía el presupuesto al cliente por email con links de aprobación/rechazo")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Presupuesto enviado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos de envío inválidos"),
+            @ApiResponse(responseCode = "404", description = "Presupuesto no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<PresupuestoResponseDto> enviarPresupuesto(
+            @Parameter(description = "ID del presupuesto") @PathVariable Long id,
+            @Valid @RequestBody EnvioPresupuestoDto envioDto) {
+        emailService.enviarPresupuestoACliente(
+                id,
+                envioDto.getMostrarOriginal(),
+                envioDto.getMostrarAlternativo(),
+                envioDto.getMensajeAdicional()
+        );
+        // Cambiar estado a ENVIADO después de enviar el email exitosamente
+        PresupuestoResponseDto presupuesto = presupuestoService.cambiarEstadoPresupuesto(id, EstadoPresupuesto.ENVIADO);
+        return ResponseEntity.ok(presupuesto);
+    }
+
+    @PutMapping("/{id}/actualizar-y-reenviar")
+    @Operation(summary = "Actualizar y reenviar presupuesto", description = "Actualiza fecha de vencimiento, precios e items de un presupuesto enviado, y opcionalmente lo reenvía al cliente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Presupuesto actualizado exitosamente"),
+            @ApiResponse(responseCode = "400", description = "Datos inválidos o presupuesto no está en estado ENVIADO"),
+            @ApiResponse(responseCode = "404", description = "Presupuesto no encontrado")
+    })
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    public ResponseEntity<PresupuestoResponseDto> actualizarYReenviar(
+            @Parameter(description = "ID del presupuesto") @PathVariable Long id,
+            @Valid @RequestBody PresupuestoActualizarReenviarDto dto) {
+        PresupuestoResponseDto presupuestoActualizado = presupuestoService.actualizarYReenviar(id, dto);
         return ResponseEntity.ok(presupuestoActualizado);
     }
 

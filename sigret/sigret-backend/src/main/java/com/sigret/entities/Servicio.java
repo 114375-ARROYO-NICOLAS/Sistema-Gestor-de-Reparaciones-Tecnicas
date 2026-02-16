@@ -57,6 +57,12 @@ public class Servicio {
     @Column(name = "firma_conformidad", columnDefinition = "LONGTEXT")
     private String firmaConformidad; // Base64 de la firma
 
+    @Column(name = "falla_reportada", columnDefinition = "TEXT")
+    private String fallaReportada; // Problema/falla reportada por el cliente
+
+    @Column(name = "observaciones", columnDefinition = "TEXT")
+    private String observaciones; // Observaciones del técnico/empleado
+
     // CAMPOS DE GARANTÍA
     @Column(name = "es_garantia", nullable = false)
     private Boolean esGarantia = false;
@@ -109,6 +115,9 @@ public class Servicio {
 
     @Column(name = "fecha_devolucion_real")
     private LocalDate fechaDevolucionReal;
+
+    @Column(name = "activo", nullable = false)
+    private Boolean activo = true;
 
     // RELACIONES INVERSAS
     @OneToMany(mappedBy = "servicio", cascade = CascadeType.ALL, fetch = FetchType.LAZY)

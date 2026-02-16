@@ -1,5 +1,6 @@
 package com.sigret.services;
 
+import com.sigret.dtos.presupuesto.PresupuestoActualizarReenviarDto;
 import com.sigret.dtos.presupuesto.PresupuestoCreateDto;
 import com.sigret.dtos.presupuesto.PresupuestoListDto;
 import com.sigret.dtos.presupuesto.PresupuestoResponseDto;
@@ -67,12 +68,22 @@ public interface PresupuestoService {
      * Aprobar presupuesto
      */
     PresupuestoResponseDto aprobarPresupuesto(Long id);
+
+    /**
+     * Aprobar presupuesto con tipo de precio específico
+     */
+    PresupuestoResponseDto aprobarPresupuesto(Long id, String tipoPrecio);
     
     /**
      * Rechazar presupuesto
      */
     PresupuestoResponseDto rechazarPresupuesto(Long id);
-    
+
+    /**
+     * Crear orden de trabajo desde un presupuesto aprobado
+     */
+    Long crearOrdenDeTrabajo(Long presupuestoId);
+
     /**
      * Eliminar un presupuesto
      */
@@ -82,4 +93,9 @@ public interface PresupuestoService {
      * Generar número de presupuesto automático
      */
     String generarNumeroPresupuesto();
+
+    /**
+     * Actualizar presupuesto enviado (fecha, precios) y opcionalmente reenviar al cliente
+     */
+    PresupuestoResponseDto actualizarYReenviar(Long id, PresupuestoActualizarReenviarDto dto);
 }

@@ -59,77 +59,104 @@
   @if (!loading() && !error()) {
     <div cdkDropListGroup class="flex gap-3 overflow-x-auto pb-3" style="min-height: calc(100vh - 16rem);">
       @for (column of columns; track column.state) {
-        <div
-          cdkDropList
-          [cdkDropListData]="column.budgets"
-          [id]="'column-' + column.state"
-          (cdkDropListDropped)="dropBudget($event, column)"
-          class="flex flex-column border-round surface-card shadow-2"
-          style="flex: 0 0 380px; border-top: 4px solid"
-          [style.border-top-color]="column.color">
-
-          <!-- Column Header -->
-          <div class="flex justify-content-between align-items-center p-3 border-round-top text-white"
-               [style.background-color]="column.color">
-            <h5 class="m-0 font-semibold">{{ column.name }}</h5>
-            <p-badge [value]="column.budgets.length.toString()"
-                     [style]="{ 'background-color': 'rgba(255, 255, 255, 0.25)' }">
-            </p-badge>
+        <div class="flex-shrink-0" style="width: 260px;">
+          <!-- Header de columna -->
+          <div class="border-round-top p-3 border-1 border-bottom-none surface-100"
+               [ngClass]="{
+                 'border-orange-200': column.state === 'PENDIENTE',
+                 'border-blue-200': column.state === 'EN_CURSO',
+                 'border-purple-200': column.state === 'LISTO',
+                 'border-orange-300': column.state === 'ENVIADO',
+                 'border-green-200': column.state === 'APROBADO',
+                 'border-red-200': column.state === 'RECHAZADO'
+               }">
+            <div class="flex align-items-center justify-content-between">
+              <h3 class="text-base font-semibold m-0"
+                  [ngClass]="{
+                    'text-orange-600': column.state === 'PENDIENTE',
+                    'text-blue-600': column.state === 'EN_CURSO',
+                    'text-purple-600': column.state === 'LISTO',
+                    'text-orange-700': column.state === 'ENVIADO',
+                    'text-green-600': column.state === 'APROBADO',
+                    'text-red-600': column.state === 'RECHAZADO'
+                  }">
+                {{ column.name }}
+              </h3>
+              <p-tag [value]="column.budgets.length.toString()"
+                     [severity]="column.state === 'PENDIENTE' ? 'warn' :
+                                 column.state === 'EN_CURSO' ? 'info' :
+                                 column.state === 'LISTO' ? 'secondary' :
+                                 column.state === 'ENVIADO' ? 'contrast' :
+                                 column.state === 'APROBADO' ? 'success' : 'danger'">
+              </p-tag>
+            </div>
           </div>
 
-          <!-- Column Body -->
-          <div class="flex-1 overflow-y-auto p-2" style="min-height: 200px; max-height: calc(100vh - 20rem);">
+          <!-- Drop zone -->
+          <div
+            cdkDropList
+            [cdkDropListData]="column.budgets"
+            [id]="'column-' + column.state"
+            (cdkDropListDropped)="dropBudget($event, column)"
+            class="surface-border border-1 border-round-bottom p-3 surface-ground"
+            style="min-height: 400px; max-height: calc(100vh - 500px); overflow-y: auto;">
             @for (budget of column.budgets; track budget.id) {
-              <p-card
+              <div
                 cdkDrag
                 [cdkDragData]="budget"
-                class="mb-2 budget-card"
+                class="surface-card border-round shadow-1 p-2 mb-2 cursor-move hover:shadow-3 transition-duration-200"
+                [class]="budget.estado === 'VENCIDO' ? 'border-2 border-orange-500' : 'border-1 surface-border'"
                 (click)="viewBudgetDetail(budget.id, $event)">
 
-                <ng-template pTemplate="header">
-                  <div class="flex justify-content-between align-items-center p-3 pb-0">
-                    <strong class="text-primary text-lg">{{ budget.numeroServicio }}</strong>
-                  </div>
-                </ng-template>
-
-                <div class="flex flex-column gap-2">
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-user text-color-secondary"></i>
-                    <span class="text-sm font-medium">{{ budget.clienteNombre }}</span>
-                  </div>
-
-                  @if (budget.equipoDescripcion) {
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-desktop text-color-secondary"></i>
-                      <span class="text-sm">{{ budget.equipoDescripcion }}</span>
-                    </div>
-                  }
-
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-dollar text-color-secondary"></i>
-                    <span class="text-sm font-semibold text-900">{{ formatCurrency(budget.montoTotal) }}</span>
-                  </div>
-
-                  @if (budget.empleadoNombre) {
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-user-edit text-primary text-sm"></i>
-                      <span class="text-sm font-semibold text-primary assigned-employee">{{ budget.empleadoNombre }}</span>
-                    </div>
-                  }
-
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-calendar text-color-secondary"></i>
-                    <span class="text-xs text-color-secondary">{{ budget.fechaCreacion | date: 'dd/MM/yyyy' }}</span>
-                  </div>
-
-                  @if (budget.fechaVencimiento) {
-                    <div class="flex align-items-center gap-2">
-                      <i class="pi pi-clock text-color-secondary"></i>
-                      <span class="text-xs text-red-600">Vence: {{ budget.fechaVencimiento | date: 'dd/MM/yyyy' }}</span>
-                    </div>
-                  }
+                <!-- Header de la card -->
+                <div class="flex justify-content-between align-items-start mb-2">
+                  <p-tag [value]="budget.numeroPresupuesto" severity="info"></p-tag>
                 </div>
-              </p-card>
+
+                <!-- Cliente -->
+                <div class="mb-1 overflow-hidden text-overflow-ellipsis white-space-nowrap">
+                  <span class="text-sm font-semibold text-900">{{ budget.clienteNombre }}</span>
+                </div>
+
+                <!-- Equipo -->
+                <div class="mb-2 overflow-hidden text-overflow-ellipsis white-space-nowrap">
+                  <span class="text-sm text-700">{{ budget.equipoDescripcion }}</span>
+                </div>
+
+                <!-- Footer: Fecha y Usuario -->
+                <div class="flex flex-column gap-2 pt-2 border-top-1 surface-border">
+                  <div class="flex align-items-center gap-2 text-xs text-500">
+                    <div class="flex align-items-center gap-1">
+                      <i class="pi pi-calendar text-xs"></i>
+                      <span>{{ budget.fechaCreacion | date: 'dd/MM/yyyy' }}</span>
+                    </div>
+                    @if (budget.fechaVencimiento) {
+                      <div class="flex align-items-center gap-1">
+                        <i class="pi pi-clock text-xs"></i>
+                        <span>{{ budget.fechaVencimiento | date: 'dd/MM/yy' }}</span>
+                      </div>
+                    }
+                    @if (budget.estado === 'VENCIDO') {
+                      <div class="flex align-items-center gap-1">
+                        <i class="pi pi-exclamation-triangle text-orange-600 text-xs"></i>
+                        <span class="text-orange-600 text-xs font-semibold">Vencido</span>
+                      </div>
+                    }
+                  </div>
+
+                  <!-- Usuario asignado -->
+                  <div class="flex align-items-center gap-1 text-xs">
+                    @if (budget.empleadoNombre) {
+                      <i class="pi pi-user text-xs text-600"></i>
+                      <span class="text-600 font-medium overflow-hidden text-overflow-ellipsis white-space-nowrap">
+                        {{ budget.empleadoNombre }}
+                      </span>
+                    } @else {
+                      <span class="text-orange-600 font-medium">Sin asignar</span>
+                    }
+                  </div>
+                </div>
+              </div>
             }
 
             @if (column.budgets.length === 0) {

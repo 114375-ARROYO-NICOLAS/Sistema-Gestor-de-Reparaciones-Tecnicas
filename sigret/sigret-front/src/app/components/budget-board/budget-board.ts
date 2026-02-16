@@ -11,6 +11,7 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { BadgeModule } from 'primeng/badge';
 import { CardModule } from 'primeng/card';
+import { Tag } from 'primeng/tag';
 
 interface Column {
   name: string;
@@ -27,6 +28,7 @@ interface Column {
     ProgressSpinnerModule,
     BadgeModule,
     CardModule,
+    Tag,
     CdkDrag,
     CdkDropList,
     CdkDropListGroup
@@ -59,6 +61,18 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
       name: 'En Curso',
       state: EstadoPresupuesto.EN_CURSO,
       color: '#17a2b8',
+      budgets: []
+    },
+    {
+      name: 'Listo',
+      state: EstadoPresupuesto.LISTO,
+      color: '#6f42c1',
+      budgets: []
+    },
+    {
+      name: 'Enviado',
+      state: EstadoPresupuesto.ENVIADO,
+      color: '#fd7e14',
       budgets: []
     },
     {
@@ -112,8 +126,12 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
     this.columns.forEach(col => col.budgets = []);
 
     // Distribuir presupuestos por estado
+    // VENCIDO se muestra en la columna de ENVIADO
     budgets.forEach(budget => {
-      const column = this.columns.find(col => col.state === budget.estado);
+      const targetState = budget.estado === EstadoPresupuesto.VENCIDO
+        ? EstadoPresupuesto.ENVIADO
+        : budget.estado;
+      const column = this.columns.find(col => col.state === targetState);
       if (column) {
         column.budgets.push(budget);
       }
@@ -129,11 +147,15 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
 
   private connectWebSocket(): void {
     this.wsService.connect();
+    // Limpiar cualquier evento anterior para evitar mostrar notificaciones viejas al entrar
+    this.wsService.clearLastPresupuestoEvent();
 
     this.wsSubscription = this.wsService.presupuestoEvent$.subscribe({
       next: (event: PresupuestoEvent | null) => {
         if (event) {
           this.handleWebSocketEvent(event);
+          // Limpiar el evento después de procesarlo
+          this.wsService.clearLastPresupuestoEvent();
         }
       },
       error: (err) => {
@@ -190,8 +212,14 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
     }
   }
 
+  private getColumnForState(state: EstadoPresupuesto): Column | undefined {
+    // VENCIDO se muestra en la columna ENVIADO
+    const targetState = state === EstadoPresupuesto.VENCIDO ? EstadoPresupuesto.ENVIADO : state;
+    return this.columns.find(col => col.state === targetState);
+  }
+
   private addBudget(budget: Presupuesto): void {
-    const column = this.columns.find(col => col.state === budget.estado);
+    const column = this.getColumnForState(budget.estado);
     if (column) {
       const exists = column.budgets.some(b => b.id === budget.id);
       if (!exists) {
@@ -201,24 +229,25 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
   }
 
   private updateBudget(budget: Presupuesto): void {
-    const column = this.columns.find(col => col.state === budget.estado);
-    if (column) {
-      const index = column.budgets.findIndex(b => b.id === budget.id);
+    // Buscar en todas las columnas porque el estado pudo haber cambiado
+    for (const col of this.columns) {
+      const index = col.budgets.findIndex(b => b.id === budget.id);
       if (index !== -1) {
-        column.budgets[index] = budget;
+        col.budgets[index] = budget;
+        return;
       }
     }
   }
 
   private moveBudget(budget: Presupuesto, previousState: EstadoPresupuesto): void {
-    // Remove from previous state
-    const previousColumn = this.columns.find(col => col.state === previousState);
+    // Remove from previous state column
+    const previousColumn = this.getColumnForState(previousState);
     if (previousColumn) {
       previousColumn.budgets = previousColumn.budgets.filter(b => b.id !== budget.id);
     }
 
-    // Add to new state
-    const newColumn = this.columns.find(col => col.state === budget.estado);
+    // Add to new state column
+    const newColumn = this.getColumnForState(budget.estado);
     if (newColumn) {
       const exists = newColumn.budgets.some(b => b.id === budget.id);
       if (!exists) {

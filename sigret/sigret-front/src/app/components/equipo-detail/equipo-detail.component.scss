@@ -1,11 +1,16 @@
 .equipo-detail-container {
-  padding: 1rem;
+  padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
+  width: 100%;
 }
 
 @media (max-width: 768px) {
   .equipo-detail-container {
-    padding: 0.5rem;
+    padding: 1rem;
+  }
+
+  .mb-4 {
+    margin-bottom: 1rem !important;
   }
 }

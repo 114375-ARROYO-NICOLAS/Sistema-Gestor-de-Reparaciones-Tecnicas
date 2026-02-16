@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
@@ -8,6 +8,7 @@ import { TableModule } from 'primeng/table';
 import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
+import { AutoComplete } from 'primeng/autocomplete';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
@@ -16,6 +17,9 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { CardModule } from 'primeng/card';
 import { DividerModule } from 'primeng/divider';
 import { BadgeModule } from 'primeng/badge';
+import { TooltipModule } from 'primeng/tooltip';
+import { IconField } from 'primeng/iconfield';
+import { InputIcon } from 'primeng/inputicon';
 
 import { ClientService } from '../../services/client.service';
 import {
@@ -29,6 +33,7 @@ import {
   Address,
   GooglePlacesData
 } from '../../models/client.model';
+import { TipoContacto, ContactoCreateDto } from '../../models/contact.model';
 import { environment } from '../../../environments/environment';
 
 // Google Maps type declarations
@@ -45,6 +50,7 @@ declare const google: any;
     DialogModule,
     InputTextModule,
     Select,
+    AutoComplete,
     TagModule,
     ToolbarModule,
     ConfirmDialogModule,
@@ -52,13 +58,16 @@ declare const google: any;
     ProgressSpinnerModule,
     CardModule,
     DividerModule,
-    BadgeModule
+    BadgeModule,
+    TooltipModule,
+    IconField,
+    InputIcon
   ],
   templateUrl: './client-management.component.html',
   styleUrls: ['./client-management.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ClientManagementComponent implements OnInit {
+export class ClientManagementComponent implements OnInit, OnDestroy {
   private readonly fb = inject(FormBuilder);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
@@ -69,10 +78,12 @@ export class ClientManagementComponent implements OnInit {
   public readonly clients = signal<ClientListDto[]>([]);
   public readonly personTypes = signal<PersonType[]>([]);
   public readonly documentTypes = signal<DocumentType[]>([]);
+  public readonly tiposContacto = signal<TipoContacto[]>([]);
   public readonly isLoading = signal(false);
   public readonly isSaving = signal(false);
   public readonly showClientDialog = signal(false);
   public readonly isEditMode = signal(false);
+  public readonly expanded = signal(false);
   public readonly selectedClient = signal<ClientListDto | null>(null);
   public readonly totalRecords = signal(0);
   public readonly currentPage = signal(0);
@@ -84,6 +95,15 @@ export class ClientManagementComponent implements OnInit {
   public readonly currentAddress = signal<Address>({});
   public readonly isAddingAddress = signal(false);
   private readonly initialAddresses = signal<Address[]>([]);
+  public readonly addressSuggestions = signal<any[]>([]);
+  public selectedAddressSuggestion: string = '';
+  private selectedPrediction: any = null;
+
+  // Contact management signals
+  public readonly contactos = signal<ContactoCreateDto[]>([]);
+  public readonly currentContacto = signal<ContactoCreateDto>({ tipoContactoId: 1, descripcion: '' });
+  public readonly isAddingContacto = signal(false);
+  private readonly initialContactos = signal<ContactoCreateDto[]>([]);
 
   // Flag to prevent infinite loop in lazy load
   private isLoadingData = false;
@@ -93,7 +113,7 @@ export class ClientManagementComponent implements OnInit {
 
   // Computed signals
   public readonly totalClients = computed(() => this.totalRecords());
-  public readonly activeClients = computed(() => this.clients().filter(c => c.activo ?? true).length);
+  public readonly activeClients = computed(() => this.clients().filter(c => c.activo === true).length);
 
   // Check if addresses have changed
   public readonly addressesChanged = computed(() => {
@@ -102,14 +122,21 @@ export class ClientManagementComponent implements OnInit {
     return JSON.stringify(current) !== JSON.stringify(initial);
   });
 
-  // Can save if form is valid OR addresses changed (for edit mode)
+  // Check if contacts have changed
+  public readonly contactosChanged = computed(() => {
+    const current = this.contactos();
+    const initial = this.initialContactos();
+    return JSON.stringify(current) !== JSON.stringify(initial);
+  });
+
+  // Can save if form is valid OR addresses/contacts changed (for edit mode)
   public readonly canSaveClient = computed(() => {
     if (!this.isEditMode()) {
       // Create mode: form must be valid
       return this.formValid();
     } else {
-      // Edit mode: Allow save if addresses changed OR form is valid and dirty
-      return this.addressesChanged() || (this.formValid() && this.clientForm.dirty);
+      // Edit mode: Allow save if addresses/contacts changed OR form is valid and dirty
+      return this.addressesChanged() || this.contactosChanged() || (this.formValid() && this.clientForm.dirty);
     }
   });
 
@@ -122,12 +149,12 @@ export class ClientManagementComponent implements OnInit {
     { label: 'Femenino', value: 'F' }
   ];
 
-  // Google Places - Classic Autocomplete API
-  @ViewChild('addressInput') addressInput?: ElementRef<HTMLInputElement>;
-  private placeAutocomplete: any = null;
+  // Google Places - Autocomplete Service API (sin widget visual)
+  private autocompleteService: any = null;
+  private placesService: any = null;
+  private sessionToken: any = null;
   private googleMapsApiKey: string = environment.googleMapsApiKey;
   private googleMapsLoaded = false;
-  private scrollListener: (() => void) | null = null;
 
   constructor() {
     this.clientForm = this.createClientForm();
@@ -145,6 +172,7 @@ export class ClientManagementComponent implements OnInit {
     // DO NOT call loadClients() here - p-table with [lazy]="true" will trigger it automatically
     this.loadPersonTypes();
     this.loadDocumentTypes();
+    this.loadTiposContacto();
     this.loadGoogleMaps();
   }
 
@@ -293,12 +321,27 @@ export class ClientManagementComponent implements OnInit {
     });
   }
 
+  loadTiposContacto(): void {
+    this.clientService.getTiposContacto().subscribe({
+      next: (types) => {
+        this.tiposContacto.set(types);
+      },
+      error: (error) => {
+        console.error('Error loading contact types:', error);
+        // Don't show error to user - these are optional catalog data
+        this.tiposContacto.set([]);
+      }
+    });
+  }
+
   openCreateDialog(): void {
     this.isEditMode.set(false);
     this.selectedClient.set(null);
     this.addresses.set([]); // Reset addresses
     this.initialAddresses.set([]); // Save initial state
-    
+    this.contactos.set([]); // Reset contacts
+    this.initialContactos.set([]); // Save initial state
+
     // Reset form with default values
     this.clientForm.reset({
       tipoPersonaId: 1,
@@ -309,14 +352,14 @@ export class ClientManagementComponent implements OnInit {
       razonSocial: '',
       sexo: ''
     });
-    
+
     // Aplicar validaciones según el tipo de persona por defecto
     setTimeout(() => {
       this.onPersonTypeChange();
       this.clientForm.markAsUntouched();
       this.clientForm.markAsPristine();
     });
-    
+
     this.showClientDialog.set(true);
   }
 
@@ -324,12 +367,19 @@ export class ClientManagementComponent implements OnInit {
     this.isEditMode.set(true);
     this.selectedClient.set(client);
 
-    // Load full client details to get addresses
+    // Load full client details to get addresses and contacts
     this.clientService.getClientById(client.id).subscribe({
       next: (clientDetails) => {
         const currentAddresses = clientDetails.direcciones || [];
         this.addresses.set(currentAddresses);
         this.initialAddresses.set(JSON.parse(JSON.stringify(currentAddresses))); // Deep copy for comparison
+
+        const currentContactos = (clientDetails.contactos || []).map(c => ({
+          tipoContactoId: c.tipoContactoId || this.getTipoContactoIdByName(c.tipoContacto),
+          descripcion: c.descripcion
+        }));
+        this.contactos.set(currentContactos);
+        this.initialContactos.set(JSON.parse(JSON.stringify(currentContactos))); // Deep copy for comparison
 
         this.clientForm.patchValue({
           tipoPersonaId: this.getPersonTypeId(clientDetails.tipoPersona),
@@ -361,6 +411,9 @@ export class ClientManagementComponent implements OnInit {
     this.addresses.set([]);
     this.currentAddress.set({});
     this.isAddingAddress.set(false);
+    this.contactos.set([]);
+    this.currentContacto.set({ tipoContactoId: 1, descripcion: '' });
+    this.isAddingContacto.set(false);
 
     // Clean up autocomplete and pac-container
     this.cleanupGooglePlaces();
@@ -368,20 +421,8 @@ export class ClientManagementComponent implements OnInit {
 
   // Clean up Google Places resources
   private cleanupGooglePlaces(): void {
-    // Remove scroll listener
-    this.removeScrollListener();
-
-    // Clean up autocomplete (Classic API)
-    if (this.placeAutocomplete) {
-      try {
-        google.maps.event.clearInstanceListeners(this.placeAutocomplete);
-        this.placeAutocomplete = null;
-      } catch (e) {
-        console.warn('Error cleaning up autocomplete:', e);
-      }
-    }
-
-    // Remove pac-container from DOM
+    // No cleanup needed for AutocompleteService
+    // Remove pac-container from DOM if exists
     this.removePacContainer();
   }
 
@@ -390,12 +431,12 @@ export class ClientManagementComponent implements OnInit {
     this.router.navigate(['/clientes', client.id]);
   }
 
+  navigateToEliminados(): void {
+    this.router.navigate(['/clientes/eliminados']);
+  }
+
   // Google Places - Classic Autocomplete API
   private async initializeGooglePlaces(): Promise<void> {
-    if (!this.addressInput?.nativeElement) {
-      return;
-    }
-
     try {
       // Ensure Google Maps is loaded
       if (!this.googleMapsLoaded) {
@@ -416,46 +457,12 @@ export class ClientManagementComponent implements OnInit {
         return;
       }
 
-      // Clean up existing autocomplete if any
-      if (this.placeAutocomplete) {
-        try {
-          google.maps.event.clearInstanceListeners(this.placeAutocomplete);
-          this.placeAutocomplete = null;
-        } catch (e) {
-          console.warn('Error removing previous autocomplete:', e);
-        }
-      }
+      // Initialize Autocomplete Service (sin widget visual)
+      this.autocompleteService = new google.maps.places.AutocompleteService();
+      this.placesService = new google.maps.places.PlacesService(document.createElement('div'));
+      this.sessionToken = new google.maps.places.AutocompleteSessionToken();
 
-      const inputElement = this.addressInput.nativeElement;
-
-      // Create session token for cost optimization
-      let sessionToken = new google.maps.places.AutocompleteSessionToken();
-
-      // Create Autocomplete instance
-      this.placeAutocomplete = new google.maps.places.Autocomplete(inputElement, {
-        componentRestrictions: { country: 'ar' },
-        fields: ['place_id', 'formatted_address', 'address_components', 'geometry', 'name'],
-        sessionToken: sessionToken,
-        types: ['geocode', 'establishment']
-      });
-
-      // Listen for place selection
-      this.placeAutocomplete.addListener('place_changed', () => {
-        const place = this.placeAutocomplete.getPlace();
-
-        if (!place || !place.place_id) {
-          return;
-        }
-
-        // Process the selected place
-        this.processPlaceDetails(place);
-
-        // Reset session token after successful selection
-        sessionToken = new google.maps.places.AutocompleteSessionToken();
-      });
-
-      // Setup scroll listener to hide dropdown when scrolling
-      this.setupScrollListener();
+      console.log('Google Places Service initialized successfully');
     } catch (error) {
       console.error('Error initializing Google Places:', error);
       this.messageService.add({
@@ -467,41 +474,74 @@ export class ClientManagementComponent implements OnInit {
     }
   }
 
-  // Setup scroll listener to hide pac-container when scrolling
-  private setupScrollListener(): void {
-    // Remove existing listener if any
-    this.removeScrollListener();
+  // Buscar direcciones usando AutocompleteService
+  searchAddress(event: any): void {
+    const query = event.query;
 
-    // Find the dialog content element that contains the scrollable area
-    const dialogContent = document.querySelector('.p-dialog-content');
-
-    if (dialogContent) {
-      this.scrollListener = () => {
-        this.hidePacContainer();
-      };
-
-      dialogContent.addEventListener('scroll', this.scrollListener);
+    if (!query || query.length < 3) {
+      this.addressSuggestions.set([]);
+      return;
     }
-  }
 
-  // Remove scroll listener
-  private removeScrollListener(): void {
-    if (this.scrollListener) {
-      const dialogContent = document.querySelector('.p-dialog-content');
-      if (dialogContent) {
-        dialogContent.removeEventListener('scroll', this.scrollListener);
+    if (!this.autocompleteService) {
+      console.error('Autocomplete service not initialized');
+      return;
+    }
+
+    const request = {
+      input: query,
+      sessionToken: this.sessionToken,
+      componentRestrictions: { country: 'ar' },
+      types: ['geocode', 'establishment']
+    };
+
+    this.autocompleteService.getPlacePredictions(request, (predictions: any, status: any) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+        this.addressSuggestions.set(predictions);
+      } else {
+        this.addressSuggestions.set([]);
       }
-      this.scrollListener = null;
-    }
-  }
-
-  // Hide the pac-container dropdown
-  private hidePacContainer(): void {
-    const pacContainers = document.querySelectorAll('.pac-container');
-    pacContainers.forEach(container => {
-      (container as HTMLElement).style.display = 'none';
     });
   }
+
+  // Cuando el usuario selecciona una dirección
+  onAddressSelected(event: any): void {
+    // PrimeNG AutoComplete envía el objeto dentro de event.value
+    const prediction = event.value || event;
+
+    if (!prediction || !prediction.place_id) {
+      return;
+    }
+
+    // Guardar la predicción seleccionada
+    this.selectedPrediction = prediction;
+
+    // Mostrar la descripción en el input
+    this.selectedAddressSuggestion = prediction.description;
+
+    // Get place details
+    const request = {
+      placeId: prediction.place_id,
+      fields: ['place_id', 'formatted_address', 'address_components', 'geometry', 'name'],
+      sessionToken: this.sessionToken
+    };
+
+    this.placesService.getDetails(request, (place: any, status: any) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+        this.processPlaceDetails(place);
+
+        // Reset session token después de obtener detalles
+        this.sessionToken = new google.maps.places.AutocompleteSessionToken();
+
+        // Limpiar el input después de agregar la dirección
+        setTimeout(() => {
+          this.selectedAddressSuggestion = '';
+          this.selectedPrediction = null;
+        }, 100);
+      }
+    });
+  }
+
 
   // Remove pac-container from DOM completely
   private removePacContainer(): void {
@@ -589,9 +629,8 @@ export class ClientManagementComponent implements OnInit {
       // Clean up autocomplete and pac-container
       this.cleanupGooglePlaces();
 
-      if (this.addressInput?.nativeElement) {
-        this.addressInput.nativeElement.value = '';
-      }
+      // Clear autocomplete selection
+      this.selectedAddressSuggestion = '';
     }
   }
 
@@ -622,9 +661,8 @@ export class ClientManagementComponent implements OnInit {
     // Clean up autocomplete and pac-container
     this.cleanupGooglePlaces();
 
-    if (this.addressInput?.nativeElement) {
-      this.addressInput.nativeElement.value = '';
-    }
+    // Clear autocomplete selection
+    this.selectedAddressSuggestion = '';
 
     this.messageService.add({
       severity: 'success',
@@ -658,6 +696,58 @@ export class ClientManagementComponent implements OnInit {
       esPrincipal: i === index
     }));
     this.addresses.set(updatedAddresses);
+  }
+
+  // Contact management methods
+  toggleAddingContacto(): void {
+    this.isAddingContacto.set(!this.isAddingContacto());
+    if (this.isAddingContacto()) {
+      const defaultTipoContactoId = this.tiposContacto().length > 0 ? this.tiposContacto()[0].id : 1;
+      this.currentContacto.set({ tipoContactoId: defaultTipoContactoId, descripcion: '' });
+    } else {
+      this.currentContacto.set({ tipoContactoId: 1, descripcion: '' });
+    }
+  }
+
+  addContacto(): void {
+    const contacto = this.currentContacto();
+
+    // Validate that it has description
+    if (!contacto.descripcion || contacto.descripcion.trim() === '') {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Por favor, ingresa un valor para el contacto'
+      });
+      return;
+    }
+
+    this.contactos.update(contacts => [...contacts, contacto]);
+
+    this.currentContacto.set({ tipoContactoId: contacto.tipoContactoId, descripcion: '' });
+    this.isAddingContacto.set(false);
+
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Éxito',
+      detail: 'Contacto agregado correctamente'
+    });
+  }
+
+  removeContacto(index: number): void {
+    const newContactos = this.contactos().filter((_, i) => i !== index);
+    this.contactos.set(newContactos);
+
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Información',
+      detail: 'Contacto eliminado'
+    });
+  }
+
+  getTipoContactoName(tipoContactoId: number): string {
+    const tipo = this.tiposContacto().find(t => t.id === tipoContactoId);
+    return tipo ? tipo.descripcion : 'Desconocido';
   }
 
   getAddressDisplay(address: Address): string {
@@ -714,9 +804,9 @@ export class ClientManagementComponent implements OnInit {
   }
 
   saveClient(): void {
-    // In edit mode, allow saving if only addresses changed (even if form is invalid)
+    // In edit mode, allow saving if only addresses/contacts changed (even if form is invalid)
     const canProceed = this.isEditMode()
-      ? (this.clientForm.valid || this.addressesChanged())
+      ? (this.clientForm.valid || this.addressesChanged() || this.contactosChanged())
       : this.clientForm.valid;
 
     if (canProceed) {
@@ -733,7 +823,8 @@ export class ClientManagementComponent implements OnInit {
           tipoDocumentoId: formValue.tipoDocumentoId,
           documento: formValue.documento,
           sexo: formValue.sexo,
-          direcciones: this.addresses().length > 0 ? this.addresses() : undefined
+          direcciones: this.addresses().length > 0 ? this.addresses() : undefined,
+          contactos: this.contactos().length > 0 ? this.contactos() : undefined
         };
 
         this.clientService.updateClient(this.selectedClient()!.id, updateData).subscribe({
@@ -766,7 +857,8 @@ export class ClientManagementComponent implements OnInit {
           tipoDocumentoId: formValue.tipoDocumentoId,
           documento: formValue.documento,
           sexo: formValue.sexo,
-          direcciones: this.addresses().length > 0 ? this.addresses() : undefined
+          direcciones: this.addresses().length > 0 ? this.addresses() : undefined,
+          contactos: this.contactos().length > 0 ? this.contactos() : undefined
         };
 
         this.clientService.createClient(createData).subscribe({
@@ -867,6 +959,11 @@ export class ClientManagementComponent implements OnInit {
     return docType?.id || 1;
   }
 
+  private getTipoContactoIdByName(descripcion: string): number {
+    const tipoContacto = this.tiposContacto().find(tc => tc.descripcion === descripcion);
+    return tipoContacto?.id || 1;
+  }
+
   // Address helper methods for table display
   getPrimaryAddress(client: ClientListDto): Address | null {
     if (!client.direcciones || client.direcciones.length === 0) {
@@ -917,6 +1014,11 @@ export class ClientManagementComponent implements OnInit {
 
   isMobile(): boolean {
     return window.innerWidth < 768;
+  }
+
+  ngOnDestroy(): void {
+    // No cleanup needed for AutocompleteService
+    console.log('Component destroyed');
   }
 }
 

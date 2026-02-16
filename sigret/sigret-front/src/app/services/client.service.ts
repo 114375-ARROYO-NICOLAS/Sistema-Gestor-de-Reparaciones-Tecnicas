@@ -95,6 +95,20 @@ export class ClientService {
   }
 
   /**
+   * Get paginated list of inactive (deleted) clients
+   */
+  getInactiveClients(page = 0, size = 10): Observable<ClientListResponse> {
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('size', size.toString())
+      .set('sort', 'id,DESC');
+
+    return this.http.get<ClientListResponse>(`${this.apiUrl}/inactivos`, { params }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
    * Reactivate a deactivated client
    */
   reactivateClient(id: number): Observable<ClientResponse> {

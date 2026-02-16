@@ -25,6 +25,8 @@ public class ServicioListDto {
     private String equipoNumeroSerie;
     private String empleadoRecepcionNombre;
     private TipoIngreso tipoIngreso;
+    private String fallaReportada;
+    private String observaciones;
     private Boolean esGarantia;
     private Boolean abonaVisita;
     private BigDecimal montoVisita;
@@ -34,4 +36,15 @@ public class ServicioListDto {
     private LocalDate fechaRecepcion;
     private LocalDate fechaDevolucionPrevista;
     private LocalDate fechaDevolucionReal;
+
+    // Campos de garantía
+    private Long tecnicoEvaluacionId;
+    private String tecnicoEvaluacionNombre;
+
+    // Técnico asignado a la reparación (desde OrdenTrabajo)
+    private Long tecnicoAsignadoId;
+    private String tecnicoAsignadoNombre;
+
+    // Soft delete
+    private Boolean activo;
 }

@@ -34,6 +34,7 @@
     "@googlemaps/js-api-loader": "^2.0.1",
     "@primeng/themes": "^20.1.2",
     "@stomp/stompjs": "^7.2.1",
+    "chart.js": "^4.5.1",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",
     "primeng": "^20.3.0",

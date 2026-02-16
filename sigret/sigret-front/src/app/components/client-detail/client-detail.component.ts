@@ -15,9 +15,12 @@ import { Select } from 'primeng/select';
 import { ClientService } from '../../services/client.service';
 import { ClientResponse, ClientUpdateRequest } from '../../models/client.model';
 import { TipoContacto, ContactoCreateDto } from '../../models/contact.model';
+import { EquipoService } from '../../services/equipo.service';
+import { EquipoListDto } from '../../models/equipo.model';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-client-detail',
@@ -50,9 +53,13 @@ export class ClientDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
+  private readonly equipoService = inject(EquipoService);
+  private readonly sanitizer = inject(DomSanitizer);
 
   // Signals
   public readonly client = signal<ClientResponse | null>(null);
+  public readonly equipos = signal<EquipoListDto[]>([]);
+  public readonly isLoadingEquipos = signal(false);
   public readonly isLoading = signal(true);
   public readonly isSaving = signal(false);
   
@@ -93,6 +100,7 @@ export class ClientDetailComponent implements OnInit {
     if (id) {
       this.clientId = +id;
       this.loadClient(this.clientId);
+      this.loadEquipos(this.clientId);
       this.loadTiposContacto();
       this.loadPersonTypes();
       this.loadDocumentTypes();
@@ -158,6 +166,49 @@ export class ClientDetailComponent implements OnInit {
         this.goBack();
       }
     });
+  }
+
+  private loadEquipos(clienteId: number): void {
+    this.isLoadingEquipos.set(true);
+    this.equipoService.getEquiposByCliente(clienteId).subscribe({
+      next: (equipos) => {
+        this.equipos.set(equipos);
+        this.isLoadingEquipos.set(false);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.equipos.set([]);
+        this.isLoadingEquipos.set(false);
+      }
+    });
+  }
+
+  getMapUrl(): SafeResourceUrl | null {
+    const client = this.client();
+    if (!client?.direcciones?.length) return null;
+
+    // Find address with coordinates (prefer principal)
+    const principal = client.direcciones.find(d => d.esPrincipal && d.latitud && d.longitud);
+    const withCoords = principal || client.direcciones.find(d => d.latitud && d.longitud);
+
+    if (withCoords?.latitud && withCoords?.longitud) {
+      const url = `https://maps.google.com/maps?q=${withCoords.latitud},${withCoords.longitud}&z=15&output=embed`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+
+    // Fallback: use formatted address as query
+    const withAddress = client.direcciones.find(d => d.direccionFormateada || d.direccionCompleta);
+    if (withAddress) {
+      const query = encodeURIComponent(withAddress.direccionFormateada || withAddress.direccionCompleta || '');
+      const url = `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
+      return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    }
+
+    return null;
+  }
+
+  navigateToEquipo(equipoId: number): void {
+    this.router.navigate(['/equipos', equipoId]);
   }
 
   goBack(): void {

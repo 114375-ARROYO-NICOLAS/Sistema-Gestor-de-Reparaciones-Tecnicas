@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { OrdenTrabajo, EstadoOrdenTrabajo } from '../models/orden-trabajo.model';
+import { ItemEvaluacionGarantia } from '../models/item-evaluacion-garantia.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -59,5 +60,35 @@ export class OrdenTrabajoService {
 
   eliminarOrdenTrabajo(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Crea una orden de trabajo sin costo para garantía que cumple condiciones
+   */
+  crearOrdenTrabajoGarantia(servicioId: number, empleadoId: number, observaciones?: string, itemsEvaluacion?: ItemEvaluacionGarantia[]): Observable<any> {
+    let params = new HttpParams()
+      .set('servicioId', servicioId.toString())
+      .set('empleadoId', empleadoId.toString());
+
+    if (observaciones) {
+      params = params.set('observaciones', observaciones);
+    }
+
+    return this.http.post<any>(`${this.apiUrl}/garantia`, itemsEvaluacion || null, { params });
+  }
+
+  actualizarDetalleOrdenTrabajo(ordenTrabajoId: number, detalleId: number, comentario?: string, completado?: boolean): Observable<any> {
+    let params = new HttpParams();
+    if (comentario !== undefined && comentario !== null) {
+      params = params.set('comentario', comentario);
+    }
+    if (completado !== undefined && completado !== null) {
+      params = params.set('completado', completado.toString());
+    }
+    return this.http.patch<any>(`${this.apiUrl}/${ordenTrabajoId}/detalles/${detalleId}`, null, { params });
+  }
+
+  verificarDetallesCompletados(ordenTrabajoId: number): Observable<boolean> {
+    return this.http.get<boolean>(`${this.apiUrl}/${ordenTrabajoId}/detalles-completados`);
   }
 }

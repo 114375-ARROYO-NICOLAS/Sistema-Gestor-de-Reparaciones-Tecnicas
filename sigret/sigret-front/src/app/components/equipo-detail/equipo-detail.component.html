@@ -1,106 +1,154 @@
 <div class="equipo-detail-container">
   @if (loading()) {
-    <div class="flex justify-content-center align-items-center" style="min-height: 400px;">
+    <div class="flex justify-content-center align-items-center" style="height: 400px;">
       <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
     </div>
   } @else if (equipo()) {
-    <div class="surface-card p-4 shadow-2 border-round">
-      <!-- Header -->
-      <div class="flex justify-content-between align-items-start mb-4">
-        <div>
-          <div class="flex align-items-center gap-2 mb-2">
-            <p-button
-              icon="pi pi-arrow-left"
-              [text]="true"
-              [rounded]="true"
-              severity="secondary"
-              (onClick)="goBack()">
-            </p-button>
-            <h2 class="text-900 font-bold text-4xl m-0">Detalle del Equipo</h2>
-          </div>
-          <p class="text-600 m-0 ml-5">Información completa del equipo</p>
-        </div>
+    <!-- Header -->
+    <div class="flex flex-column md:flex-row justify-content-between align-items-start gap-3 mb-4">
+      <div class="flex align-items-start gap-2 flex-1">
         <p-button
-          label="Editar"
-          icon="pi pi-pencil"
-          (onClick)="editEquipo()">
+          icon="pi pi-arrow-left"
+          [text]="true"
+          severity="secondary"
+          size="small"
+          (onClick)="goBack()"
+          title="Volver a la lista">
         </p-button>
-      </div>
-
-      <!-- Content -->
-      <div class="grid">
-        <!-- Descripción -->
-        <div class="col-12">
-          <p-card>
-            <ng-template pTemplate="header">
-              <div class="p-3">
-                <h3 class="m-0 text-primary">
-                  <i class="pi pi-desktop mr-2"></i>
-                  Información General
-                </h3>
-              </div>
-            </ng-template>
-            <ng-template pTemplate="content">
-              <div class="grid">
-                <div class="col-12">
-                  <label class="text-600 text-sm">Descripción Completa:</label>
-                  <p class="font-bold text-xl m-0 mt-1">{{ equipo()!.descripcionCompleta }}</p>
-                </div>
-
-                <div class="col-12 md:col-6">
-                  <label class="text-600 text-sm">Tipo de Equipo:</label>
-                  <p class="font-medium m-0 mt-1">{{ equipo()!.tipoEquipo }}</p>
-                </div>
-
-                <div class="col-12 md:col-6">
-                  <label class="text-600 text-sm">Marca:</label>
-                  <p class="font-medium m-0 mt-1">{{ equipo()!.marca }}</p>
-                </div>
-
-                <div class="col-12 md:col-6">
-                  <label class="text-600 text-sm">Modelo:</label>
-                  <p class="m-0 mt-1">
-                    @if (equipo()!.modelo) {
-                      {{ equipo()!.modelo }}
-                    } @else {
-                      <span class="text-500">-</span>
-                    }
-                  </p>
-                </div>
-
-                <div class="col-12 md:col-6">
-                  <label class="text-600 text-sm">Número de Serie:</label>
-                  <p class="m-0 mt-1">
-                    @if (equipo()!.numeroSerie) {
-                      <p-badge [value]="equipo()!.numeroSerie!" severity="info"></p-badge>
-                    } @else {
-                      <span class="text-500">-</span>
-                    }
-                  </p>
-                </div>
-
-                <div class="col-12 md:col-6">
-                  <label class="text-600 text-sm">Color:</label>
-                  <p class="m-0 mt-1">
-                    @if (equipo()!.color) {
-                      {{ equipo()!.color }}
-                    } @else {
-                      <span class="text-500">-</span>
-                    }
-                  </p>
-                </div>
-
-                @if (equipo()!.observaciones) {
-                  <div class="col-12">
-                    <label class="text-600 text-sm">Observaciones:</label>
-                    <p class="m-0 mt-1 white-space-pre-wrap">{{ equipo()!.observaciones }}</p>
-                  </div>
-                }
-              </div>
-            </ng-template>
-          </p-card>
+        <div class="flex-1 min-width-0">
+          <h2 class="text-xl md:text-2xl font-bold text-900 m-0 overflow-hidden text-overflow-ellipsis">
+            {{ equipo()!.descripcionCompleta }}
+          </h2>
+          <div class="flex align-items-center gap-2 mt-2 flex-wrap">
+            <p-tag
+              [value]="equipo()!.tipoEquipo.descripcion"
+              severity="info"
+              icon="pi pi-desktop">
+            </p-tag>
+            <p-tag
+              [value]="equipo()!.marca.descripcion"
+              severity="secondary">
+            </p-tag>
+          </div>
         </div>
       </div>
+      <p-button
+        label="Editar"
+        icon="pi pi-pencil"
+        severity="primary"
+        size="small"
+        class="w-full md:w-auto"
+        (onClick)="editEquipo()">
+      </p-button>
+    </div>
+
+    <!-- Información General -->
+    <div class="mb-4">
+      <p-card>
+        <ng-template pTemplate="content">
+          <div class="grid">
+            <div class="col-12">
+              <h3 class="text-lg font-semibold text-primary mb-3">
+                <i class="pi pi-desktop mr-2"></i>Información del Equipo
+              </h3>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="text-sm text-600 mb-1 block">Tipo de Equipo</label>
+                <div class="font-medium text-900">{{ equipo()!.tipoEquipo.descripcion }}</div>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="text-sm text-600 mb-1 block">Marca</label>
+                <div class="font-medium text-900">{{ equipo()!.marca.descripcion }}</div>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="text-sm text-600 mb-1 block">Modelo</label>
+                <div class="font-medium text-900">
+                  @if (equipo()!.modelo) {
+                    {{ equipo()!.modelo!.descripcion }}
+                  } @else {
+                    <span class="text-500">-</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="text-sm text-600 mb-1 block">Número de Serie</label>
+                <div class="font-medium text-900">
+                  @if (equipo()!.numeroSerie) {
+                    <p-badge [value]="equipo()!.numeroSerie" severity="info"></p-badge>
+                  } @else {
+                    <span class="text-500">No especificado</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            <div class="col-12 md:col-6">
+              <div class="mb-3">
+                <label class="text-sm text-600 mb-1 block">Color</label>
+                <div class="font-medium text-900">
+                  @if (equipo()!.color) {
+                    <div class="flex align-items-center gap-2">
+                      <div
+                        class="border-circle"
+                        [style.width.px]="20"
+                        [style.height.px]="20"
+                        [style.background-color]="equipo()!.color"
+                        [style.border]="'2px solid var(--surface-border)'">
+                      </div>
+                      <span>{{ equipo()!.color }}</span>
+                    </div>
+                  } @else {
+                    <span class="text-500">No especificado</span>
+                  }
+                </div>
+              </div>
+            </div>
+
+            @if (equipo()!.observaciones) {
+              <div class="col-12">
+                <div class="mb-3">
+                  <label class="text-sm text-600 mb-1 block">Observaciones</label>
+                  <div class="surface-50 border-round p-3">
+                    <p class="m-0 white-space-pre-wrap text-900">{{ equipo()!.observaciones }}</p>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </ng-template>
+      </p-card>
+    </div>
+
+    <!-- Historial de Servicios (placeholder para futuro) -->
+    <div class="mb-4">
+      <p-card>
+        <ng-template pTemplate="header">
+          <div class="p-3 flex justify-content-between align-items-center">
+            <h3 class="text-lg font-semibold m-0">
+              <i class="pi pi-history mr-2"></i>Historial de Servicios
+            </h3>
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="content">
+          <div class="text-center text-600 py-5">
+            <i class="pi pi-wrench text-4xl mb-3"></i>
+            <p class="text-lg font-medium mb-2">No hay servicios registrados</p>
+            <p class="text-sm mb-0">El historial de servicios aparecerá aquí</p>
+          </div>
+        </ng-template>
+      </p-card>
     </div>
   }
 </div>

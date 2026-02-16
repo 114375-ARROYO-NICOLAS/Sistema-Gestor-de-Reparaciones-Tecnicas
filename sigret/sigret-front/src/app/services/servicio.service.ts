@@ -10,6 +10,7 @@ import {
   PaginatedResponse
 } from '../models/servicio.model';
 import { ServicioUpdateDto } from '../models/servicio-update.dto';
+import { ItemServicioOriginal } from '../models/item-evaluacion-garantia.model';
 
 @Injectable({
   providedIn: 'root'
@@ -41,6 +42,13 @@ export class ServicioService {
       .set('sort', 'fechaCreacion,desc');
 
     return this.http.get<PaginatedResponse<ServicioList>>(this.API_URL, { params });
+  }
+
+  /**
+   * Obtiene los estados disponibles desde el backend
+   */
+  obtenerEstados(): Observable<{ value: string; label: string }[]> {
+    return this.http.get<{ value: string; label: string }[]>(`${this.API_URL}/estados`);
   }
 
   /**
@@ -80,10 +88,30 @@ export class ServicioService {
   }
 
   /**
-   * Elimina un servicio
+   * Elimina un servicio (soft delete)
    */
   eliminarServicio(id: number): Observable<void> {
     return this.http.delete<void>(`${this.API_URL}/${id}`);
+  }
+
+  /**
+   * Obtiene servicios eliminados
+   */
+  obtenerServiciosEliminados(): Observable<ServicioList[]> {
+    const params = new HttpParams()
+      .set('size', '1000')
+      .set('sort', 'fechaCreacion,desc');
+
+    return this.http.get<PaginatedResponse<ServicioList>>(`${this.API_URL}/eliminados`, { params }).pipe(
+      map(response => response.content || [])
+    );
+  }
+
+  /**
+   * Restaura un servicio eliminado
+   */
+  restaurarServicio(id: number): Observable<ServicioResponse> {
+    return this.http.patch<ServicioResponse>(`${this.API_URL}/${id}/restaurar`, null);
   }
 
   /**
@@ -154,5 +182,52 @@ export class ServicioService {
    */
   crearServicioGarantia(servicioOriginalId: number, datos: Partial<ServicioCreateDto>): Observable<ServicioResponse> {
     return this.http.post<ServicioResponse>(`${this.API_URL}/garantia/${servicioOriginalId}`, datos);
+  }
+
+  /**
+   * Obtiene los items (repuestos) usados en la reparación del servicio original
+   * Para mostrar en la evaluación de garantía
+   */
+  obtenerItemsServicioOriginal(servicioGarantiaId: number): Observable<ItemServicioOriginal[]> {
+    return this.http.get<ItemServicioOriginal[]>(`${this.API_URL}/${servicioGarantiaId}/items-servicio-original`);
+  }
+
+  /**
+   * Descarga el PDF del servicio
+   */
+  descargarPdfServicio(id: number): Observable<Blob> {
+    return this.http.get(`${this.API_URL}/${id}/pdf`, {
+      responseType: 'blob'
+    });
+  }
+
+  /**
+   * Envía el PDF por email al cliente
+   */
+  enviarPdfPorEmail(id: number): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/${id}/pdf/enviar-email`, null);
+  }
+
+  /**
+   * Finaliza un servicio registrando la firma de conformidad
+   */
+  finalizarServicio(id: number, firmaConformidad: string): Observable<ServicioResponse> {
+    return this.http.patch<ServicioResponse>(`${this.API_URL}/${id}/finalizar`, { firmaConformidad });
+  }
+
+  /**
+   * Descarga el PDF final del servicio (con presupuesto, orden de trabajo y firma de conformidad)
+   */
+  descargarPdfFinal(id: number): Observable<Blob> {
+    return this.http.get(`${this.API_URL}/${id}/pdf-final`, {
+      responseType: 'blob'
+    });
+  }
+
+  /**
+   * Envía el PDF final por email al cliente
+   */
+  enviarPdfFinalPorEmail(id: number): Observable<void> {
+    return this.http.post<void>(`${this.API_URL}/${id}/pdf-final/enviar-email`, null);
   }
 }

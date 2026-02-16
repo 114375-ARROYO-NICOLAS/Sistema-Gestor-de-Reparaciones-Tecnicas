@@ -17,6 +17,7 @@ import java.time.LocalDateTime;
 public class OrdenTrabajoListDto {
 
     private Long id;
+    private String numeroOrdenTrabajo;
     private String numeroServicio;
     private String clienteNombre;
     private String equipoDescripcion;

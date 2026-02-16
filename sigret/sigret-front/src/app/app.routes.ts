@@ -29,6 +29,10 @@ export const routes: Routes = [
             loadComponent: () => import('./components/client-management/client-management.component').then(m => m.ClientManagementComponent)
           },
           {
+            path: 'eliminados',
+            loadComponent: () => import('./components/clientes-eliminados/clientes-eliminados').then(m => m.ClientesEliminadosComponent)
+          },
+          {
             path: ':id',
             loadComponent: () => import('./components/client-detail/client-detail.component').then(m => m.ClientDetailComponent)
           }
@@ -92,6 +96,10 @@ export const routes: Routes = [
             loadComponent: () => import('./components/servicio-create/servicio-create').then(m => m.ServicioCreateComponent)
           },
           {
+            path: 'eliminados',
+            loadComponent: () => import('./components/servicios-eliminados/servicios-eliminados').then(m => m.ServiciosEliminadosComponent)
+          },
+          {
             path: ':id',
             loadComponent: () => import('./components/servicio-detail/servicio-detail').then(m => m.ServicioDetail)
           }
@@ -116,7 +124,16 @@ export const routes: Routes = [
       },
       {
         path: 'ordenes-trabajo',
-        loadComponent: () => import('./components/work-order-board/work-order-board').then(m => m.WorkOrderBoardComponent)
+        children: [
+          {
+            path: '',
+            loadComponent: () => import('./components/work-order-board/work-order-board').then(m => m.WorkOrderBoardComponent)
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./components/orden-trabajo-detail/orden-trabajo-detail').then(m => m.OrdenTrabajoDetailComponent)
+          }
+        ]
       },
       {
         path: 'configuracion',
@@ -132,14 +149,26 @@ export const routes: Routes = [
           {
             path: 'modelos',
             loadComponent: () => import('./components/configuracion/modelo-config/modelo-config').then(m => m.ModeloConfigComponent)
+          },
+          {
+            path: 'repuestos',
+            loadComponent: () => import('./components/configuracion/repuesto-config/repuesto-config').then(m => m.RepuestoConfigComponent)
           }
         ]
       },
       {
         path: 'profile',
         loadComponent: () => import('./components/profile/profile.component').then(m => m.ProfileComponent)
+      },
+      {
+        path: 'ayuda',
+        loadComponent: () => import('./components/faq/faq').then(m => m.FaqComponent)
       }
     ]
+  },
+  {
+    path: 'p/:token/:accion',
+    loadComponent: () => import('./components/presupuesto-publico/presupuesto-publico.component').then(m => m.PresupuestoPublicoComponent)
   },
   {
     path: '**',

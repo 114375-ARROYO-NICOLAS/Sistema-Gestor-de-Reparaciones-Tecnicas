@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Presupuesto, EstadoPresupuesto } from '../models/presupuesto.model';
+import { Presupuesto, EstadoPresupuesto, EnvioPresupuestoDto, PresupuestoActualizarReenviarDto } from '../models/presupuesto.model';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -27,8 +27,8 @@ export class PresupuestoService {
     return this.http.get<Presupuesto[]>(`${this.apiUrl}/servicio/${servicioId}`);
   }
 
-  crearPresupuesto(presupuesto: any): Observable<any> {
-    return this.http.post<any>(this.apiUrl, presupuesto);
+  crearPresupuesto(presupuesto: any): Observable<Presupuesto> {
+    return this.http.post<Presupuesto>(this.apiUrl, presupuesto);
   }
 
   actualizarPresupuesto(id: number, presupuesto: any): Observable<any> {
@@ -53,7 +53,26 @@ export class PresupuestoService {
     return this.http.patch<any>(`${this.apiUrl}/${id}/cambiar-estado`, null, { params });
   }
 
+  cambiarEstado(id: number, nuevoEstado: EstadoPresupuesto): Observable<any> {
+    return this.cambiarEstadoPresupuesto(id, nuevoEstado);
+  }
+
   eliminarPresupuesto(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  enviarPresupuestoACliente(dto: EnvioPresupuestoDto): Observable<Presupuesto> {
+    return this.http.post<Presupuesto>(`${this.apiUrl}/${dto.presupuestoId}/enviar`, dto);
+  }
+
+  actualizarYReenviar(id: number, dto: PresupuestoActualizarReenviarDto): Observable<Presupuesto> {
+    return this.http.put<Presupuesto>(`${this.apiUrl}/${id}/actualizar-y-reenviar`, dto);
+  }
+
+  crearOrdenDeTrabajo(presupuestoId: number): Observable<{ message: string; ordenTrabajoId: number }> {
+    return this.http.post<{ message: string; ordenTrabajoId: number }>(
+      `${this.apiUrl}/${presupuestoId}/crear-orden-trabajo`,
+      null
+    );
   }
 }
