@@ -1,60 +1,68 @@
-<div class="container-fluid py-4">
+<div class="config-container">
   <p-toast />
+  <p-confirmDialog />
 
-  <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h3 class="m-0">Tipos de Equipo</h3>
+  <div class="config-card">
+    <div class="config-header">
+      <h3>Tipos de Equipo</h3>
       <p-button
         label="Nuevo Tipo"
         icon="pi pi-plus"
-        (onClick)="openCreateDialog()">
+        (onClick)="openCreateDialog()"
+        size="small">
       </p-button>
     </div>
 
-    <div class="card-body">
-      <p-table
-        [value]="tiposEquipo()"
-        [loading]="isLoading()"
-        [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[5, 10, 20]"
-        [globalFilterFields]="['descripcion']"
-        responsiveLayout="scroll"
-        styleClass="p-datatable-sm">
+    <p-table
+      [value]="tiposEquipo()"
+      [loading]="isLoading()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[5, 10, 20]"
+      [globalFilterFields]="['descripcion']"
+      [breakpoint]="'768px'"
+      [scrollable]="true"
+      styleClass="p-datatable-sm p-datatable-gridlines">
 
-        <ng-template pTemplate="header">
-          <tr>
-            <th>ID</th>
-            <th>Descripción</th>
-            <th style="width: 100px">Acciones</th>
-          </tr>
-        </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
+          <th style="width: 120px; text-align: center">Acciones</th>
+        </tr>
+      </ng-template>
 
-        <ng-template pTemplate="body" let-tipo>
-          <tr>
-            <td>{{ tipo.id }}</td>
-            <td>{{ tipo.descripcion }}</td>
-            <td>
-              <p-button
-                icon="pi pi-pencil"
-                [text]="true"
-                [rounded]="true"
-                severity="warn"
-                (onClick)="openEditDialog(tipo)"
-                pTooltip="Editar"
-                tooltipPosition="top">
-              </p-button>
-            </td>
-          </tr>
-        </ng-template>
+      <ng-template pTemplate="body" let-tipo>
+        <tr>
+          <td>{{ tipo.descripcion }}</td>
+          <td class="text-center">
+            <p-button
+              icon="pi pi-pencil"
+              [text]="true"
+              [rounded]="true"
+              severity="warn"
+              (onClick)="openEditDialog(tipo)"
+              pTooltip="Editar"
+              tooltipPosition="top">
+            </p-button>
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              [rounded]="true"
+              severity="danger"
+              (onClick)="confirmDelete(tipo)"
+              pTooltip="Eliminar"
+              tooltipPosition="top">
+            </p-button>
+          </td>
+        </tr>
+      </ng-template>
 
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="3" class="text-center">No se encontraron tipos de equipo</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="2" class="text-center">No se encontraron tipos de equipo</td>
+        </tr>
+      </ng-template>
+    </p-table>
   </div>
 
   <!-- Dialog for Create/Edit -->
@@ -64,7 +72,7 @@
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
-    [style]="{width: '500px'}">
+    [style]="{width: '500px', maxWidth: '95vw'}">
 
     <form [formGroup]="tipoForm" (ngSubmit)="saveTipo()">
       <div class="mb-3">

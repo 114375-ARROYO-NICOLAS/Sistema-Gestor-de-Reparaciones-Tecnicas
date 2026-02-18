@@ -7,7 +7,9 @@ import { InputText } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 import { Dialog } from 'primeng/dialog';
 import { Toast } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Tooltip } from 'primeng/tooltip';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { ModeloService } from '../../../services/modelo.service';
 import { MarcaService } from '../../../services/marca.service';
@@ -24,18 +26,21 @@ import { MarcaListDto } from '../../../models/marca.model';
     InputText,
     Select,
     Dialog,
-    Toast
+    Toast,
+    ConfirmDialog,
+    Tooltip
   ],
   templateUrl: './modelo-config.html',
   styleUrl: './modelo-config.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [MessageService]
+  providers: [MessageService, ConfirmationService]
 })
 export class ModeloConfigComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly modeloService = inject(ModeloService);
   private readonly marcaService = inject(MarcaService);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   readonly modelos = signal<ModeloListDto[]>([]);
   readonly marcas = signal<MarcaListDto[]>([]);
@@ -66,7 +71,7 @@ export class ModeloConfigComponent implements OnInit {
         this.modelos.set(modelos);
         this.isLoading.set(false);
       },
-      error: (error) => {
+      error: () => {
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
@@ -82,7 +87,7 @@ export class ModeloConfigComponent implements OnInit {
       next: (marcas) => {
         this.marcas.set(marcas);
       },
-      error: (error) => {
+      error: () => {
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
@@ -185,5 +190,35 @@ export class ModeloConfigComponent implements OnInit {
   getMarcaNombre(marcaId: number): string {
     const marca = this.marcas().find(m => m.id === marcaId);
     return marca?.descripcion || '-';
+  }
+
+  confirmDelete(modelo: ModeloListDto): void {
+    this.confirmationService.confirm({
+      message: `¿Está seguro de eliminar el modelo "${modelo.descripcion}"?`,
+      header: 'Confirmar eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.modeloService.deleteModelo(modelo.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: 'Modelo eliminado correctamente'
+            });
+            this.loadModelos();
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: error.message || 'No se pudo eliminar el modelo'
+            });
+          }
+        });
+      }
+    });
   }
 }

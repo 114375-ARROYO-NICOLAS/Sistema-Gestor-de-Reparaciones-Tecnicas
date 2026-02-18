@@ -7,8 +7,9 @@ import { InputText } from 'primeng/inputtext';
 import { Dialog } from 'primeng/dialog';
 import { Toast } from 'primeng/toast';
 import { Select } from 'primeng/select';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Tooltip } from 'primeng/tooltip';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { RepuestoService } from '../../../services/repuesto.service';
 import { TipoEquipoService } from '../../../services/tipo-equipo.service';
@@ -26,18 +27,20 @@ import { TipoEquipoListDto } from '../../../models/tipo-equipo.model';
     Dialog,
     Toast,
     Select,
+    ConfirmDialog,
     Tooltip
   ],
   templateUrl: './repuesto-config.html',
   styleUrl: './repuesto-config.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [MessageService]
+  providers: [MessageService, ConfirmationService]
 })
 export class RepuestoConfigComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly repuestoService = inject(RepuestoService);
   private readonly tipoEquipoService = inject(TipoEquipoService);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   readonly repuestos = signal<RepuestoListDto[]>([]);
   readonly tiposEquipo = signal<TipoEquipoListDto[]>([]);
@@ -185,25 +188,33 @@ export class RepuestoConfigComponent implements OnInit {
     }
   }
 
-  deleteRepuesto(repuesto: RepuestoListDto): void {
-    if (confirm(`¿Está seguro de eliminar el repuesto "${repuesto.descripcion}"?`)) {
-      this.repuestoService.deleteRepuesto(repuesto.id).subscribe({
-        next: () => {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Éxito',
-            detail: 'Repuesto eliminado correctamente'
-          });
-          this.loadRepuestos();
-        },
-        error: (error) => {
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: error.message || 'No se pudo eliminar el repuesto'
-          });
-        }
-      });
-    }
+  confirmDelete(repuesto: RepuestoListDto): void {
+    this.confirmationService.confirm({
+      message: `¿Está seguro de eliminar el repuesto "${repuesto.descripcion}"?`,
+      header: 'Confirmar eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.repuestoService.deleteRepuesto(repuesto.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: 'Repuesto eliminado correctamente'
+            });
+            this.loadRepuestos();
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: error.message || 'No se pudo eliminar el repuesto'
+            });
+          }
+        });
+      }
+    });
   }
 }

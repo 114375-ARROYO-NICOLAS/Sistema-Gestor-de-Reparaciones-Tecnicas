@@ -33,27 +33,17 @@
     </div>
 
     <!-- Search bar -->
-    <div class="flex align-items-center gap-2 mb-4">
-      <p-iconfield iconPosition="left" class="flex-1">
+    <div class="mb-4">
+      <p-iconfield iconPosition="left" class="w-full md:w-30rem">
         <p-inputicon styleClass="pi pi-search" />
         <input
           type="text"
           pInputText
           [(ngModel)]="filterBusqueda"
           (input)="onFilterChange()"
-          placeholder="Buscar por nombre, apellido, razón social o documento..."
+          placeholder="Buscar por nombre, apellido o documento..."
           class="w-full">
       </p-iconfield>
-      <p-button
-        icon="pi pi-refresh"
-        severity="secondary"
-        [text]="true"
-        [rounded]="true"
-        (onClick)="loadClients()"
-        [loading]="isLoading()"
-        pTooltip="Actualizar"
-        tooltipPosition="top">
-      </p-button>
     </div>
 
     <!-- Table -->
@@ -66,17 +56,15 @@
       (onLazyLoad)="loadClients($event)"
       [loading]="isLoading()"
       [rowHover]="true"
-      [scrollable]="true"
-      scrollHeight="flex"
       styleClass="p-datatable-sm p-datatable-gridlines"
-      responsiveLayout="scroll">
-          
+      [tableStyle]="{ 'min-width': '60rem' }">
+
           <ng-template pTemplate="header">
             <tr>
-              <th style="min-width: 200px;">Nombre Completo</th>
-              <th style="min-width: 120px;">Documento</th>
-              <th style="min-width: 200px;">Dirección Principal</th>
-              <th class="text-center" style="min-width: 120px;">Acciones</th>
+              <th>Nombre Completo</th>
+              <th>Documento</th>
+              <th>Dirección Principal</th>
+              <th class="text-center" style="width: 100px;">Acciones</th>
             </tr>
           </ng-template>
 

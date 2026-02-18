@@ -47,7 +47,9 @@ export class FaqComponent {
                 <div class="flow-node node-warn">PRESUPUESTADO</div>
                 <div class="flow-arrow"></div>
                 <div class="flow-node node-info">APROBADO</div>
-                <div class="flow-arrow"></div>
+              </div>
+              <div class="flow-connector-down"></div>
+              <div class="flow-row">
                 <div class="flow-node node-info">EN REPARACIÓN</div>
                 <div class="flow-arrow"></div>
                 <div class="flow-node node-success">TERMINADO</div>
@@ -55,8 +57,7 @@ export class FaqComponent {
                 <div class="flow-node node-success">FINALIZADO</div>
               </div>
               <div class="flow-branch">
-                <div class="flow-branch-line" style="left: 230px;"></div>
-                <div class="flow-node node-danger" style="margin-top: 0.5rem;">RECHAZADO</div>
+                <div class="flow-node node-danger">RECHAZADO</div>
                 <div class="flow-branch-label">Si el cliente rechaza el presupuesto</div>
               </div>
             </div>`

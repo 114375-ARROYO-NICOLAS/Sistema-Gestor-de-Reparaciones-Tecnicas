@@ -7,7 +7,6 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { Button } from 'primeng/button';
 import { TableModule } from 'primeng/table';
-import { ProgressSpinner } from 'primeng/progressspinner';
 import { Tooltip } from 'primeng/tooltip';
 import { ToastModule } from 'primeng/toast';
 
@@ -17,7 +16,6 @@ import { ToastModule } from 'primeng/toast';
     CommonModule,
     Button,
     TableModule,
-    ProgressSpinner,
     ConfirmDialog,
     Tooltip,
     ToastModule

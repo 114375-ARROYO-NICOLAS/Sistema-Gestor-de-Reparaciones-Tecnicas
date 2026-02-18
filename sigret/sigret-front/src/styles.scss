@@ -326,11 +326,28 @@ body {
   border-radius: 12px !important;
 }
 
-// Horizontally scrollable tables
-.p-datatable-scrollable {
+// Force all tables to use horizontal scroll instead of stacking columns
+.p-datatable {
   .p-datatable-wrapper {
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .p-datatable-thead > tr > th {
+    display: table-cell !important;
+  }
+
+  .p-datatable-tbody > tr {
+    display: table-row !important;
+
+    > td {
+      display: table-cell !important;
+      white-space: nowrap;
+
+      &::before {
+        display: none !important;
+      }
+    }
   }
 }
 

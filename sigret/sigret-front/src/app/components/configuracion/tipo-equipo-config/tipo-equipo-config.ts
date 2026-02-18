@@ -2,11 +2,13 @@ import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@ang
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
-import { Table, TableModule } from 'primeng/table';
+import { TableModule } from 'primeng/table';
 import { InputText } from 'primeng/inputtext';
 import { Dialog } from 'primeng/dialog';
 import { Toast } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Tooltip } from 'primeng/tooltip';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { TipoEquipoService } from '../../../services/tipo-equipo.service';
 import { TipoEquipoListDto, TipoEquipoCreateDto, TipoEquipoUpdateDto } from '../../../models/tipo-equipo.model';
@@ -20,17 +22,20 @@ import { TipoEquipoListDto, TipoEquipoCreateDto, TipoEquipoUpdateDto } from '../
     TableModule,
     InputText,
     Dialog,
-    Toast
+    Toast,
+    ConfirmDialog,
+    Tooltip
   ],
   templateUrl: './tipo-equipo-config.html',
   styleUrl: './tipo-equipo-config.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [MessageService]
+  providers: [MessageService, ConfirmationService]
 })
 export class TipoEquipoConfigComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly tipoEquipoService = inject(TipoEquipoService);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   readonly tiposEquipo = signal<TipoEquipoListDto[]>([]);
   readonly isLoading = signal(false);
@@ -58,7 +63,7 @@ export class TipoEquipoConfigComponent implements OnInit {
         this.tiposEquipo.set(tipos);
         this.isLoading.set(false);
       },
-      error: (error) => {
+      error: () => {
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
@@ -154,5 +159,35 @@ export class TipoEquipoConfigComponent implements OnInit {
         }
       });
     }
+  }
+
+  confirmDelete(tipo: TipoEquipoListDto): void {
+    this.confirmationService.confirm({
+      message: `¿Está seguro de eliminar el tipo de equipo "${tipo.descripcion}"?`,
+      header: 'Confirmar eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.tipoEquipoService.deleteTipoEquipo(tipo.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: 'Tipo de equipo eliminado correctamente'
+            });
+            this.loadTiposEquipo();
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: error.message || 'No se pudo eliminar el tipo de equipo'
+            });
+          }
+        });
+      }
+    });
   }
 }

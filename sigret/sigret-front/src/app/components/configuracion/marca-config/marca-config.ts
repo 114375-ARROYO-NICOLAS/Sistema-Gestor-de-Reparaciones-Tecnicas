@@ -6,7 +6,9 @@ import { TableModule } from 'primeng/table';
 import { InputText } from 'primeng/inputtext';
 import { Dialog } from 'primeng/dialog';
 import { Toast } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Tooltip } from 'primeng/tooltip';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { MarcaService } from '../../../services/marca.service';
 import { MarcaListDto, MarcaCreateDto, MarcaUpdateDto } from '../../../models/marca.model';
@@ -20,17 +22,20 @@ import { MarcaListDto, MarcaCreateDto, MarcaUpdateDto } from '../../../models/ma
     TableModule,
     InputText,
     Dialog,
-    Toast
+    Toast,
+    ConfirmDialog,
+    Tooltip
   ],
   templateUrl: './marca-config.html',
   styleUrl: './marca-config.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [MessageService]
+  providers: [MessageService, ConfirmationService]
 })
 export class MarcaConfigComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly marcaService = inject(MarcaService);
   private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
   readonly marcas = signal<MarcaListDto[]>([]);
   readonly isLoading = signal(false);
@@ -58,7 +63,7 @@ export class MarcaConfigComponent implements OnInit {
         this.marcas.set(marcas);
         this.isLoading.set(false);
       },
-      error: (error) => {
+      error: () => {
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
@@ -154,5 +159,35 @@ export class MarcaConfigComponent implements OnInit {
         }
       });
     }
+  }
+
+  confirmDelete(marca: MarcaListDto): void {
+    this.confirmationService.confirm({
+      message: `¿Está seguro de eliminar la marca "${marca.descripcion}"?`,
+      header: 'Confirmar eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.marcaService.deleteMarca(marca.id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Éxito',
+              detail: 'Marca eliminada correctamente'
+            });
+            this.loadMarcas();
+          },
+          error: (error) => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: error.message || 'No se pudo eliminar la marca'
+            });
+          }
+        });
+      }
+    });
   }
 }

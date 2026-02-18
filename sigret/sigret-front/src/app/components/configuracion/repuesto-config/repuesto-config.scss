@@ -1,3 +1,30 @@
+.config-container {
+  padding: 1.5rem;
+}
+
+.config-card {
+  background: var(--surface-card);
+  border-radius: 8px;
+  border: 1px solid var(--surface-border);
+  overflow: visible;
+}
+
+.config-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-50);
+
+  h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+}
+
 .field {
   display: flex;
   flex-direction: column;
@@ -33,4 +60,17 @@
 
 .mb-4 {
   margin-bottom: 1.5rem;
+}
+
+@media (max-width: 576px) {
+  .config-container {
+    padding: 1rem;
+  }
+
+  .config-header {
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: stretch;
+    padding: 1rem;
+  }
 }

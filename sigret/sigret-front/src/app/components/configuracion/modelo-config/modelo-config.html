@@ -1,62 +1,70 @@
-<div class="container-fluid py-4">
+<div class="config-container">
   <p-toast />
+  <p-confirmDialog />
 
-  <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-      <h3 class="m-0">Modelos</h3>
+  <div class="config-card">
+    <div class="config-header">
+      <h3>Modelos</h3>
       <p-button
         label="Nuevo Modelo"
         icon="pi pi-plus"
-        (onClick)="openCreateDialog()">
+        (onClick)="openCreateDialog()"
+        size="small">
       </p-button>
     </div>
 
-    <div class="card-body">
-      <p-table
-        [value]="modelos()"
-        [loading]="isLoading()"
-        [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[5, 10, 20]"
-        [globalFilterFields]="['descripcion', 'marcaNombre']"
-        responsiveLayout="scroll"
-        styleClass="p-datatable-sm">
+    <p-table
+      [value]="modelos()"
+      [loading]="isLoading()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[5, 10, 20]"
+      [globalFilterFields]="['descripcion', 'marcaNombre']"
+      [breakpoint]="'768px'"
+      [scrollable]="true"
+      styleClass="p-datatable-sm p-datatable-gridlines">
 
-        <ng-template pTemplate="header">
-          <tr>
-            <th>ID</th>
-            <th>Marca</th>
-            <th>Descripción</th>
-            <th style="width: 100px">Acciones</th>
-          </tr>
-        </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="marcaNombre">Marca <p-sortIcon field="marcaNombre" /></th>
+          <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
+          <th style="width: 120px; text-align: center">Acciones</th>
+        </tr>
+      </ng-template>
 
-        <ng-template pTemplate="body" let-modelo>
-          <tr>
-            <td>{{ modelo.id }}</td>
-            <td>{{ getMarcaNombre(modelo.marcaId) }}</td>
-            <td>{{ modelo.descripcion }}</td>
-            <td>
-              <p-button
-                icon="pi pi-pencil"
-                [text]="true"
-                [rounded]="true"
-                severity="warn"
-                (onClick)="openEditDialog(modelo)"
-                pTooltip="Editar"
-                tooltipPosition="top">
-              </p-button>
-            </td>
-          </tr>
-        </ng-template>
+      <ng-template pTemplate="body" let-modelo>
+        <tr>
+          <td>{{ getMarcaNombre(modelo.marcaId) }}</td>
+          <td>{{ modelo.descripcion }}</td>
+          <td class="text-center">
+            <p-button
+              icon="pi pi-pencil"
+              [text]="true"
+              [rounded]="true"
+              severity="warn"
+              (onClick)="openEditDialog(modelo)"
+              pTooltip="Editar"
+              tooltipPosition="top">
+            </p-button>
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              [rounded]="true"
+              severity="danger"
+              (onClick)="confirmDelete(modelo)"
+              pTooltip="Eliminar"
+              tooltipPosition="top">
+            </p-button>
+          </td>
+        </tr>
+      </ng-template>
 
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="4" class="text-center">No se encontraron modelos</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="3" class="text-center">No se encontraron modelos</td>
+        </tr>
+      </ng-template>
+    </p-table>
   </div>
 
   <!-- Dialog for Create/Edit -->
@@ -66,7 +74,7 @@
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
-    [style]="{width: '500px'}">
+    [style]="{width: '500px', maxWidth: '95vw'}">
 
     <form [formGroup]="modeloForm" (ngSubmit)="saveModelo()">
       <div class="mb-3">

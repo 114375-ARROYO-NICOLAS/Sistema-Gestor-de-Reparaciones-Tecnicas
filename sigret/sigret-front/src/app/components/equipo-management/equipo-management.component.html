@@ -55,14 +55,14 @@
       [rows]="10"
       [rowsPerPageOptions]="[10, 25, 50]"
       [tableStyle]="{ 'min-width': '60rem' }"
-      [globalFilterFields]="['descripcionCompleta', 'numeroSerie', 'marca', 'modelo', 'clienteNombre']"
+      [globalFilterFields]="['tipoEquipo', 'numeroSerie', 'marca', 'modelo', 'clienteNombre']"
       styleClass="p-datatable-sm p-datatable-gridlines">
 
       <ng-template pTemplate="header">
         <tr>
-          <th pSortableColumn="descripcionCompleta">
-            Descripción
-            <p-sortIcon field="descripcionCompleta" />
+          <th pSortableColumn="tipoEquipo">
+            Tipo de Equipo
+            <p-sortIcon field="tipoEquipo" />
           </th>
           <th pSortableColumn="marca">
             Marca
@@ -93,7 +93,7 @@
           <td>
             <div class="flex align-items-center gap-2">
               <i class="pi pi-desktop text-primary"></i>
-              <span class="font-medium">{{ equipo.descripcionCompleta }}</span>
+              <span class="font-medium">{{ equipo.tipoEquipo }}</span>
             </div>
           </td>
           <td>{{ equipo.marca }}</td>

@@ -1,69 +1,70 @@
-<div class="container-fluid py-4">
+<div class="config-container">
   <p-toast />
+  <p-confirmDialog />
 
-  <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center py-3">
-      <h3 class="m-0">Repuestos</h3>
+  <div class="config-card">
+    <div class="config-header">
+      <h3>Repuestos</h3>
       <p-button
         label="Nuevo Repuesto"
         icon="pi pi-plus"
-        (onClick)="openCreateDialog()">
+        (onClick)="openCreateDialog()"
+        size="small">
       </p-button>
     </div>
 
-    <div class="card-body pt-4">
-      <p-table
-        [value]="repuestos()"
-        [loading]="isLoading()"
-        [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[5, 10, 20, 50]"
-        [globalFilterFields]="['descripcion', 'tipoEquipo']"
-        responsiveLayout="scroll"
-        styleClass="p-datatable-sm">
+    <p-table
+      [value]="repuestos()"
+      [loading]="isLoading()"
+      [paginator]="true"
+      [rows]="10"
+      [rowsPerPageOptions]="[5, 10, 20, 50]"
+      [globalFilterFields]="['descripcion', 'tipoEquipo']"
+      [breakpoint]="'768px'"
+      [scrollable]="true"
+      styleClass="p-datatable-sm p-datatable-gridlines">
 
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="tipoEquipo">Tipo de Equipo <p-sortIcon field="tipoEquipo" /></th>
-            <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
-            <th style="width: 120px; text-align: center">Acciones</th>
-          </tr>
-        </ng-template>
+      <ng-template pTemplate="header">
+        <tr>
+          <th pSortableColumn="tipoEquipo">Tipo de Equipo <p-sortIcon field="tipoEquipo" /></th>
+          <th pSortableColumn="descripcion">Descripción <p-sortIcon field="descripcion" /></th>
+          <th style="width: 120px; text-align: center">Acciones</th>
+        </tr>
+      </ng-template>
 
-        <ng-template pTemplate="body" let-repuesto>
-          <tr>
-            <td>{{ repuesto.tipoEquipo }}</td>
-            <td>{{ repuesto.descripcion }}</td>
-            <td class="text-center">
-              <p-button
-                icon="pi pi-pencil"
-                [text]="true"
-                [rounded]="true"
-                severity="warn"
-                (onClick)="openEditDialog(repuesto)"
-                pTooltip="Editar"
-                tooltipPosition="top">
-              </p-button>
-              <p-button
-                icon="pi pi-trash"
-                [text]="true"
-                [rounded]="true"
-                severity="danger"
-                (onClick)="deleteRepuesto(repuesto)"
-                pTooltip="Eliminar"
-                tooltipPosition="top">
-              </p-button>
-            </td>
-          </tr>
-        </ng-template>
+      <ng-template pTemplate="body" let-repuesto>
+        <tr>
+          <td>{{ repuesto.tipoEquipo }}</td>
+          <td>{{ repuesto.descripcion }}</td>
+          <td class="text-center">
+            <p-button
+              icon="pi pi-pencil"
+              [text]="true"
+              [rounded]="true"
+              severity="warn"
+              (onClick)="openEditDialog(repuesto)"
+              pTooltip="Editar"
+              tooltipPosition="top">
+            </p-button>
+            <p-button
+              icon="pi pi-trash"
+              [text]="true"
+              [rounded]="true"
+              severity="danger"
+              (onClick)="confirmDelete(repuesto)"
+              pTooltip="Eliminar"
+              tooltipPosition="top">
+            </p-button>
+          </td>
+        </tr>
+      </ng-template>
 
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="3" class="text-center py-4">No se encontraron repuestos</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="3" class="text-center py-4">No se encontraron repuestos</td>
+        </tr>
+      </ng-template>
+    </p-table>
   </div>
 
   <!-- Dialog for Create/Edit -->
@@ -73,7 +74,7 @@
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
-    [style]="{width: '500px'}">
+    [style]="{width: '500px', maxWidth: '95vw'}">
 
     <form [formGroup]="repuestoForm" (ngSubmit)="saveRepuesto()">
       <div class="field mb-4">
