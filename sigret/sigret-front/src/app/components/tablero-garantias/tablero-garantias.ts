@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, OnDestroy, viewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { CdkDropListGroup, CdkDropList, CdkDrag, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
 import { ServicioService } from '../../services/servicio.service';
@@ -48,6 +48,7 @@ export class TableroGarantiasComponent implements OnInit, OnDestroy {
   private readonly authService = inject(AuthService);
   private readonly router = inject(Router);
   private readonly messageService = inject(MessageService);
+  private readonly location = inject(Location);
 
   // Signals
   readonly loading = signal<boolean>(true);
@@ -124,6 +125,10 @@ export class TableroGarantiasComponent implements OnInit, OnDestroy {
       servicios: serviciosList.filter(s => s.estado === columna.estado)
     }));
   });
+
+  goBack(): void {
+    this.location.back();
+  }
 
   ngOnInit(): void {
     this.cargarGarantias();

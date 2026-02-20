@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Button } from 'primeng/button';
@@ -64,6 +64,7 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
   private readonly clientService = inject(ClientService);
   private readonly employeeService = inject(EmployeeService);
   private readonly equipoService = inject(EquipoService);
+  private readonly location = inject(Location);
 
   // Canvas para la firma
   @ViewChild('signatureCanvas') signatureCanvas!: ElementRef<HTMLCanvasElement>;
@@ -131,6 +132,10 @@ export class ServicioCreateComponent implements OnInit, AfterViewInit {
       fechaRecepcion: [new Date(), Validators.required],
       fechaDevolucionPrevista: [null]
     });
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   ngOnInit(): void {

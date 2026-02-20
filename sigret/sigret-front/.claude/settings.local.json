@@ -18,14 +18,20 @@
       "Bash(npx ng serve:*)",
       "Bash(npx --yes png-to-ico:*)",
       "Bash(npx --yes to-ico:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Read(//d/Nico/Escritorio/PS/Sistema-Gestor-de-Reparaciones-Tecnicas/sigret/sigret-front/**)",
+      "Bash(node -e:*)"
     ],
     "deny": [],
     "ask": [],
     "additionalDirectories": [
       "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\services",
       "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\repositories",
-      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\controllers\\publico"
+      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\controllers\\publico",
+      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\controllers\\servicio",
+      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\security",
+      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret\\sigret-backend\\src\\main\\java\\com\\sigret\\entities",
+      "d:\\Nico\\Escritorio\\PS\\Sistema-Gestor-de-Reparaciones-Tecnicas\\sigret"
     ]
   }
 }

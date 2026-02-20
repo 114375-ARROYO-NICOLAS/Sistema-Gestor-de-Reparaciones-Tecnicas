@@ -12,10 +12,13 @@ public interface PdfService {
     byte[] generarPdfServicio(Long servicioId);
 
     /**
-     * Genera un PDF y lo envía por email al cliente
-     * @param servicioId ID del servicio
+     * Genera un PDF con el detalle del presupuesto para adjuntar al email del cliente
+     * @param presupuestoId ID del presupuesto
+     * @param mostrarOriginal si se muestra el precio con repuestos originales
+     * @param mostrarAlternativo si se muestra el precio con repuestos alternativos
+     * @return byte array con el PDF generado
      */
-    void enviarPdfPorEmail(Long servicioId);
+    byte[] generarPdfPresupuesto(Long presupuestoId, Boolean mostrarOriginal, Boolean mostrarAlternativo);
 
     /**
      * Genera un PDF final con info del servicio, presupuesto aprobado, orden de trabajo y firma de conformidad
@@ -23,10 +26,4 @@ public interface PdfService {
      * @return byte array con el PDF generado
      */
     byte[] generarPdfFinal(Long servicioId);
-
-    /**
-     * Genera un PDF final y lo envía por email al cliente
-     * @param servicioId ID del servicio
-     */
-    void enviarPdfFinalPorEmail(Long servicioId);
 }

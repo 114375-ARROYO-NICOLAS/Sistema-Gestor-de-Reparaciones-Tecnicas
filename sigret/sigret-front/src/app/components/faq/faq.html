@@ -1,10 +1,19 @@
 <div class="faq-container">
   <!-- Header -->
   <div class="faq-header">
-    <h1 class="faq-title">
-      <i class="pi pi-question-circle"></i>
-      Preguntas Frecuentes
-    </h1>
+    <div class="flex align-items-center gap-2 mb-2">
+      <p-button
+        icon="pi pi-arrow-left"
+        [text]="true"
+        [rounded]="true"
+        severity="secondary"
+        (onClick)="goBack()">
+      </p-button>
+      <h1 class="faq-title m-0">
+        <i class="pi pi-question-circle"></i>
+        Preguntas Frecuentes
+      </h1>
+    </div>
     <p class="faq-subtitle">
       Encuentra respuestas a las preguntas más comunes sobre el uso del sistema
     </p>

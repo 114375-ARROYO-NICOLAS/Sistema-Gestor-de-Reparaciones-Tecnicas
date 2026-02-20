@@ -58,7 +58,7 @@ public class PresupuestoController {
             @ApiResponse(responseCode = "200", description = "Presupuesto encontrado"),
             @ApiResponse(responseCode = "404", description = "Presupuesto no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<PresupuestoResponseDto> obtenerPresupuestoPorId(
             @Parameter(description = "ID del presupuesto") @PathVariable Long id) {
         PresupuestoResponseDto presupuesto = presupuestoService.obtenerPresupuestoPorId(id);
@@ -70,7 +70,7 @@ public class PresupuestoController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de presupuestos obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<Page<PresupuestoListDto>> obtenerPresupuestos(Pageable pageable) {
         Page<PresupuestoListDto> presupuestos = presupuestoService.obtenerPresupuestos(pageable);
         return ResponseEntity.ok(presupuestos);
@@ -81,7 +81,7 @@ public class PresupuestoController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de presupuestos obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<List<PresupuestoListDto>> obtenerPresupuestosPorServicio(
             @Parameter(description = "ID del servicio") @PathVariable Long servicioId) {
         List<PresupuestoListDto> presupuestos = presupuestoService.obtenerPresupuestosPorServicio(servicioId);
@@ -93,7 +93,7 @@ public class PresupuestoController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de presupuestos obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<List<PresupuestoListDto>> obtenerPresupuestosPorEstado(
             @Parameter(description = "Estado del presupuesto") @PathVariable EstadoPresupuesto estado) {
         List<PresupuestoListDto> presupuestos = presupuestoService.obtenerPresupuestosPorEstado(estado);
@@ -105,7 +105,7 @@ public class PresupuestoController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de presupuestos obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<List<PresupuestoListDto>> obtenerPresupuestosPorCliente(
             @Parameter(description = "ID del cliente") @PathVariable Long clienteId) {
         List<PresupuestoListDto> presupuestos = presupuestoService.obtenerPresupuestosPorCliente(clienteId);
@@ -117,7 +117,7 @@ public class PresupuestoController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de presupuestos obtenida exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<List<PresupuestoListDto>> obtenerPresupuestosPorFechas(
             @Parameter(description = "Fecha de inicio") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
             @Parameter(description = "Fecha de fin") @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin) {
@@ -146,7 +146,7 @@ public class PresupuestoController {
             @ApiResponse(responseCode = "200", description = "Estado cambiado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Presupuesto no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<PresupuestoResponseDto> cambiarEstadoPresupuesto(
             @Parameter(description = "ID del presupuesto") @PathVariable Long id,
             @Parameter(description = "Nuevo estado") @RequestParam EstadoPresupuesto nuevoEstado) {
@@ -160,7 +160,7 @@ public class PresupuestoController {
             @ApiResponse(responseCode = "200", description = "Empleado asignado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Presupuesto o empleado no encontrado")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<PresupuestoResponseDto> asignarEmpleado(
             @Parameter(description = "ID del presupuesto") @PathVariable Long id,
             @Parameter(description = "ID del empleado") @RequestParam Long empleadoId) {
@@ -234,8 +234,9 @@ public class PresupuestoController {
                 envioDto.getMostrarAlternativo(),
                 envioDto.getMensajeAdicional()
         );
-        // Cambiar estado a ENVIADO después de enviar el email exitosamente
-        PresupuestoResponseDto presupuesto = presupuestoService.cambiarEstadoPresupuesto(id, EstadoPresupuesto.ENVIADO);
+        // Guardar qué opciones se muestran y cambiar estado a ENVIADO
+        PresupuestoResponseDto presupuesto = presupuestoService.marcarComoEnviado(
+                id, envioDto.getMostrarOriginal(), envioDto.getMostrarAlternativo());
         return ResponseEntity.ok(presupuesto);
     }
 

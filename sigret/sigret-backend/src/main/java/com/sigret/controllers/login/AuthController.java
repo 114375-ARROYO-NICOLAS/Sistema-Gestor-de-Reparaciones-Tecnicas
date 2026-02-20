@@ -5,6 +5,7 @@ import com.sigret.dtos.login.LoginResponseDto;
 import com.sigret.dtos.login.RefreshTokenRequestDto;
 import com.sigret.entities.Usuario;
 import com.sigret.services.AuthService;
+import com.sigret.services.TokenBlacklistService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
@@ -25,15 +26,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/auth")
-@CrossOrigin(origins = {
-        "http://localhost:4200",
-        "http://192.168.100.9:4200"
-})
 @Tag(name = "Autenticación", description = "Endpoints para autenticación y gestión de usuarios")
 public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
 
     @Operation(
             summary = "Iniciar sesión",
@@ -218,8 +218,11 @@ public class AuthController {
             )
     })
     @PostMapping("/logout")
-    public ResponseEntity<?> logout() {
-        // En JWT stateless, el logout se maneja en el frontend eliminando el token
+    public ResponseEntity<?> logout(@org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String authHeader) {
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            tokenBlacklistService.blacklist(token);
+        }
         Map<String, String> response = new HashMap<>();
         response.put("message", "Logout exitoso");
         return ResponseEntity.ok(response);

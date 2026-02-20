@@ -41,6 +41,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -48,6 +50,16 @@ import java.util.stream.Collectors;
 public class PresupuestoServiceImpl implements PresupuestoService {
 
     private static final Logger log = LoggerFactory.getLogger(PresupuestoServiceImpl.class);
+
+    private static final Map<EstadoPresupuesto, Set<EstadoPresupuesto>> TRANSICIONES_VALIDAS = Map.of(
+        EstadoPresupuesto.PENDIENTE,  Set.of(EstadoPresupuesto.EN_CURSO),
+        EstadoPresupuesto.EN_CURSO,   Set.of(EstadoPresupuesto.LISTO),
+        EstadoPresupuesto.LISTO,      Set.of(EstadoPresupuesto.ENVIADO, EstadoPresupuesto.APROBADO),
+        EstadoPresupuesto.ENVIADO,    Set.of(EstadoPresupuesto.APROBADO, EstadoPresupuesto.RECHAZADO, EstadoPresupuesto.VENCIDO),
+        EstadoPresupuesto.VENCIDO,    Set.of(EstadoPresupuesto.RECHAZADO),
+        EstadoPresupuesto.APROBADO,   Set.of(),
+        EstadoPresupuesto.RECHAZADO,  Set.of()
+    );
 
     @Autowired
     private PresupuestoRepository presupuestoRepository;
@@ -305,6 +317,13 @@ public class PresupuestoServiceImpl implements PresupuestoService {
 
         EstadoPresupuesto estadoAnterior = presupuesto.getEstado();
 
+        Set<EstadoPresupuesto> permitidos = TRANSICIONES_VALIDAS.getOrDefault(estadoAnterior, Set.of());
+        if (!permitidos.contains(nuevoEstado)) {
+            throw new IllegalStateException(
+                String.format("Transición de estado inválida: %s → %s", estadoAnterior, nuevoEstado)
+            );
+        }
+
         // Si cambia a EN_CURSO y no tiene empleado asignado, auto-asignar el usuario actual
         if (nuevoEstado == EstadoPresupuesto.EN_CURSO && presupuesto.getEmpleado() == null) {
             // Obtener el usuario autenticado
@@ -510,6 +529,35 @@ public class PresupuestoServiceImpl implements PresupuestoService {
     }
 
     @Override
+    @Transactional
+    public PresupuestoResponseDto marcarComoEnviado(Long id, Boolean mostrarOriginal, Boolean mostrarAlternativo) {
+        Presupuesto presupuesto = presupuestoRepository.findById(id)
+                .orElseThrow(() -> new PresupuestoNotFoundException("Presupuesto no encontrado con ID: " + id));
+
+        if (mostrarOriginal != null) {
+            presupuesto.setMostrarOriginal(mostrarOriginal);
+        }
+        if (mostrarAlternativo != null) {
+            presupuesto.setMostrarAlternativo(mostrarAlternativo);
+        }
+        presupuesto.setEstado(EstadoPresupuesto.ENVIADO);
+
+        Presupuesto actualizado = presupuestoRepository.save(presupuesto);
+
+        PresupuestoEventDto evento = new PresupuestoEventDto();
+        evento.setTipoEvento("CAMBIO_ESTADO");
+        evento.setPresupuestoId(presupuesto.getId());
+        evento.setServicioId(presupuesto.getServicio().getId());
+        evento.setNumeroServicio(presupuesto.getServicio().getNumeroServicio());
+        evento.setEstadoAnterior(EstadoPresupuesto.LISTO);
+        evento.setEstadoNuevo(EstadoPresupuesto.ENVIADO);
+        evento.setPresupuesto(convertirAPresupuestoListDto(actualizado));
+        notificationService.notificarPresupuesto(evento);
+
+        return convertirAPresupuestoResponseDto(actualizado);
+    }
+
+    @Override
     public PresupuestoResponseDto actualizarYReenviar(Long id, PresupuestoActualizarReenviarDto dto) {
         Presupuesto presupuesto = presupuestoRepository.findById(id)
                 .orElseThrow(() -> new PresupuestoNotFoundException("Presupuesto no encontrado con ID: " + id));
@@ -545,6 +593,14 @@ public class PresupuestoServiceImpl implements PresupuestoService {
                 detalle.setPresupuesto(presupuesto);
                 presupuesto.getDetallePresupuestos().add(detalle);
             }
+        }
+
+        // Actualizar qué opciones de precio se muestran al cliente
+        if (dto.getMostrarOriginal() != null) {
+            presupuesto.setMostrarOriginal(dto.getMostrarOriginal());
+        }
+        if (dto.getMostrarAlternativo() != null) {
+            presupuesto.setMostrarAlternativo(dto.getMostrarAlternativo());
         }
 
         // Recalcular montos

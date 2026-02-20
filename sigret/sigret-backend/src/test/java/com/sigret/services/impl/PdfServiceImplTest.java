@@ -3,7 +3,6 @@ package com.sigret.services.impl;
 import com.sigret.entities.*;
 import com.sigret.enums.TipoIngreso;
 import com.sigret.repositories.ServicioRepository;
-import com.sigret.services.EmailService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,12 +11,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,9 +22,6 @@ class PdfServiceImplTest {
 
     @Mock
     private ServicioRepository servicioRepository;
-
-    @Mock
-    private EmailService emailService;
 
     @InjectMocks
     private PdfServiceImpl pdfService;
@@ -150,34 +144,4 @@ class PdfServiceImplTest {
         assertTrue(resultado.length > 0);
     }
 
-    @Test
-    void enviarPdfPorEmail_conServicioValido_enviaEmail() {
-        when(servicioRepository.findById(1L)).thenReturn(Optional.of(servicio));
-
-        pdfService.enviarPdfPorEmail(1L);
-
-        verify(emailService).enviarEmailConAdjunto(
-                eq("cliente@mail.com"),
-                contains("SER2600001"),
-                anyString(),
-                any(byte[].class),
-                contains("SER2600001")
-        );
-    }
-
-    @Test
-    void enviarPdfPorEmail_conServicioInexistente_lanzaRuntimeException() {
-        when(servicioRepository.findById(99L)).thenReturn(Optional.empty());
-
-        assertThrows(RuntimeException.class, () -> pdfService.enviarPdfPorEmail(99L));
-    }
-
-    @Test
-    void enviarPdfPorEmail_sinEmailCliente_lanzaRuntimeException() {
-        cliente.getPersona().setContactos(new ArrayList<>());
-
-        when(servicioRepository.findById(1L)).thenReturn(Optional.of(servicio));
-
-        assertThrows(RuntimeException.class, () -> pdfService.enviarPdfPorEmail(1L));
-    }
 }

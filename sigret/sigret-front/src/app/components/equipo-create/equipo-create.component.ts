@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, inject, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Button } from 'primeng/button';
@@ -49,6 +49,7 @@ export class EquipoCreateComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly messageService = inject(MessageService);
+  private readonly location = inject(Location);
 
   readonly marcas = signal<MarcaListDto[]>([]);
   readonly modelos = signal<ModeloListDto[]>([]);
@@ -70,6 +71,10 @@ export class EquipoCreateComponent implements OnInit {
       color: [''],
       observaciones: ['']
     });
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   ngOnInit(): void {

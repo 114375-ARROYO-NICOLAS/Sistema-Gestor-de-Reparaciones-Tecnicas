@@ -33,7 +33,7 @@ public class DashboardController {
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", description = "Estadísticas obtenidas exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
+    @PreAuthorize("hasRole('PROPIETARIO')")
     public ResponseEntity<DashboardEstadisticasDto> obtenerEstadisticas(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaDesde,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaHasta) {

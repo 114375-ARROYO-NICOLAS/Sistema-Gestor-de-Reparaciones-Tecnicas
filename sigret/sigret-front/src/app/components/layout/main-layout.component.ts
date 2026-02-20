@@ -1,4 +1,4 @@
-import { Component, signal, computed, OnInit, OnDestroy, inject } from '@angular/core';
+import { Component, signal, computed, OnInit, OnDestroy, inject, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd, RouterLink, RouterLinkActive } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -35,6 +35,7 @@ function isGroup(item: SidebarItem): item is MenuGroup {
 
 @Component({
   selector: 'app-main-layout',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     RouterOutlet,
@@ -72,49 +73,55 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   // Estado de grupos expandidos
   protected readonly expandedGroups = signal<Set<string>>(new Set());
 
-  // Configuración del menú con grupos desplegables
-  protected readonly menuItems: SidebarItem[] = [
-    {
-      label: 'Dashboard',
-      icon: 'pi pi-chart-bar',
-      routerLink: '/dashboard'
-    },
-    {
-      label: 'Tableros',
-      icon: 'pi pi-th-large',
-      children: [
-        { label: 'Servicios', icon: 'pi pi-list', routerLink: '/servicios' },
-        { label: 'Garantías', icon: 'pi pi-shield', routerLink: '/garantias' },
-        { label: 'Presupuestos', icon: 'pi pi-dollar', routerLink: '/presupuestos' },
-        { label: 'Órdenes de Trabajo', icon: 'pi pi-wrench', routerLink: '/ordenes-trabajo' }
-      ]
-    },
-    {
-      label: 'Administración',
-      icon: 'pi pi-briefcase',
-      children: [
-        { label: 'Clientes', icon: 'pi pi-users', routerLink: '/clientes' },
-        { label: 'Capital Humano', icon: 'pi pi-id-card', routerLink: '/empleados' },
-        { label: 'Equipos', icon: 'pi pi-desktop', routerLink: '/equipos' },
-        { label: 'Usuarios', icon: 'pi pi-user', routerLink: '/usuarios' }
-      ]
-    },
-    {
-      label: 'Configuración',
-      icon: 'pi pi-cog',
-      children: [
-        { label: 'Tipos de Equipo', icon: 'pi pi-tag', routerLink: '/configuracion/tipos-equipo' },
-        { label: 'Marcas', icon: 'pi pi-bookmark', routerLink: '/configuracion/marcas' },
-        { label: 'Modelos', icon: 'pi pi-database', routerLink: '/configuracion/modelos' },
-        { label: 'Repuestos', icon: 'pi pi-box', routerLink: '/configuracion/repuestos' }
-      ]
-    },
-    {
-      label: 'Ayuda',
-      icon: 'pi pi-question-circle',
-      routerLink: '/ayuda'
+  // Menú dinámico según rol
+  protected readonly menuItems = computed<SidebarItem[]>(() => {
+    const rol = this.user()?.rol;
+    const esPropietario = rol === 'PROPIETARIO';
+    const esAdminOPropietario = rol === 'PROPIETARIO' || rol === 'ADMINISTRATIVO';
+
+    const items: SidebarItem[] = [];
+
+    if (esPropietario) {
+      items.push({ label: 'Dashboard', icon: 'pi pi-chart-bar', routerLink: '/dashboard' });
     }
-  ];
+
+    const tableroChildren: MenuLink[] = [
+      { label: 'Servicios', icon: 'pi pi-list', routerLink: '/servicios' },
+      { label: 'Garantías', icon: 'pi pi-shield', routerLink: '/garantias' },
+    ];
+    if (esAdminOPropietario) {
+      tableroChildren.push({ label: 'Presupuestos', icon: 'pi pi-dollar', routerLink: '/presupuestos' });
+    }
+    tableroChildren.push({ label: 'Órdenes de Trabajo', icon: 'pi pi-wrench', routerLink: '/ordenes-trabajo' });
+    items.push({ label: 'Tableros', icon: 'pi pi-th-large', children: tableroChildren });
+
+    const adminChildren: MenuLink[] = [
+      { label: 'Clientes', icon: 'pi pi-users', routerLink: '/clientes' },
+      { label: 'Equipos', icon: 'pi pi-desktop', routerLink: '/equipos' },
+    ];
+    if (esAdminOPropietario) {
+      adminChildren.push({ label: 'Capital Humano', icon: 'pi pi-id-card', routerLink: '/empleados' });
+      adminChildren.push({ label: 'Usuarios', icon: 'pi pi-user', routerLink: '/usuarios' });
+    }
+    items.push({ label: 'Administración', icon: 'pi pi-briefcase', children: adminChildren });
+
+    if (esPropietario) {
+      items.push({
+        label: 'Configuración',
+        icon: 'pi pi-cog',
+        children: [
+          { label: 'Tipos de Equipo', icon: 'pi pi-tag', routerLink: '/configuracion/tipos-equipo' },
+          { label: 'Marcas', icon: 'pi pi-bookmark', routerLink: '/configuracion/marcas' },
+          { label: 'Modelos', icon: 'pi pi-database', routerLink: '/configuracion/modelos' },
+          { label: 'Repuestos', icon: 'pi pi-box', routerLink: '/configuracion/repuestos' }
+        ]
+      });
+    }
+
+    items.push({ label: 'Ayuda', icon: 'pi pi-question-circle', routerLink: '/ayuda' });
+
+    return items;
+  });
 
   protected readonly isGroup = isGroup;
 
@@ -173,7 +180,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   private findRouteLabel(url: string): string | null {
-    for (const item of this.menuItems) {
+    for (const item of this.menuItems()) {
       if (isGroup(item)) {
         const child = item.children.find(c => c.routerLink === url);
         if (child) return child.label;
@@ -222,7 +229,7 @@ export class MainLayoutComponent implements OnInit, OnDestroy {
   }
 
   private expandGroupForRoute(url: string): void {
-    for (const item of this.menuItems) {
+    for (const item of this.menuItems()) {
       if (isGroup(item) && item.children.some(c => url.startsWith(c.routerLink))) {
         this.expandedGroups.update(groups => {
           const next = new Set(groups);

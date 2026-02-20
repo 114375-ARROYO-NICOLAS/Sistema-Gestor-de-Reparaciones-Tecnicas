@@ -179,11 +179,12 @@
               <h3 class="text-lg font-semibold m-0">
                 <i class="pi pi-map-marker mr-2"></i>Direcciones Registradas
               </h3>
-              <p-button 
-                label="Agregar Dirección" 
+              <p-button
+                label="Agregar Dirección"
                 icon="pi pi-plus"
                 size="small"
-                severity="primary">
+                severity="primary"
+                (onClick)="openAddAddressDialog()">
               </p-button>
             </div>
           </ng-template>
@@ -255,22 +256,22 @@
                       </div>
 
                       <div class="ml-2 flex flex-column gap-1">
-                        @if (address.latitud && address.longitud) {
-                          <p-button 
-                            icon="pi pi-map"
-                            label="Ver en Maps"
-                            severity="info"
-                            size="small"
-                            [outlined]="true"
-                            title="Abrir en Google Maps">
-                          </p-button>
-                        }
-                        <p-button 
+                        <p-button
+                          icon="pi pi-map"
+                          label="Ver en mapa"
+                          severity="info"
+                          size="small"
+                          [outlined]="selectedAddressForMap() !== $index"
+                          title="Ver esta dirección en el mapa"
+                          (onClick)="selectAddressForMap($index)">
+                        </p-button>
+                        <p-button
                           icon="pi pi-pencil"
                           severity="secondary"
                           size="small"
                           [outlined]="true"
-                          title="Editar">
+                          title="Editar dirección"
+                          (onClick)="openEditAddressDialog(address, $index)">
                         </p-button>
                       </div>
                     </div>
@@ -282,10 +283,11 @@
                 <i class="pi pi-map-marker text-4xl mb-3"></i>
                 <p class="text-lg font-medium mb-2">No hay direcciones registradas</p>
                 <p class="text-sm mb-3">Agrega una dirección para este cliente</p>
-                <p-button 
-                  label="Agregar Primera Dirección" 
+                <p-button
+                  label="Agregar Primera Dirección"
                   icon="pi pi-plus"
-                  severity="primary">
+                  severity="primary"
+                  (onClick)="openAddAddressDialog()">
                 </p-button>
               </div>
             }
@@ -305,6 +307,10 @@
                 <i class="pi pi-map mr-2"></i>Ubicación
               </h3>
               @if (getMapUrl(); as mapUrl) {
+                <div class="flex align-items-center gap-2 mb-2 text-sm text-600">
+                  <i class="pi pi-map-marker text-primary"></i>
+                  <span class="overflow-hidden text-overflow-ellipsis white-space-nowrap">{{ getMapAddressLabel() }}</span>
+                </div>
                 <iframe
                   [src]="mapUrl"
                   class="w-full border-round"
@@ -313,6 +319,12 @@
                   loading="lazy"
                   referrerpolicy="no-referrer-when-downgrade">
                 </iframe>
+                @if ((client()?.direcciones?.length ?? 0) > 1) {
+                  <p class="text-xs text-500 mt-2 mb-0">
+                    <i class="pi pi-info-circle mr-1"></i>
+                    Usá "Ver en mapa" en cada dirección para cambiar la vista
+                  </p>
+                }
               } @else {
                 <div class="text-center text-600 py-4">
                   <i class="pi pi-map-marker text-3xl mb-2"></i>
@@ -555,6 +567,126 @@
         [loading]="isSaving()"
         (onClick)="saveContact()"
         [disabled]="!contactForm.valid">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<!-- Address Dialog -->
+<p-dialog
+  [header]="isEditingAddress() ? 'Editar Dirección' : 'Agregar Dirección'"
+  [visible]="showAddressDialog()"
+  (visibleChange)="showAddressDialog.set($event)"
+  [modal]="true"
+  [closable]="true"
+  [breakpoints]="{ '960px': '90vw', '640px': '95vw' }"
+  [style]="{ width: '560px', maxWidth: '95vw' }"
+  (onHide)="closeAddressDialog()">
+
+  <div class="grid">
+    <!-- Buscador Google Places -->
+    <div class="col-12">
+      <label for="addrBuscador" class="block text-900 font-medium mb-2">
+        Buscar dirección
+      </label>
+      <p-autocomplete
+        [(ngModel)]="selectedAddressSuggestion"
+        [ngModelOptions]="{standalone: true}"
+        [suggestions]="addressSuggestions()"
+        (completeMethod)="searchAddress($event)"
+        (onSelect)="onAddressSelected($event)"
+        field="description"
+        [minLength]="3"
+        placeholder="Ingresá una dirección..."
+        [showEmptyMessage]="true"
+        emptyMessage="Escribí al menos 3 caracteres para buscar"
+        class="w-full"
+        inputStyleClass="w-full"
+        [dropdown]="false">
+        <ng-template let-suggestion pTemplate="item">
+          <div class="flex align-items-center gap-2 py-2">
+            <i class="pi pi-map-marker text-primary"></i>
+            <span>{{ suggestion.description }}</span>
+          </div>
+        </ng-template>
+      </p-autocomplete>
+      <small class="text-600 block mt-2">
+        <i class="pi pi-info-circle mr-1"></i>
+        <strong>IMPORTANTE:</strong> Escribí y luego <strong>seleccioná una opción</strong> del desplegable.
+      </small>
+    </div>
+
+    <!-- Dirección seleccionada (preview) -->
+    @if (currentAddressData().direccionFormateada) {
+      <div class="col-12">
+        <div class="surface-100 border-round p-3 flex align-items-center gap-2">
+          <i class="pi pi-map-marker text-primary"></i>
+          <span class="text-900 font-medium">{{ currentAddressData().direccionFormateada }}</span>
+        </div>
+      </div>
+    }
+
+    <!-- Campos adicionales -->
+    <div class="col-12 md:col-6">
+      <label for="addrPiso" class="block text-900 font-medium mb-2">Piso (Opcional)</label>
+      <input
+        id="addrPiso"
+        type="text"
+        pInputText
+        placeholder="Ej: 3"
+        [(ngModel)]="currentAddressData().piso"
+        [ngModelOptions]="{standalone: true}"
+        class="w-full">
+    </div>
+
+    <div class="col-12 md:col-6">
+      <label for="addrDepto" class="block text-900 font-medium mb-2">Departamento (Opcional)</label>
+      <input
+        id="addrDepto"
+        type="text"
+        pInputText
+        placeholder="Ej: B"
+        [(ngModel)]="currentAddressData().departamento"
+        [ngModelOptions]="{standalone: true}"
+        class="w-full">
+    </div>
+
+    <div class="col-12">
+      <label for="addrObs" class="block text-900 font-medium mb-2">Observaciones (Opcional)</label>
+      <input
+        id="addrObs"
+        type="text"
+        pInputText
+        placeholder="Información adicional sobre la dirección"
+        [(ngModel)]="currentAddressData().observaciones"
+        [ngModelOptions]="{standalone: true}"
+        class="w-full">
+    </div>
+
+    <div class="col-12">
+      <div class="flex align-items-center gap-2">
+        <input
+          type="checkbox"
+          id="addrPrincipal"
+          [(ngModel)]="currentAddressData().esPrincipal"
+          [ngModelOptions]="{standalone: true}">
+        <label for="addrPrincipal" class="text-900 font-medium cursor-pointer">Dirección Principal</label>
+      </div>
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancelar"
+        severity="secondary"
+        [text]="true"
+        (onClick)="closeAddressDialog()">
+      </p-button>
+      <p-button
+        [label]="isEditingAddress() ? 'Actualizar' : 'Agregar'"
+        [loading]="isSaving()"
+        (onClick)="saveAddress()">
       </p-button>
     </div>
   </ng-template>

@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, inject, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { ServicioService } from '../../services/servicio.service';
@@ -50,6 +50,7 @@ export class ServicioSearch implements OnInit {
   private readonly employeeService = inject(EmployeeService);
   private readonly tipoEquipoService = inject(TipoEquipoService);
   private readonly messageService = inject(MessageService);
+  private readonly location = inject(Location);
 
   private readonly MAX_VISIBLE = 4;
 
@@ -166,6 +167,10 @@ export class ServicioSearch implements OnInit {
 
     return servicios;
   });
+
+  goBack(): void {
+    this.location.back();
+  }
 
   ngOnInit(): void {
     this.cargarServicios();

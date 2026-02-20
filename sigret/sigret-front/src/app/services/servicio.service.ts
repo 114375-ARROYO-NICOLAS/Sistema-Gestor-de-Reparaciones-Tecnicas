@@ -118,16 +118,14 @@ export class ServicioService {
    * Busca servicios por número de servicio
    */
   buscarPorNumeroServicio(numeroServicio: string): Observable<ServicioList[]> {
-    const params = new HttpParams().set('numeroServicio', numeroServicio);
-    return this.http.get<ServicioList[]>(`${this.API_URL}/buscar`, { params });
+    return this.http.get<ServicioList[]>(`${this.API_URL}/numero/${numeroServicio}`);
   }
 
   /**
    * Filtra servicios por cliente
    */
   filtrarPorCliente(clienteId: number): Observable<ServicioList[]> {
-    const params = new HttpParams().set('clienteId', clienteId.toString());
-    return this.http.get<ServicioList[]>(`${this.API_URL}/filtrar/cliente`, { params });
+    return this.http.get<ServicioList[]>(`${this.API_URL}/cliente/${clienteId}`);
   }
 
   /**
@@ -167,7 +165,7 @@ export class ServicioService {
     const params = new HttpParams()
       .set('fechaInicio', fechaInicio)
       .set('fechaFin', fechaFin);
-    return this.http.get<ServicioList[]>(`${this.API_URL}/filtrar/fechas`, { params });
+    return this.http.get<ServicioList[]>(`${this.API_URL}/fechas`, { params });
   }
 
   /**

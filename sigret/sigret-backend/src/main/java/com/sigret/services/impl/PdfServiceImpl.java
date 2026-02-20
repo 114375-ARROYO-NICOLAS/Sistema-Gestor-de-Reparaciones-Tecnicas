@@ -12,11 +12,14 @@ import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.*;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
+
+import java.io.InputStream;
 import com.sigret.entities.*;
 import com.sigret.enums.EstadoOrdenTrabajo;
 import com.sigret.enums.EstadoPresupuesto;
+import com.sigret.repositories.PresupuestoRepository;
 import com.sigret.repositories.ServicioRepository;
-import com.sigret.services.EmailService;
 import com.sigret.services.PdfService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +37,7 @@ public class PdfServiceImpl implements PdfService {
     private ServicioRepository servicioRepository;
 
     @Autowired
-    private EmailService emailService;
+    private PresupuestoRepository presupuestoRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
@@ -48,11 +51,11 @@ public class PdfServiceImpl implements PdfService {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdfDoc = new PdfDocument(writer);
             Document document = new Document(pdfDoc);
+            document.setMargins(20, 36, 20, 36);
 
             // Agregar contenido al PDF
             agregarEncabezado(document, servicio);
-            agregarInformacionCliente(document, servicio);
-            agregarInformacionEquipo(document, servicio);
+            agregarInformacionClienteYEquipo(document, servicio);
             agregarDetallesServicio(document, servicio);
             agregarComponentes(document, servicio);
             agregarFirma(document, servicio);
@@ -67,185 +70,172 @@ public class PdfServiceImpl implements PdfService {
         }
     }
 
-    @Override
-    public void enviarPdfPorEmail(Long servicioId) {
-        Servicio servicio = servicioRepository.findById(servicioId)
-                .orElseThrow(() -> new RuntimeException("Servicio no encontrado"));
+    private void agregarEncabezado(Document document, Servicio servicio) {
+        Table headerTable = new Table(UnitValue.createPercentArray(new float[]{55, 45}));
+        headerTable.setWidth(UnitValue.createPercentValue(100));
+        headerTable.setBorder(Border.NO_BORDER);
+        headerTable.setMarginBottom(6);
 
-        // Obtener email del cliente
-        String email = servicio.getCliente().getPrimerEmail();
-        if (email == null || email.isEmpty()) {
-            throw new RuntimeException("El cliente no tiene un email registrado");
+        // Celda izquierda: logo
+        Cell leftCell = new Cell().setBorder(Border.NO_BORDER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPadding(0);
+
+        try {
+            InputStream logoStream = getClass().getClassLoader().getResourceAsStream("logos/logo-horizontal-original.png");
+            if (logoStream != null) {
+                Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()));
+                logo.setWidth(170);
+                logo.setAutoScaleHeight(true);
+                leftCell.add(logo);
+            } else {
+                leftCell.add(new Paragraph("Arroyo Electromecánica")
+                        .setFontSize(12).setBold()
+                        .setFontColor(new DeviceRgb(28, 96, 145)));
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo cargar el logo", e);
+            leftCell.add(new Paragraph("Arroyo Electromecánica")
+                    .setFontSize(12).setBold()
+                    .setFontColor(new DeviceRgb(28, 96, 145)));
         }
 
-        // Generar PDF
-        byte[] pdfBytes = generarPdfServicio(servicioId);
+        // Celda derecha: tipo de comprobante + número
+        Cell rightCell = new Cell().setBorder(Border.NO_BORDER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setPadding(0);
 
-        // Enviar email
-        String asunto = "Comprobante de Servicio - " + servicio.getNumeroServicio();
-        String mensaje = String.format(
-                "Estimado/a %s,\n\n" +
-                        "Adjuntamos el comprobante de recepción del servicio técnico número %s.\n\n" +
-                        "Equipo: %s\n" +
-                        "Fecha de recepción: %s\n\n" +
-                        "Gracias por confiar en nuestros servicios.\n\n" +
-                        "Saludos cordiales,\n" +
-                        "Arroyo Electromecánica",
-                servicio.getCliente().getNombreCompleto(),
-                servicio.getNumeroServicio(),
-                servicio.getEquipo().getDescripcionCompleta(),
-                servicio.getFechaRecepcion().format(DATE_FORMATTER)
-        );
+        rightCell.add(new Paragraph("COMPROBANTE DE SERVICIO TÉCNICO")
+                .setFontSize(8)
+                .setBold()
+                .setFontColor(new DeviceRgb(80, 80, 80))
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setMarginBottom(2));
 
-        emailService.enviarEmailConAdjunto(
-                email,
-                asunto,
-                mensaje,
-                pdfBytes,
-                "comprobante-servicio-" + servicio.getNumeroServicio() + ".pdf"
-        );
-
-        log.info("PDF del servicio {} enviado por email a {}", servicioId, email);
-    }
-
-    private void agregarEncabezado(Document document, Servicio servicio) {
-        // Nombre de la empresa
-        Paragraph empresa = new Paragraph("Arroyo Electromecánica")
-                .setFontSize(12)
+        rightCell.add(new Paragraph("Nº " + servicio.getNumeroServicio())
+                .setFontSize(16)
                 .setBold()
                 .setFontColor(new DeviceRgb(28, 96, 145))
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(5);
-        document.add(empresa);
+                .setTextAlignment(TextAlignment.RIGHT));
 
-        // Título principal
-        Paragraph titulo = new Paragraph("COMPROBANTE DE SERVICIO TÉCNICO")
-                .setFontSize(18)
-                .setBold()
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(5);
-        document.add(titulo);
+        headerTable.addCell(leftCell);
+        headerTable.addCell(rightCell);
+        document.add(headerTable);
 
-        // Número de servicio
-        Paragraph numeroServicio = new Paragraph("Nº " + servicio.getNumeroServicio())
-                .setFontSize(14)
-                .setBold()
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(20);
-        document.add(numeroServicio);
-
-        // Línea separadora
         SolidLine line = new SolidLine(1f);
-        line.setColor(ColorConstants.GRAY);
+        line.setColor(new DeviceRgb(28, 96, 145));
         document.add(new LineSeparator(line));
-        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("").setMarginBottom(6));
     }
 
-    private void agregarInformacionCliente(Document document, Servicio servicio) {
+    private void agregarInformacionClienteYEquipo(Document document, Servicio servicio) {
         Cliente cliente = servicio.getCliente();
         Persona persona = cliente.getPersona();
-
-        Paragraph seccion = new Paragraph("INFORMACIÓN DEL CLIENTE")
-                .setFontSize(12)
-                .setBold()
-                .setMarginBottom(10);
-        document.add(seccion);
-
-        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 70}));
-        table.setWidth(UnitValue.createPercentValue(100));
-
-        agregarFilaTabla(table, "Nombre:", cliente.getNombreCompleto());
-        agregarFilaTabla(table, "Documento:", persona.getTipoDocumento().getDescripcion() + " " + persona.getDocumento());
-
-        // Agregar email si existe
-        String email = cliente.getPrimerEmail();
-        if (email != null && !email.isEmpty()) {
-            agregarFilaTabla(table, "Email:", email);
-        }
-
-        // Agregar teléfono si existe
-        String telefono = cliente.getPrimerTelefono();
-        if (telefono != null && !telefono.isEmpty()) {
-            agregarFilaTabla(table, "Teléfono:", telefono);
-        }
-
-        document.add(table);
-        document.add(new Paragraph("\n"));
-    }
-
-    private void agregarInformacionEquipo(Document document, Servicio servicio) {
         Equipo equipo = servicio.getEquipo();
 
-        Paragraph seccion = new Paragraph("INFORMACIÓN DEL EQUIPO")
-                .setFontSize(12)
-                .setBold()
-                .setMarginBottom(10);
-        document.add(seccion);
+        Table outerTable = new Table(UnitValue.createPercentArray(new float[]{50, 50}));
+        outerTable.setWidth(UnitValue.createPercentValue(100));
+        outerTable.setBorder(Border.NO_BORDER);
+        outerTable.setMarginBottom(6);
 
-        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 70}));
-        table.setWidth(UnitValue.createPercentValue(100));
+        // --- Columna izquierda: Cliente ---
+        Cell leftCell = new Cell().setBorder(Border.NO_BORDER).setPaddingRight(6);
 
-        agregarFilaTabla(table, "Tipo:", equipo.getTipoEquipo().getDescripcion());
-        agregarFilaTabla(table, "Marca:", equipo.getMarca().getDescripcion());
+        leftCell.add(new Paragraph("INFORMACIÓN DEL CLIENTE")
+                .setFontSize(9).setBold()
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setMarginBottom(4));
+
+        Table clienteTable = new Table(UnitValue.createPercentArray(new float[]{38, 62}));
+        clienteTable.setWidth(UnitValue.createPercentValue(100));
+
+        agregarFilaTablaCompacta(clienteTable, "Nombre:", cliente.getNombreCompleto());
+        agregarFilaTablaCompacta(clienteTable, "Documento:", persona.getTipoDocumento().getDescripcion() + " " + persona.getDocumento());
+
+        String email = cliente.getPrimerEmail();
+        if (email != null && !email.isEmpty()) {
+            agregarFilaTablaCompacta(clienteTable, "Email:", email);
+        }
+
+        String telefono = cliente.getPrimerTelefono();
+        if (telefono != null && !telefono.isEmpty()) {
+            agregarFilaTablaCompacta(clienteTable, "Teléfono:", telefono);
+        }
+
+        leftCell.add(clienteTable);
+        outerTable.addCell(leftCell);
+
+        // --- Columna derecha: Equipo ---
+        Cell rightCell = new Cell().setBorder(Border.NO_BORDER).setPaddingLeft(6);
+
+        rightCell.add(new Paragraph("INFORMACIÓN DEL EQUIPO")
+                .setFontSize(9).setBold()
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setMarginBottom(4));
+
+        Table equipoTable = new Table(UnitValue.createPercentArray(new float[]{38, 62}));
+        equipoTable.setWidth(UnitValue.createPercentValue(100));
+
+        agregarFilaTablaCompacta(equipoTable, "Tipo:", equipo.getTipoEquipo().getDescripcion());
+        agregarFilaTablaCompacta(equipoTable, "Marca:", equipo.getMarca().getDescripcion());
 
         if (equipo.getModelo() != null) {
-            agregarFilaTabla(table, "Modelo:", equipo.getModelo().getDescripcion());
+            agregarFilaTablaCompacta(equipoTable, "Modelo:", equipo.getModelo().getDescripcion());
         }
-
         if (equipo.getNumeroSerie() != null && !equipo.getNumeroSerie().isEmpty()) {
-            agregarFilaTabla(table, "N° de Serie:", equipo.getNumeroSerie());
+            agregarFilaTablaCompacta(equipoTable, "N° de Serie:", equipo.getNumeroSerie());
         }
-
         if (equipo.getColor() != null && !equipo.getColor().isEmpty()) {
-            agregarFilaTabla(table, "Color:", equipo.getColor());
+            agregarFilaTablaCompacta(equipoTable, "Color:", equipo.getColor());
         }
 
-        document.add(table);
-        document.add(new Paragraph("\n"));
+        rightCell.add(equipoTable);
+        outerTable.addCell(rightCell);
+
+        document.add(outerTable);
     }
 
     private void agregarDetallesServicio(Document document, Servicio servicio) {
         Paragraph seccion = new Paragraph("DETALLES DEL SERVICIO")
-                .setFontSize(12)
+                .setFontSize(9)
                 .setBold()
-                .setMarginBottom(10);
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setMarginBottom(4);
         document.add(seccion);
 
-        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 70}));
+        Table table = new Table(UnitValue.createPercentArray(new float[]{25, 75}));
         table.setWidth(UnitValue.createPercentValue(100));
 
-        agregarFilaTabla(table, "Fecha de Recepción:", servicio.getFechaRecepcion().format(DATE_FORMATTER));
+        agregarFilaTablaCompacta(table, "Estado:", servicio.getEstado().getDescripcion());
+        agregarFilaTablaCompacta(table, "Fecha de Recepción:", servicio.getFechaRecepcion().format(DATE_FORMATTER));
 
         if (servicio.getFechaDevolucionPrevista() != null) {
-            agregarFilaTabla(table, "Fecha Devolución Prevista:", servicio.getFechaDevolucionPrevista().format(DATE_FORMATTER));
+            agregarFilaTablaCompacta(table, "Devolución Prevista:", servicio.getFechaDevolucionPrevista().format(DATE_FORMATTER));
         }
 
-        agregarFilaTabla(table, "Tipo de Ingreso:", servicio.getTipoIngreso().getDescripcion());
-        agregarFilaTabla(table, "Empleado de Recepción:", servicio.getEmpleadoRecepcion().getPersona().getNombreCompleto());
+        agregarFilaTablaCompacta(table, "Tipo de Ingreso:", servicio.getTipoIngreso().getDescripcion());
+        agregarFilaTablaCompacta(table, "Recepcionado por:", servicio.getEmpleadoRecepcion().getPersona().getNombreCompleto());
 
         if (servicio.getEsGarantia()) {
-            agregarFilaTabla(table, "Es Garantía:", "SÍ");
+            agregarFilaTablaCompacta(table, "Es Garantía:", "SÍ");
             if (servicio.getServicioGarantia() != null) {
-                agregarFilaTabla(table, "Servicio Original:", servicio.getServicioGarantia().getNumeroServicio());
+                agregarFilaTablaCompacta(table, "Servicio Original:", servicio.getServicioGarantia().getNumeroServicio());
             }
         }
 
         if (servicio.getFallaReportada() != null && !servicio.getFallaReportada().isEmpty()) {
-            agregarFilaTabla(table, "Falla Reportada:", servicio.getFallaReportada());
-        }
-
-        if (servicio.getObservaciones() != null && !servicio.getObservaciones().isEmpty()) {
-            agregarFilaTabla(table, "Observaciones:", servicio.getObservaciones());
+            agregarFilaTablaCompacta(table, "Falla Reportada:", servicio.getFallaReportada());
         }
 
         if (servicio.getAbonaVisita()) {
-            agregarFilaTabla(table, "Abona Visita:", "SÍ");
-            agregarFilaTabla(table, "Monto Visita:", "$" + servicio.getMontoVisita().toString());
-            agregarFilaTabla(table, "Monto Pagado:", "$" + servicio.getMontoPagado().toString());
+            agregarFilaTablaCompacta(table, "Abona Visita:", "SÍ");
+            agregarFilaTablaCompacta(table, "Monto Visita:", "$" + servicio.getMontoVisita().toString());
+            agregarFilaTablaCompacta(table, "Monto Pagado:", "$" + servicio.getMontoPagado().toString());
         }
 
         document.add(table);
-        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("").setMarginBottom(6));
     }
 
     private void agregarComponentes(Document document, Servicio servicio) {
@@ -254,15 +244,16 @@ public class PdfServiceImpl implements PdfService {
         }
 
         Paragraph seccion = new Paragraph("COMPONENTES DEL EQUIPO")
-                .setFontSize(12)
+                .setFontSize(9)
                 .setBold()
-                .setMarginBottom(10);
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setMarginBottom(4);
         document.add(seccion);
 
         Table table = new Table(UnitValue.createPercentArray(new float[]{40, 15, 45}));
         table.setWidth(UnitValue.createPercentValue(100));
+        table.setFontSize(8);
 
-        // Encabezados
         Cell headerComponente = new Cell().add(new Paragraph("Componente").setBold())
                 .setBackgroundColor(new DeviceRgb(230, 230, 230))
                 .setTextAlignment(TextAlignment.CENTER);
@@ -277,7 +268,6 @@ public class PdfServiceImpl implements PdfService {
         table.addCell(headerPresente);
         table.addCell(headerComentario);
 
-        // Datos
         for (DetalleServicio detalle : servicio.getDetalleServicios()) {
             table.addCell(new Cell().add(new Paragraph(detalle.getComponente())));
             table.addCell(new Cell().add(new Paragraph(detalle.getPresente() ? "Presente" : "No Presente"))
@@ -286,7 +276,7 @@ public class PdfServiceImpl implements PdfService {
         }
 
         document.add(table);
-        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("").setMarginBottom(6));
     }
 
     private void agregarFirma(Document document, Servicio servicio) {
@@ -295,31 +285,28 @@ public class PdfServiceImpl implements PdfService {
         }
 
         Paragraph seccion = new Paragraph("FIRMA DEL CLIENTE")
-                .setFontSize(12)
+                .setFontSize(9)
                 .setBold()
-                .setMarginBottom(10);
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setMarginBottom(4);
         document.add(seccion);
 
         try {
-            // Decodificar la imagen base64
             byte[] imageBytes = Base64.getDecoder().decode(servicio.getFirmaIngreso());
             Image firma = new Image(ImageDataFactory.create(imageBytes));
-
-            // Ajustar tamaño de la firma
-            firma.setWidth(200);
-            firma.setHeight(100);
-
+            firma.setWidth(180);
+            firma.setHeight(80);
             document.add(firma);
         } catch (Exception e) {
             log.error("Error al agregar firma al PDF", e);
             document.add(new Paragraph("Error al cargar firma"));
         }
 
-        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("").setMarginBottom(4));
     }
 
     private void agregarPiePagina(Document document) {
-        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("").setMarginBottom(4));
         SolidLine footerLine = new SolidLine(0.5f);
         footerLine.setColor(ColorConstants.GRAY);
         document.add(new LineSeparator(footerLine));
@@ -327,23 +314,39 @@ public class PdfServiceImpl implements PdfService {
         Paragraph pie = new Paragraph("TÉRMINOS Y CONDICIONES")
                 .setFontSize(8)
                 .setBold()
-                .setMarginTop(10);
+                .setMarginTop(6)
+                .setMarginBottom(2);
         document.add(pie);
 
-        Paragraph terminos = new Paragraph(
-                "El cliente acepta que el equipo será revisado y diagnosticado por personal técnico calificado. " +
-                        "La empresa se compromete a notificar al cliente sobre el diagnóstico y presupuesto correspondiente. " +
-                        "Los equipos no retirados en un plazo de 90 días podrán ser dados de baja según lo establecido en nuestros términos de servicio. " +
-                        "Este documento constituye un comprobante de recepción del equipo en las condiciones descritas."
-        )
-                .setFontSize(7)
-                .setTextAlignment(TextAlignment.JUSTIFIED);
-        document.add(terminos);
+        String[] terminos = {
+                "Garantía: Los repuestos instalados tienen garantía de 90 días por defecto de fabricación. La mano de obra tiene garantía de 30 días. No se cubre daño por mal uso, caídas, humedad o causas externas.",
+                "Almacenamiento: Los equipos no retirados dentro de los 90 días corridos desde la comunicación de finalización del servicio podrán generar un cargo adicional de almacenamiento.",
+                "Conformidad: El retiro del equipo implica la conformidad con los trabajos efectuados y los precios acordados.",
+                "Este documento constituye un comprobante de entrega del equipo reparado en las condiciones descritas."
+        };
+
+        for (String termino : terminos) {
+            document.add(new Paragraph("• " + termino)
+                    .setFontSize(7)
+                    .setTextAlignment(TextAlignment.JUSTIFIED)
+                    .setMarginBottom(2));
+        }
     }
 
     private void agregarFilaTabla(Table table, String etiqueta, String valor) {
         Cell cellEtiqueta = new Cell().add(new Paragraph(etiqueta).setBold());
         Cell cellValor = new Cell().add(new Paragraph(valor != null ? valor : "-"));
+        table.addCell(cellEtiqueta);
+        table.addCell(cellValor);
+    }
+
+    private void agregarFilaTablaCompacta(Table table, String etiqueta, String valor) {
+        Cell cellEtiqueta = new Cell()
+                .add(new Paragraph(etiqueta).setBold().setFontSize(8))
+                .setPadding(3);
+        Cell cellValor = new Cell()
+                .add(new Paragraph(valor != null ? valor : "-").setFontSize(8))
+                .setPadding(3);
         table.addCell(cellEtiqueta);
         table.addCell(cellValor);
     }
@@ -359,13 +362,12 @@ public class PdfServiceImpl implements PdfService {
             PdfWriter writer = new PdfWriter(baos);
             PdfDocument pdfDoc = new PdfDocument(writer);
             Document document = new Document(pdfDoc);
+            document.setMargins(20, 36, 20, 36);
 
             agregarEncabezadoFinal(document, servicio);
-            agregarInformacionCliente(document, servicio);
-            agregarInformacionEquipo(document, servicio);
+            agregarInformacionClienteYEquipo(document, servicio);
             agregarDetallesServicio(document, servicio);
             agregarPresupuestoAprobado(document, servicio);
-            agregarOrdenTrabajo(document, servicio);
             agregarConformidad(document, servicio);
             agregarPiePagina(document);
 
@@ -378,80 +380,67 @@ public class PdfServiceImpl implements PdfService {
         }
     }
 
-    @Override
-    public void enviarPdfFinalPorEmail(Long servicioId) {
-        Servicio servicio = servicioRepository.findById(servicioId)
-                .orElseThrow(() -> new RuntimeException("Servicio no encontrado"));
+    private void agregarEncabezadoFinal(Document document, Servicio servicio) {
+        Table headerTable = new Table(UnitValue.createPercentArray(new float[]{55, 45}));
+        headerTable.setWidth(UnitValue.createPercentValue(100));
+        headerTable.setBorder(Border.NO_BORDER);
+        headerTable.setMarginBottom(6);
 
-        String email = servicio.getCliente().getPrimerEmail();
-        if (email == null || email.isEmpty()) {
-            throw new RuntimeException("El cliente no tiene un email registrado");
+        Cell leftCell = new Cell().setBorder(Border.NO_BORDER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPadding(0);
+
+        try {
+            InputStream logoStream = getClass().getClassLoader().getResourceAsStream("logos/logo-horizontal-original.png");
+            if (logoStream != null) {
+                Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()));
+                logo.setWidth(170);
+                logo.setAutoScaleHeight(true);
+                leftCell.add(logo);
+            } else {
+                leftCell.add(new Paragraph("Arroyo Electromecánica")
+                        .setFontSize(12).setBold()
+                        .setFontColor(new DeviceRgb(28, 96, 145)));
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo cargar el logo", e);
+            leftCell.add(new Paragraph("Arroyo Electromecánica")
+                    .setFontSize(12).setBold()
+                    .setFontColor(new DeviceRgb(28, 96, 145)));
         }
 
-        byte[] pdfBytes = generarPdfFinal(servicioId);
+        Cell rightCell = new Cell().setBorder(Border.NO_BORDER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setPadding(0);
 
-        String asunto = "Comprobante Final de Servicio - " + servicio.getNumeroServicio();
-        String mensaje = String.format(
-                "Estimado/a %s,\n\n" +
-                        "Adjuntamos el comprobante final del servicio técnico número %s.\n\n" +
-                        "Equipo: %s\n" +
-                        "Fecha de recepción: %s\n" +
-                        "Fecha de devolución: %s\n\n" +
-                        "Gracias por confiar en nuestros servicios.\n\n" +
-                        "Saludos cordiales,\n" +
-                        "Arroyo Electromecánica",
-                servicio.getCliente().getNombreCompleto(),
-                servicio.getNumeroServicio(),
-                servicio.getEquipo().getDescripcionCompleta(),
-                servicio.getFechaRecepcion().format(DATE_FORMATTER),
-                servicio.getFechaDevolucionReal() != null ? servicio.getFechaDevolucionReal().format(DATE_FORMATTER) : "N/A"
-        );
+        rightCell.add(new Paragraph("COMPROBANTE FINAL DE SERVICIO TÉCNICO")
+                .setFontSize(8)
+                .setBold()
+                .setFontColor(new DeviceRgb(80, 80, 80))
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setMarginBottom(2));
 
-        emailService.enviarEmailConAdjunto(
-                email,
-                asunto,
-                mensaje,
-                pdfBytes,
-                "comprobante-final-" + servicio.getNumeroServicio() + ".pdf"
-        );
-
-        log.info("PDF final del servicio {} enviado por email a {}", servicioId, email);
-    }
-
-    private void agregarEncabezadoFinal(Document document, Servicio servicio) {
-        // Nombre de la empresa
-        Paragraph empresa = new Paragraph("Arroyo Electromecánica")
-                .setFontSize(12)
+        rightCell.add(new Paragraph("Nº " + servicio.getNumeroServicio())
+                .setFontSize(16)
                 .setBold()
                 .setFontColor(new DeviceRgb(28, 96, 145))
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(5);
-        document.add(empresa);
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setMarginBottom(2));
 
-        Paragraph titulo = new Paragraph("COMPROBANTE FINAL DE SERVICIO TÉCNICO")
-                .setFontSize(18)
-                .setBold()
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(5);
-        document.add(titulo);
+        rightCell.add(new Paragraph("Estado: " + servicio.getEstado().getDescripcion())
+                .setFontSize(8)
+                .setFontColor(new DeviceRgb(80, 80, 80))
+                .setTextAlignment(TextAlignment.RIGHT));
 
-        Paragraph numeroServicio = new Paragraph("Nº " + servicio.getNumeroServicio())
-                .setFontSize(14)
-                .setBold()
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(5);
-        document.add(numeroServicio);
-
-        Paragraph estado = new Paragraph("Estado: " + servicio.getEstado().getDescripcion())
-                .setFontSize(10)
-                .setTextAlignment(TextAlignment.CENTER)
-                .setMarginBottom(20);
-        document.add(estado);
+        headerTable.addCell(leftCell);
+        headerTable.addCell(rightCell);
+        document.add(headerTable);
 
         SolidLine line = new SolidLine(1f);
-        line.setColor(ColorConstants.GRAY);
+        line.setColor(new DeviceRgb(28, 96, 145));
         document.add(new LineSeparator(line));
-        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("").setMarginBottom(6));
     }
 
     private void agregarPresupuestoAprobado(Document document, Servicio servicio) {
@@ -466,26 +455,32 @@ public class PdfServiceImpl implements PdfService {
         }
 
         Paragraph seccion = new Paragraph("PRESUPUESTO APROBADO")
-                .setFontSize(12)
+                .setFontSize(9)
                 .setBold()
-                .setMarginBottom(10);
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setMarginBottom(4);
         document.add(seccion);
 
-        Table table = new Table(UnitValue.createPercentArray(new float[]{30, 70}));
+        Table table = new Table(UnitValue.createPercentArray(new float[]{25, 75}));
         table.setWidth(UnitValue.createPercentValue(100));
 
-        agregarFilaTabla(table, "Nº Presupuesto:", presupuestoAprobado.getNumeroPresupuesto());
+        agregarFilaTablaCompacta(table, "Nº Presupuesto:", presupuestoAprobado.getNumeroPresupuesto());
 
         if (presupuestoAprobado.getDiagnostico() != null && !presupuestoAprobado.getDiagnostico().isEmpty()) {
-            agregarFilaTabla(table, "Diagnóstico:", presupuestoAprobado.getDiagnostico());
+            agregarFilaTablaCompacta(table, "Diagnóstico:", presupuestoAprobado.getDiagnostico());
         }
 
-        agregarFilaTabla(table, "Mano de Obra:", "$" + presupuestoAprobado.getManoObra().toString());
-        agregarFilaTabla(table, "Repuestos:", "$" + presupuestoAprobado.getMontoRepuestosOriginal().toString());
-        agregarFilaTabla(table, "Total:", "$" + presupuestoAprobado.getMontoTotalOriginal().toString());
+        agregarFilaTablaCompacta(table, "Mano de Obra:", "$" + presupuestoAprobado.getManoObra().toString());
+        agregarFilaTablaCompacta(table, "Repuestos:", "$" + presupuestoAprobado.getMontoRepuestosOriginal().toString());
+
+        Cell labelTotal = new Cell().add(new Paragraph("Total:").setBold().setFontSize(8)).setPadding(3);
+        Cell valorTotal = new Cell().add(new Paragraph("$" + presupuestoAprobado.getMontoTotalOriginal().toString())
+                .setBold().setFontSize(8).setFontColor(new DeviceRgb(28, 96, 145))).setPadding(3);
+        table.addCell(labelTotal);
+        table.addCell(valorTotal);
 
         document.add(table);
-        document.add(new Paragraph("\n"));
+        document.add(new Paragraph("").setMarginBottom(6));
     }
 
     private void agregarOrdenTrabajo(Document document, Servicio servicio) {
@@ -561,39 +556,39 @@ public class PdfServiceImpl implements PdfService {
 
     private void agregarConformidad(Document document, Servicio servicio) {
         Paragraph seccion = new Paragraph("CONFORMIDAD DEL CLIENTE")
-                .setFontSize(12)
+                .setFontSize(9)
                 .setBold()
-                .setMarginBottom(10);
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setMarginBottom(4);
         document.add(seccion);
 
         Paragraph textoConformidad = new Paragraph(
                 "El cliente declara haber recibido el equipo en condiciones satisfactorias " +
                         "y de conformidad con el servicio realizado."
         )
-                .setFontSize(10)
-                .setMarginBottom(10);
+                .setFontSize(8)
+                .setMarginBottom(4);
         document.add(textoConformidad);
 
         if (servicio.getFechaDevolucionReal() != null) {
             Paragraph fechaDevolucion = new Paragraph("Fecha de devolución: " + servicio.getFechaDevolucionReal().format(DATE_FORMATTER))
-                    .setFontSize(10)
-                    .setMarginBottom(10);
+                    .setFontSize(8)
+                    .setMarginBottom(4);
             document.add(fechaDevolucion);
         }
 
-        // Firma de conformidad
         if (servicio.getFirmaConformidad() != null && !servicio.getFirmaConformidad().isEmpty()) {
             Paragraph firmaLabel = new Paragraph("Firma de Conformidad:")
-                    .setFontSize(10)
+                    .setFontSize(8)
                     .setBold()
-                    .setMarginBottom(5);
+                    .setMarginBottom(4);
             document.add(firmaLabel);
 
             try {
                 byte[] imageBytes = Base64.getDecoder().decode(servicio.getFirmaConformidad());
                 Image firma = new Image(ImageDataFactory.create(imageBytes));
-                firma.setWidth(200);
-                firma.setHeight(100);
+                firma.setWidth(180);
+                firma.setHeight(80);
                 document.add(firma);
             } catch (Exception e) {
                 log.error("Error al agregar firma de conformidad al PDF", e);
@@ -601,27 +596,190 @@ public class PdfServiceImpl implements PdfService {
             }
         }
 
-        // Firma de ingreso
-        if (servicio.getFirmaIngreso() != null && !servicio.getFirmaIngreso().isEmpty()) {
-            document.add(new Paragraph("\n"));
-            Paragraph firmaIngresoLabel = new Paragraph("Firma de Ingreso:")
-                    .setFontSize(10)
-                    .setBold()
-                    .setMarginBottom(5);
-            document.add(firmaIngresoLabel);
+        document.add(new Paragraph("").setMarginBottom(6));
+    }
 
-            try {
-                byte[] imageBytes = Base64.getDecoder().decode(servicio.getFirmaIngreso());
-                Image firma = new Image(ImageDataFactory.create(imageBytes));
-                firma.setWidth(200);
-                firma.setHeight(100);
-                document.add(firma);
-            } catch (Exception e) {
-                log.error("Error al agregar firma de ingreso al PDF final", e);
-                document.add(new Paragraph("Error al cargar firma de ingreso"));
+    private void agregarPiePaginaPresupuesto(Document document) {
+        document.add(new Paragraph("\n"));
+        SolidLine footerLine = new SolidLine(0.5f);
+        footerLine.setColor(ColorConstants.GRAY);
+        document.add(new LineSeparator(footerLine));
+
+        Paragraph titulo = new Paragraph("CONDICIONES DEL PRESUPUESTO")
+                .setFontSize(8)
+                .setBold()
+                .setMarginTop(10);
+        document.add(titulo);
+
+        String[] condiciones = {
+                "Validez: El presente presupuesto tiene validez hasta la fecha indicada. Vencido dicho plazo, los valores quedan sujetos a actualización sin previo aviso.",
+                "Precios: Los importes incluyen únicamente los repuestos y la mano de obra detallados. Cualquier trabajo adicional que surja durante la reparación será comunicado y requerirá aprobación previa del cliente.",
+                "Garantía: Los repuestos nuevos instalados tienen garantía de 90 días por defecto de fabricación. La mano de obra tiene una garantía de 30 días. No se cubre daño por mal uso o causas externas.",
+                "Plazos: El plazo de reparación es estimado y puede verse afectado por la disponibilidad de repuestos u otras circunstancias técnicas.",
+                "Retiro: El retiro del equipo una vez realizada la reparación implica la conformidad con los trabajos efectuados y los precios acordados.",
+                "Almacenamiento: Los equipos no retirados dentro de los 90 días corridos desde la comunicación de finalización del servicio podrán generar un cargo adicional de almacenamiento."
+        };
+
+        for (String condicion : condiciones) {
+            document.add(new Paragraph("• " + condicion)
+                    .setFontSize(7)
+                    .setTextAlignment(TextAlignment.JUSTIFIED)
+                    .setMarginBottom(2));
+        }
+    }
+
+    // ==================== PDF PRESUPUESTO ====================
+
+    @Override
+    public byte[] generarPdfPresupuesto(Long presupuestoId, Boolean mostrarOriginal, Boolean mostrarAlternativo) {
+        Presupuesto presupuesto = presupuestoRepository.findById(presupuestoId)
+                .orElseThrow(() -> new RuntimeException("Presupuesto no encontrado"));
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdfDoc = new PdfDocument(writer);
+            Document document = new Document(pdfDoc);
+            document.setMargins(20, 36, 20, 36);
+
+            agregarEncabezadoPresupuesto(document, presupuesto);
+            agregarInformacionClienteYEquipo(document, presupuesto.getServicio());
+            agregarDetallePresupuesto(document, presupuesto, mostrarOriginal, mostrarAlternativo);
+            agregarPiePaginaPresupuesto(document);
+
+            document.close();
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            log.error("Error al generar PDF de presupuesto {}", presupuestoId, e);
+            throw new RuntimeException("Error al generar PDF de presupuesto", e);
+        }
+    }
+
+    private void agregarEncabezadoPresupuesto(Document document, Presupuesto presupuesto) {
+        Table headerTable = new Table(UnitValue.createPercentArray(new float[]{55, 45}));
+        headerTable.setWidth(UnitValue.createPercentValue(100));
+        headerTable.setBorder(Border.NO_BORDER);
+        headerTable.setMarginBottom(6);
+
+        Cell leftCell = new Cell().setBorder(Border.NO_BORDER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPadding(0);
+
+        try {
+            InputStream logoStream = getClass().getClassLoader().getResourceAsStream("logos/logo-horizontal-original.png");
+            if (logoStream != null) {
+                Image logo = new Image(ImageDataFactory.create(logoStream.readAllBytes()));
+                logo.setWidth(170);
+                logo.setAutoScaleHeight(true);
+                leftCell.add(logo);
+            } else {
+                leftCell.add(new Paragraph("Arroyo Electromecánica")
+                        .setFontSize(12).setBold()
+                        .setFontColor(new DeviceRgb(28, 96, 145)));
             }
+        } catch (Exception e) {
+            log.warn("No se pudo cargar el logo", e);
+            leftCell.add(new Paragraph("Arroyo Electromecánica")
+                    .setFontSize(12).setBold()
+                    .setFontColor(new DeviceRgb(28, 96, 145)));
         }
 
-        document.add(new Paragraph("\n"));
+        Cell rightCell = new Cell().setBorder(Border.NO_BORDER)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setPadding(0);
+
+        rightCell.add(new Paragraph("PRESUPUESTO")
+                .setFontSize(8).setBold()
+                .setFontColor(new DeviceRgb(80, 80, 80))
+                .setTextAlignment(TextAlignment.RIGHT)
+                .setMarginBottom(2));
+
+        rightCell.add(new Paragraph("Nº " + presupuesto.getNumeroPresupuesto())
+                .setFontSize(16).setBold()
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setTextAlignment(TextAlignment.RIGHT));
+
+        headerTable.addCell(leftCell);
+        headerTable.addCell(rightCell);
+        document.add(headerTable);
+
+        SolidLine line = new SolidLine(1f);
+        line.setColor(new DeviceRgb(28, 96, 145));
+        document.add(new LineSeparator(line));
+        document.add(new Paragraph("").setMarginBottom(6));
+    }
+
+    private void agregarDetallePresupuesto(Document document, Presupuesto presupuesto,
+                                           Boolean mostrarOriginal, Boolean mostrarAlternativo) {
+        Paragraph seccion = new Paragraph("DETALLE DEL PRESUPUESTO")
+                .setFontSize(9).setBold()
+                .setFontColor(new DeviceRgb(28, 96, 145))
+                .setMarginBottom(4);
+        document.add(seccion);
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{25, 75}));
+        table.setWidth(UnitValue.createPercentValue(100));
+
+        if (presupuesto.getFechaVencimiento() != null) {
+            agregarFilaTablaCompacta(table, "Válido hasta:", presupuesto.getFechaVencimiento().format(DATE_FORMATTER));
+        }
+
+        if (presupuesto.getDiagnostico() != null && !presupuesto.getDiagnostico().isEmpty()) {
+            agregarFilaTablaCompacta(table, "Diagnóstico:", presupuesto.getDiagnostico());
+        }
+
+        document.add(table);
+        document.add(new Paragraph("").setMarginBottom(6));
+
+        // Bloque de precio original
+        if (mostrarOriginal != null && mostrarOriginal) {
+            String titulo = (mostrarAlternativo != null && mostrarAlternativo)
+                    ? "OPCIÓN 1 – REPUESTOS ORIGINALES"
+                    : "DETALLE DE PRECIOS";
+
+            Paragraph tituloOriginal = new Paragraph(titulo)
+                    .setFontSize(9).setBold()
+                    .setFontColor(new DeviceRgb(28, 96, 145))
+                    .setMarginBottom(4);
+            document.add(tituloOriginal);
+
+            Table tOriginal = new Table(UnitValue.createPercentArray(new float[]{25, 75}));
+            tOriginal.setWidth(UnitValue.createPercentValue(100));
+            agregarFilaTablaCompacta(tOriginal, "Repuestos:", "$" + presupuesto.getMontoRepuestosOriginal());
+            agregarFilaTablaCompacta(tOriginal, "Mano de Obra:", "$" + presupuesto.getManoObra());
+
+            Cell labelTotal = new Cell().add(new Paragraph("TOTAL:").setBold().setFontSize(9)).setPadding(3);
+            Cell valorTotal = new Cell().add(new Paragraph("$" + presupuesto.getMontoTotalOriginal())
+                    .setBold().setFontSize(9).setFontColor(new DeviceRgb(28, 96, 145))).setPadding(3);
+            tOriginal.addCell(labelTotal);
+            tOriginal.addCell(valorTotal);
+
+            document.add(tOriginal);
+            document.add(new Paragraph("").setMarginBottom(6));
+        }
+
+        // Bloque de precio alternativo
+        if (mostrarAlternativo != null && mostrarAlternativo && presupuesto.getMontoRepuestosAlternativo() != null) {
+            Paragraph tituloAlt = new Paragraph("OPCIÓN 2 – REPUESTOS ALTERNATIVOS")
+                    .setFontSize(9).setBold()
+                    .setFontColor(new DeviceRgb(28, 96, 145))
+                    .setMarginBottom(4);
+            document.add(tituloAlt);
+
+            Table tAlt = new Table(UnitValue.createPercentArray(new float[]{25, 75}));
+            tAlt.setWidth(UnitValue.createPercentValue(100));
+            agregarFilaTablaCompacta(tAlt, "Repuestos:", "$" + presupuesto.getMontoRepuestosAlternativo());
+            agregarFilaTablaCompacta(tAlt, "Mano de Obra:", "$" + presupuesto.getManoObra());
+
+            Cell labelTotalAlt = new Cell().add(new Paragraph("TOTAL:").setBold().setFontSize(9)).setPadding(3);
+            Cell valorTotalAlt = new Cell().add(new Paragraph("$" + presupuesto.getMontoTotalAlternativo())
+                    .setBold().setFontSize(9).setFontColor(new DeviceRgb(28, 96, 145))).setPadding(3);
+            tAlt.addCell(labelTotalAlt);
+            tAlt.addCell(valorTotalAlt);
+
+            document.add(tAlt);
+            document.add(new Paragraph("").setMarginBottom(6));
+        }
     }
 }

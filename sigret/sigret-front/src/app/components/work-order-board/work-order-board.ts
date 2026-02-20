@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { Observable, Subscription } from 'rxjs';
 import { CdkDragDrop, CdkDrag, CdkDropList, CdkDropListGroup, transferArrayItem } from '@angular/cdk/drag-drop';
@@ -41,6 +41,7 @@ export class WorkOrderBoardComponent implements OnInit, OnDestroy {
   private readonly orderService = inject(OrdenTrabajoService);
   private readonly wsService = inject(WebSocketService);
   private readonly messageService = inject(MessageService);
+  private readonly location = inject(Location);
 
   private wsSubscription?: Subscription;
 
@@ -76,6 +77,10 @@ export class WorkOrderBoardComponent implements OnInit, OnDestroy {
       orders: []
     }
   ];
+
+  goBack(): void {
+    this.location.back();
+  }
 
   ngOnInit(): void {
     this.loadOrders();

@@ -6,6 +6,7 @@ import com.sigret.dtos.servicio.ServicioListDto;
 import com.sigret.dtos.servicio.ServicioResponseDto;
 import com.sigret.dtos.servicio.ServicioUpdateDto;
 import com.sigret.enums.EstadoServicio;
+import com.sigret.services.EmailService;
 import com.sigret.services.PdfService;
 import com.sigret.services.ServicioService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +44,9 @@ public class ServicioController {
     @Autowired
     private PdfService pdfService;
 
+    @Autowired
+    private EmailService emailService;
+
     @GetMapping("/estados")
     @Operation(summary = "Obtener estados disponibles", description = "Retorna todos los estados posibles de un servicio")
     @ApiResponses(value = {
@@ -62,7 +66,7 @@ public class ServicioController {
             @ApiResponse(responseCode = "201", description = "Servicio creado exitosamente"),
             @ApiResponse(responseCode = "400", description = "Datos de entrada inválidos")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
     public ResponseEntity<ServicioResponseDto> crearServicio(@Valid @RequestBody ServicioCreateDto servicioCreateDto) {
         ServicioResponseDto servicioCreado = servicioService.crearServicio(servicioCreateDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(servicioCreado);
@@ -224,7 +228,7 @@ public class ServicioController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Número generado exitosamente")
     })
-    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
+    @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO') or hasRole('TECNICO')")
     public ResponseEntity<String> generarNumeroServicio() {
         String numero = servicioService.generarNumeroServicio();
         return ResponseEntity.ok(numero);
@@ -289,7 +293,7 @@ public class ServicioController {
     @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<Void> enviarPdfPorEmail(
             @Parameter(description = "ID del servicio") @PathVariable Long id) {
-        pdfService.enviarPdfPorEmail(id);
+        emailService.enviarPdfPorEmail(id);
         return ResponseEntity.ok().build();
     }
 
@@ -340,7 +344,7 @@ public class ServicioController {
     @PreAuthorize("hasRole('PROPIETARIO') or hasRole('ADMINISTRATIVO')")
     public ResponseEntity<Void> enviarPdfFinalPorEmail(
             @Parameter(description = "ID del servicio") @PathVariable Long id) {
-        pdfService.enviarPdfFinalPorEmail(id);
+        emailService.enviarPdfFinalPorEmail(id);
         return ResponseEntity.ok().build();
     }
 }

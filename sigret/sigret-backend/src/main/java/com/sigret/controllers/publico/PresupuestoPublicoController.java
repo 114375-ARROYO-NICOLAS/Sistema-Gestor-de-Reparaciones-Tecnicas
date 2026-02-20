@@ -61,14 +61,11 @@ public class PresupuestoPublicoController {
     })
     public ResponseEntity<Map<String, String>> aprobarPresupuesto(
             @Parameter(description = "Token de aprobación") @PathVariable String token,
+            @Parameter(description = "Tipo de precio elegido (ORIGINAL o ALTERNATIVO). Requerido solo cuando el presupuesto tiene ambas opciones.")
+            @RequestParam(required = false) String tipoPrecio,
             HttpServletRequest request) {
 
         PresupuestoToken presupuestoToken = tokenService.validarToken(token);
-
-        if (!"APROBAR".equals(presupuestoToken.getTipoAccion())) {
-            throw new RuntimeException("Este token no es válido para aprobar el presupuesto");
-        }
-
         Presupuesto presupuesto = presupuestoToken.getPresupuesto();
 
         // Validar que el presupuesto no haya sido ya respondido
@@ -84,10 +81,19 @@ public class PresupuestoPublicoController {
         }
 
         Long presupuestoId = presupuesto.getId();
-        String tipoPrecio = presupuestoToken.getTipoPrecio(); // "ORIGINAL" o "ALTERNATIVO"
+        // Si el token ya tiene tipoPrecio (1 sola opción), se usa ese.
+        // Si es null (ambas opciones), se usa el enviado desde la página.
+        String precioFinal = presupuestoToken.getTipoPrecio() != null
+                ? presupuestoToken.getTipoPrecio()
+                : tipoPrecio;
+
+        if (precioFinal == null) {
+            throw new RuntimeException("Debe seleccionar una opción de precio para aprobar el presupuesto.");
+        }
+
         String ip = obtenerIpCliente(request);
 
-        presupuestoService.aprobarPresupuesto(presupuestoId, tipoPrecio);
+        presupuestoService.aprobarPresupuesto(presupuestoId, precioFinal);
         tokenService.marcarTokenComoUsado(token, ip);
         tokenService.invalidarTokensAnteriores(presupuestoId);
 
@@ -110,11 +116,6 @@ public class PresupuestoPublicoController {
             HttpServletRequest request) {
 
         PresupuestoToken presupuestoToken = tokenService.validarToken(token);
-
-        if (!"RECHAZAR".equals(presupuestoToken.getTipoAccion())) {
-            throw new RuntimeException("Este token no es válido para rechazar el presupuesto");
-        }
-
         Presupuesto presupuesto = presupuestoToken.getPresupuesto();
 
         // Validar que el presupuesto no haya sido ya respondido

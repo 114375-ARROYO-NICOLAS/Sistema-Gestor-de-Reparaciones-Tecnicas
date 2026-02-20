@@ -13,7 +13,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { Select } from 'primeng/select';
 
 import { ClientService } from '../../services/client.service';
-import { ClientResponse, ClientUpdateRequest } from '../../models/client.model';
+import { ClientResponse, ClientUpdateRequest, Address } from '../../models/client.model';
 import { TipoContacto, ContactoCreateDto } from '../../models/contact.model';
 import { EquipoService } from '../../services/equipo.service';
 import { EquipoListDto } from '../../models/equipo.model';
@@ -21,6 +21,12 @@ import { MessageService, ConfirmationService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { CheckboxModule } from 'primeng/checkbox';
+import { AutoComplete } from 'primeng/autocomplete';
+import { environment } from '../../../environments/environment';
+
+// Google Maps type declarations
+declare const google: any;
 
 @Component({
   selector: 'app-client-detail',
@@ -38,7 +44,9 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
     InputTextModule,
     Select,
     ToastModule,
-    ConfirmDialogModule
+    ConfirmDialogModule,
+    CheckboxModule,
+    AutoComplete
   ],
   templateUrl: './client-detail.component.html',
   styleUrls: ['./client-detail.component.scss'],
@@ -75,7 +83,23 @@ export class ClientDetailComponent implements OnInit {
   public readonly isEditingContact = signal(false);
   public readonly editingContactIndex = signal<number>(-1);
   public contactForm: FormGroup;
-  
+
+  // Address management
+  public readonly showAddressDialog = signal(false);
+  public readonly isEditingAddress = signal(false);
+  public readonly editingAddressIndex = signal<number>(-1);
+  public readonly selectedAddressForMap = signal<number>(-1);
+  public readonly currentAddressData = signal<Address>({});
+  public readonly addressSuggestions = signal<any[]>([]);
+  public selectedAddressSuggestion: string = '';
+
+  // Google Places internals
+  private autocompleteService: any = null;
+  private placesService: any = null;
+  private sessionToken: any = null;
+  private readonly googleMapsApiKey = environment.googleMapsApiKey;
+  private googleMapsLoaded = false;
+
   private clientId: number = 0;
 
   constructor() {
@@ -104,6 +128,7 @@ export class ClientDetailComponent implements OnInit {
       this.loadTiposContacto();
       this.loadPersonTypes();
       this.loadDocumentTypes();
+      this.loadGoogleMaps();
     } else {
       this.goBack();
     }
@@ -187,24 +212,49 @@ export class ClientDetailComponent implements OnInit {
     const client = this.client();
     if (!client?.direcciones?.length) return null;
 
-    // Find address with coordinates (prefer principal)
-    const principal = client.direcciones.find(d => d.esPrincipal && d.latitud && d.longitud);
-    const withCoords = principal || client.direcciones.find(d => d.latitud && d.longitud);
+    const direcciones = client.direcciones;
+    const selectedIdx = this.selectedAddressForMap();
 
-    if (withCoords?.latitud && withCoords?.longitud) {
-      const url = `https://maps.google.com/maps?q=${withCoords.latitud},${withCoords.longitud}&z=15&output=embed`;
+    let target: Address | undefined;
+    if (selectedIdx >= 0 && selectedIdx < direcciones.length) {
+      target = direcciones[selectedIdx];
+    } else {
+      // Default: prefer principal with coords, then any with coords, then any with address text
+      target = direcciones.find(d => d.esPrincipal && d.latitud && d.longitud)
+        || direcciones.find(d => d.latitud && d.longitud)
+        || direcciones.find(d => d.direccionFormateada || d.direccionCompleta)
+        || direcciones[0];
+    }
+
+    if (!target) return null;
+
+    if (target.latitud && target.longitud) {
+      const url = `https://maps.google.com/maps?q=${target.latitud},${target.longitud}&z=15&output=embed`;
       return this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
 
-    // Fallback: use formatted address as query
-    const withAddress = client.direcciones.find(d => d.direccionFormateada || d.direccionCompleta);
-    if (withAddress) {
-      const query = encodeURIComponent(withAddress.direccionFormateada || withAddress.direccionCompleta || '');
+    const addressText = target.direccionFormateada || target.direccionCompleta || this.getAddressDisplay(target);
+    if (addressText && addressText !== 'Dirección sin especificar') {
+      const query = encodeURIComponent(addressText);
       const url = `https://maps.google.com/maps?q=${query}&z=15&output=embed`;
       return this.sanitizer.bypassSecurityTrustResourceUrl(url);
     }
 
     return null;
+  }
+
+  selectAddressForMap(index: number): void {
+    this.selectedAddressForMap.set(index);
+  }
+
+  getMapAddressLabel(): string {
+    const client = this.client();
+    if (!client?.direcciones?.length) return '';
+    const selectedIdx = this.selectedAddressForMap();
+    const addr = selectedIdx >= 0 && selectedIdx < client.direcciones.length
+      ? client.direcciones[selectedIdx]
+      : (client.direcciones.find(d => d.esPrincipal) || client.direcciones[0]);
+    return addr ? this.getAddressDisplay(addr) : '';
   }
 
   navigateToEquipo(equipoId: number): void {
@@ -468,6 +518,222 @@ export class ClientDetailComponent implements OnInit {
     if (address.provincia) parts.push(address.provincia);
 
     return parts.join(', ') || 'Dirección sin especificar';
+  }
+
+  // Google Places API
+  private async loadGoogleMaps(): Promise<void> {
+    if (this.googleMapsLoaded || typeof google !== 'undefined') {
+      this.googleMapsLoaded = true;
+      return;
+    }
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${this.googleMapsApiKey}&libraries=places&loading=async&callback=initGoogleMapsDetail`;
+      script.async = true;
+      script.defer = true;
+      (window as any)['initGoogleMapsDetail'] = () => {
+        this.googleMapsLoaded = true;
+        resolve();
+      };
+      script.onerror = (err) => reject(err);
+      document.head.appendChild(script);
+    });
+  }
+
+  private async initializeGooglePlaces(): Promise<void> {
+    try {
+      if (!this.googleMapsLoaded) {
+        await this.loadGoogleMaps();
+      }
+      await new Promise(resolve => setTimeout(resolve, 300));
+      if (typeof google === 'undefined' || !google.maps?.places) return;
+
+      this.autocompleteService = new google.maps.places.AutocompleteService();
+      this.placesService = new google.maps.places.PlacesService(document.createElement('div'));
+      this.sessionToken = new google.maps.places.AutocompleteSessionToken();
+    } catch (error) {
+      console.error('Error initializing Google Places:', error);
+    }
+  }
+
+  searchAddress(event: any): void {
+    const query = event.query;
+    if (!query || query.length < 3 || !this.autocompleteService) {
+      this.addressSuggestions.set([]);
+      return;
+    }
+    const request = {
+      input: query,
+      sessionToken: this.sessionToken,
+      componentRestrictions: { country: 'ar' },
+      types: ['geocode', 'establishment']
+    };
+    this.autocompleteService.getPlacePredictions(request, (predictions: any, status: any) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+        this.addressSuggestions.set(predictions);
+      } else {
+        this.addressSuggestions.set([]);
+      }
+    });
+  }
+
+  onAddressSelected(event: any): void {
+    const prediction = event.value || event;
+    if (!prediction?.place_id) return;
+
+    this.selectedAddressSuggestion = prediction.description;
+
+    const request = {
+      placeId: prediction.place_id,
+      fields: ['place_id', 'formatted_address', 'address_components', 'geometry'],
+      sessionToken: this.sessionToken
+    };
+
+    this.placesService.getDetails(request, (place: any, status: any) => {
+      if (status === google.maps.places.PlacesServiceStatus.OK && place) {
+        this.processPlaceDetails(place);
+        this.sessionToken = new google.maps.places.AutocompleteSessionToken();
+        setTimeout(() => { this.selectedAddressSuggestion = ''; }, 100);
+      }
+    });
+  }
+
+  private processPlaceDetails(place: any): void {
+    try {
+      const addressComponents = place.address_components || [];
+      const getComponent = (types: string[]) =>
+        addressComponents.find((c: any) => types.some((t: string) => c.types.includes(t)));
+
+      const streetNumber = getComponent(['street_number'])?.long_name || '';
+      const route = getComponent(['route'])?.long_name || '';
+      const locality = getComponent(['locality', 'administrative_area_level_2'])?.long_name || '';
+      const adminArea1 = getComponent(['administrative_area_level_1'])?.long_name || '';
+      const country = getComponent(['country'])?.long_name || '';
+      const postalCode = getComponent(['postal_code'])?.long_name || '';
+
+      // Preserve extra fields the user may have already entered
+      const prev = this.currentAddressData();
+
+      this.currentAddressData.set({
+        placeId: place.place_id || undefined,
+        calle: route || undefined,
+        numero: streetNumber || undefined,
+        ciudad: locality || undefined,
+        provincia: adminArea1 || undefined,
+        pais: country || undefined,
+        codigoPostal: postalCode || undefined,
+        direccionFormateada: place.formatted_address || undefined,
+        latitud: place.geometry?.location?.lat() || undefined,
+        longitud: place.geometry?.location?.lng() || undefined,
+        esPrincipal: prev.esPrincipal ?? (this.client()?.direcciones?.length === 0),
+        piso: prev.piso,
+        departamento: prev.departamento,
+        observaciones: prev.observaciones,
+        googlePlacesData: {
+          placeId: place.place_id || '',
+          formattedAddress: place.formatted_address || '',
+          geometry: {
+            location: {
+              lat: place.geometry?.location?.lat() || 0,
+              lng: place.geometry?.location?.lng() || 0
+            }
+          },
+          addressComponents: addressComponents.map((c: any) => ({
+            longName: c.long_name || '',
+            shortName: c.short_name || '',
+            types: c.types || []
+          }))
+        }
+      });
+    } catch (error) {
+      console.error('Error processing place:', error);
+    }
+  }
+
+  openAddAddressDialog(): void {
+    this.isEditingAddress.set(false);
+    this.editingAddressIndex.set(-1);
+    this.currentAddressData.set({ esPrincipal: !(this.client()?.direcciones?.length) });
+    this.selectedAddressSuggestion = '';
+    this.addressSuggestions.set([]);
+    this.showAddressDialog.set(true);
+    setTimeout(() => this.initializeGooglePlaces(), 400);
+  }
+
+  openEditAddressDialog(address: Address, index: number): void {
+    this.isEditingAddress.set(true);
+    this.editingAddressIndex.set(index);
+    this.currentAddressData.set({ ...address });
+    this.selectedAddressSuggestion = address.direccionFormateada || this.getAddressDisplay(address);
+    this.addressSuggestions.set([]);
+    this.showAddressDialog.set(true);
+    setTimeout(() => this.initializeGooglePlaces(), 400);
+  }
+
+  closeAddressDialog(): void {
+    this.showAddressDialog.set(false);
+    this.currentAddressData.set({});
+    this.selectedAddressSuggestion = '';
+    this.addressSuggestions.set([]);
+    this.isEditingAddress.set(false);
+    this.editingAddressIndex.set(-1);
+  }
+
+  saveAddress(): void {
+    const currentClient = this.client();
+    if (!currentClient) return;
+
+    const addressData = this.currentAddressData();
+    if (!addressData.placeId && !addressData.direccionFormateada) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Advertencia',
+        detail: 'Por favor, selecciona una dirección del autocompletado'
+      });
+      return;
+    }
+
+    this.isSaving.set(true);
+    const newAddress: Address = { ...addressData };
+    const direcciones = currentClient.direcciones || [];
+    const editingIdx = this.editingAddressIndex();
+    let updatedDirecciones: Address[];
+
+    if (this.isEditingAddress()) {
+      updatedDirecciones = direcciones.map((d, i) =>
+        i === editingIdx
+          ? newAddress
+          : (newAddress.esPrincipal ? { ...d, esPrincipal: false } : d)
+      );
+    } else {
+      updatedDirecciones = [
+        ...direcciones.map(d => newAddress.esPrincipal ? { ...d, esPrincipal: false } : d),
+        newAddress
+      ];
+    }
+
+    const updateData: ClientUpdateRequest = { direcciones: updatedDirecciones };
+    this.clientService.updateClient(this.clientId, updateData).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: this.isEditingAddress() ? 'Dirección actualizada correctamente' : 'Dirección agregada correctamente'
+        });
+        this.selectedAddressForMap.set(-1);
+        this.closeAddressDialog();
+        this.loadClient(this.clientId);
+        this.isSaving.set(false);
+      },
+      error: (error) => {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: error.message || 'Error al guardar dirección'
+        });
+        this.isSaving.set(false);
+      }
+    });
   }
 
   getContactIcon(tipoContacto: string): string {

@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -60,6 +60,7 @@ export class UserManagementComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
   public readonly userService = inject(UserService);
+  private readonly location = inject(Location);
   // EmployeeService ya no es necesario aquí
 
   // Signals
@@ -92,6 +93,10 @@ export class UserManagementComponent implements OnInit {
   constructor() {
     this.userForm = this.createUserForm();
     this.passwordForm = this.createPasswordForm();
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   ngOnInit(): void {

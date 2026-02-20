@@ -28,4 +28,16 @@ public interface EmailService {
      * @param mensajeAdicional mensaje adicional
      */
     void enviarPresupuestoACliente(Long presupuestoId, Boolean mostrarOriginal, Boolean mostrarAlternativo, String mensajeAdicional);
+
+    /**
+     * Genera el PDF de ingreso de servicio y lo envía por email al cliente
+     * @param servicioId ID del servicio
+     */
+    void enviarPdfPorEmail(Long servicioId);
+
+    /**
+     * Genera el PDF final del servicio y lo envía por email al cliente
+     * @param servicioId ID del servicio
+     */
+    void enviarPdfFinalPorEmail(Long servicioId);
 }

@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy, signal, computed, inject, ChangeDetectionStrategy, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -73,6 +73,7 @@ export class ClientManagementComponent implements OnInit, OnDestroy {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly router = inject(Router);
   public readonly clientService = inject(ClientService);
+  private readonly location = inject(Location);
 
   // Signals
   public readonly clients = signal<ClientListDto[]>([]);
@@ -166,6 +167,10 @@ export class ClientManagementComponent implements OnInit, OnDestroy {
     
     // Initialize form valid state
     this.formValid.set(this.clientForm.valid);
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   ngOnInit(): void {

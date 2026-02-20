@@ -1,11 +1,20 @@
 <div class="servicio-create-container">
   <!-- Header -->
-  <div class="mb-4">
-    <h2 class="text-3xl font-bold text-900 m-0 mb-2">
-      <i class="pi pi-file-plus mr-2"></i>
-      Crear Nuevo Servicio
-    </h2>
-    <p class="text-600 m-0">Complete los pasos para registrar un nuevo servicio técnico</p>
+  <div class="flex align-items-start gap-2 mb-4">
+    <p-button
+      icon="pi pi-arrow-left"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      (onClick)="goBack()">
+    </p-button>
+    <div>
+      <h2 class="text-3xl font-bold text-900 m-0 mb-2">
+        <i class="pi pi-file-plus mr-2"></i>
+        Nuevo Servicio
+      </h2>
+      <p class="text-600 m-0">Complete los pasos para registrar un nuevo servicio técnico</p>
+    </div>
   </div>
 
   <!-- Stepper -->

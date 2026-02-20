@@ -38,11 +38,26 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class ServicioServiceImpl implements ServicioService {
+
+    private static final Map<EstadoServicio, Set<EstadoServicio>> TRANSICIONES_VALIDAS = Map.ofEntries(
+        Map.entry(EstadoServicio.RECIBIDO,                      Set.of(EstadoServicio.PRESUPUESTADO, EstadoServicio.RECHAZADO)),
+        Map.entry(EstadoServicio.ESPERANDO_EVALUACION_GARANTIA, Set.of(EstadoServicio.EN_REPARACION, EstadoServicio.GARANTIA_SIN_REPARACION, EstadoServicio.GARANTIA_RECHAZADA)),
+        Map.entry(EstadoServicio.PRESUPUESTADO,                 Set.of(EstadoServicio.APROBADO, EstadoServicio.RECHAZADO)),
+        Map.entry(EstadoServicio.APROBADO,                      Set.of(EstadoServicio.EN_REPARACION)),
+        Map.entry(EstadoServicio.EN_REPARACION,                 Set.of(EstadoServicio.TERMINADO, EstadoServicio.ESPERANDO_EVALUACION_GARANTIA)),
+        Map.entry(EstadoServicio.TERMINADO,                     Set.of(EstadoServicio.FINALIZADO)),
+        Map.entry(EstadoServicio.GARANTIA_SIN_REPARACION,       Set.of(EstadoServicio.FINALIZADO)),
+        Map.entry(EstadoServicio.RECHAZADO,                     Set.of()),
+        Map.entry(EstadoServicio.GARANTIA_RECHAZADA,            Set.of()),
+        Map.entry(EstadoServicio.FINALIZADO,                    Set.of())
+    );
 
     @Autowired
     private ServicioRepository servicioRepository;
@@ -103,7 +118,7 @@ public class ServicioServiceImpl implements ServicioService {
         servicio.setAbonaVisita(servicioCreateDto.getAbonaVisita() != null ? servicioCreateDto.getAbonaVisita() : false);
         servicio.setMontoVisita(servicioCreateDto.getMontoVisita() != null ? servicioCreateDto.getMontoVisita() : BigDecimal.ZERO);
         servicio.setMontoPagado(servicioCreateDto.getMontoPagado());
-        servicio.setEstado(EstadoServicio.RECIBIDO);
+        servicio.setEstado(esGarantia ? EstadoServicio.ESPERANDO_EVALUACION_GARANTIA : EstadoServicio.RECIBIDO);
         servicio.setFechaCreacion(LocalDateTime.now());
         servicio.setFechaRecepcion(LocalDate.now());
 
@@ -336,6 +351,14 @@ public class ServicioServiceImpl implements ServicioService {
                 .orElseThrow(() -> new ServicioNotFoundException("Servicio no encontrado con ID: " + id));
 
         EstadoServicio estadoAnterior = servicio.getEstado();
+
+        Set<EstadoServicio> permitidos = TRANSICIONES_VALIDAS.getOrDefault(estadoAnterior, Set.of());
+        if (!permitidos.contains(nuevoEstado)) {
+            throw new IllegalStateException(
+                String.format("Transición de estado inválida: %s → %s", estadoAnterior, nuevoEstado)
+            );
+        }
+
         servicio.setEstado(nuevoEstado);
 
         // Si el servicio cambia a TERMINADO y no tiene fechaDevolucionReal, establecerla automáticamente

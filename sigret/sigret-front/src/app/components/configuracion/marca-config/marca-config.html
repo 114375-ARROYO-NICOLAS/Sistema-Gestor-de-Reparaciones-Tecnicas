@@ -76,17 +76,17 @@
 
     <form [formGroup]="marcaForm" (ngSubmit)="saveMarca()">
       <div class="mb-3">
-        <label for="descripcion" class="form-label">Descripción <span class="text-danger">*</span></label>
+        <label for="descripcion" class="block font-medium mb-2">Descripción <span class="text-red-500">*</span></label>
         <input
           pInputText
           id="descripcion"
           formControlName="descripcion"
-          class="w-100"
+          class="w-full"
           placeholder="Ingrese descripción de la marca"
           maxlength="100" />
 
         @if (marcaForm.get('descripcion')?.invalid && marcaForm.get('descripcion')?.touched) {
-          <small class="text-danger d-block mt-1">
+          <small class="text-red-500 block mt-1">
             @if (marcaForm.get('descripcion')?.errors?.['required']) {
               La descripción es requerida
             }

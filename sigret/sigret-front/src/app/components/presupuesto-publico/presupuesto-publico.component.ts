@@ -1,5 +1,4 @@
 import { Component, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { PresupuestoPublicoService } from '../../services/presupuesto-publico.service';
 import { PresupuestoPublico } from '../../models/presupuesto.model';
@@ -9,17 +8,18 @@ import { ButtonModule } from 'primeng/button';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { DividerModule } from 'primeng/divider';
 import { TableModule } from 'primeng/table';
+import { ToastModule } from 'primeng/toast';
 import { finalize } from 'rxjs';
 
 @Component({
   selector: 'app-presupuesto-publico',
   imports: [
-    CommonModule,
     CardModule,
     ButtonModule,
     ProgressSpinnerModule,
     DividerModule,
-    TableModule
+    TableModule,
+    ToastModule
   ],
   templateUrl: './presupuesto-publico.component.html',
   styleUrl: './presupuesto-publico.component.scss',
@@ -35,9 +35,9 @@ export class PresupuestoPublicoComponent implements OnInit {
   readonly cargando = signal<boolean>(true);
   readonly error = signal<string | null>(null);
   readonly procesando = signal<boolean>(false);
-  readonly accion = signal<'aprobar' | 'rechazar' | null>(null);
   readonly accionCompletada = signal<boolean>(false);
   readonly mensajeExito = signal<string>('');
+
   readonly estaVencido = computed(() => this.presupuesto()?.vencido === true);
   readonly yaRespondido = computed(() => {
     const estado = this.presupuesto()?.estado;
@@ -46,15 +46,12 @@ export class PresupuestoPublicoComponent implements OnInit {
 
   ngOnInit(): void {
     const token = this.route.snapshot.paramMap.get('token');
-    const accionParam = this.route.snapshot.paramMap.get('accion');
 
     if (!token) {
       this.error.set('Token inválido');
       this.cargando.set(false);
       return;
     }
-
-    this.accion.set(accionParam as 'aprobar' | 'rechazar');
 
     this.service.obtenerPorToken(token).subscribe({
       next: (presupuesto) => {
@@ -68,28 +65,39 @@ export class PresupuestoPublicoComponent implements OnInit {
     });
   }
 
-  confirmarAccion(): void {
+  aprobarDirecto(precio: 'ORIGINAL' | 'ALTERNATIVO'): void {
     const token = this.route.snapshot.paramMap.get('token');
-    const accion = this.accion();
-
-    if (!token || !accion) return;
+    if (!token) return;
 
     this.procesando.set(true);
-
-    const request$ = accion === 'aprobar'
-      ? this.service.aprobar(token)
-      : this.service.rechazar(token);
-
-    request$.pipe(finalize(() => this.procesando.set(false)))
+    this.service.aprobar(token, precio)
+      .pipe(finalize(() => this.procesando.set(false)))
       .subscribe({
         next: (response) => {
           this.accionCompletada.set(true);
           this.mensajeExito.set(response.message);
+        },
+        error: (err) => {
           this.messageService.add({
-            severity: 'success',
-            summary: 'Éxito',
-            detail: response.message
+            severity: 'error',
+            summary: 'Error',
+            detail: err.error?.message || 'Error al procesar la solicitud'
           });
+        }
+      });
+  }
+
+  rechazar(): void {
+    const token = this.route.snapshot.paramMap.get('token');
+    if (!token) return;
+
+    this.procesando.set(true);
+    this.service.rechazar(token)
+      .pipe(finalize(() => this.procesando.set(false)))
+      .subscribe({
+        next: (response) => {
+          this.accionCompletada.set(true);
+          this.mensajeExito.set(response.message);
         },
         error: (err) => {
           this.messageService.add({

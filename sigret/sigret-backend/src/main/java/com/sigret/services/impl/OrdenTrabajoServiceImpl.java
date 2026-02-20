@@ -31,11 +31,20 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
 @Transactional
 public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
+
+    private static final Map<EstadoOrdenTrabajo, Set<EstadoOrdenTrabajo>> TRANSICIONES_VALIDAS = Map.of(
+        EstadoOrdenTrabajo.PENDIENTE,   Set.of(EstadoOrdenTrabajo.EN_PROGRESO, EstadoOrdenTrabajo.CANCELADA),
+        EstadoOrdenTrabajo.EN_PROGRESO, Set.of(EstadoOrdenTrabajo.TERMINADA, EstadoOrdenTrabajo.CANCELADA),
+        EstadoOrdenTrabajo.TERMINADA,   Set.of(),
+        EstadoOrdenTrabajo.CANCELADA,   Set.of()
+    );
 
     @Autowired
     private OrdenTrabajoRepository ordenTrabajoRepository;
@@ -218,6 +227,14 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
         OrdenTrabajo ordenTrabajo = ordenTrabajoRepository.findById(id)
                 .orElseThrow(() -> new OrdenTrabajoNotFoundException("Orden de trabajo no encontrada con ID: " + id));
 
+        EstadoOrdenTrabajo estadoAnterior = ordenTrabajo.getEstado();
+        Set<EstadoOrdenTrabajo> permitidos = TRANSICIONES_VALIDAS.getOrDefault(estadoAnterior, Set.of());
+        if (!permitidos.contains(nuevoEstado)) {
+            throw new IllegalStateException(
+                String.format("Transición de estado inválida: %s → %s", estadoAnterior, nuevoEstado)
+            );
+        }
+
         ordenTrabajo.setEstado(nuevoEstado);
         OrdenTrabajo ordenTrabajoActualizada = ordenTrabajoRepository.save(ordenTrabajo);
 
@@ -392,12 +409,12 @@ public class OrdenTrabajoServiceImpl implements OrdenTrabajoService {
     @Override
     public String generarNumeroOrdenTrabajo() {
         String year = String.valueOf(LocalDate.now().getYear()).substring(2); // Últimos 2 dígitos del año
-        String pattern = "ODT" + year + "%";
+        String pattern = "OT" + year + "%";
 
         Integer maxNumero = ordenTrabajoRepository.findMaxNumeroOrdenTrabajo(pattern);
         int siguienteNumero = (maxNumero != null ? maxNumero : 0) + 1;
 
-        return String.format("ODT%s%05d", year, siguienteNumero);
+        return String.format("OT%s%05d", year, siguienteNumero);
     }
 
     @Override

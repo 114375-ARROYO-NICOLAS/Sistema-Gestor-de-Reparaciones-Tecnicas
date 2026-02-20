@@ -1,8 +1,17 @@
 <div class="profile-container">
   <!-- Header -->
-  <div class="mb-4">
-    <h2 class="text-2xl font-bold text-900 m-0">Mi Perfil</h2>
-    <p class="text-600 mt-2">Gestiona tu información personal y configuración de cuenta</p>
+  <div class="flex align-items-start gap-2 mb-4">
+    <p-button
+      icon="pi pi-arrow-left"
+      [text]="true"
+      [rounded]="true"
+      severity="secondary"
+      (onClick)="goBack()">
+    </p-button>
+    <div>
+      <h2 class="text-2xl font-bold text-900 m-0">Mi Perfil</h2>
+      <p class="text-600 mt-2">Gestiona tu información personal y configuración de cuenta</p>
+    </div>
   </div>
 
   @if (isLoading()) {

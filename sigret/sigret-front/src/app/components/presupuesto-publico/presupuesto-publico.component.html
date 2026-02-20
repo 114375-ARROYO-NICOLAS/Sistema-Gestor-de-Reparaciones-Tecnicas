@@ -1,3 +1,5 @@
+<p-toast></p-toast>
+
 <div class="min-h-screen bg-gray-50 py-6">
   <div class="container mx-auto px-4 max-w-4xl">
 
@@ -40,11 +42,17 @@
     @else if (presupuesto()) {
       <div class="flex flex-column gap-4">
 
-        <!-- Header Card -->
+        <!-- Header Card con logo de la empresa -->
         <p-card>
-          <div class="text-center">
-            <h1 class="text-3xl font-bold mb-2">Presupuesto {{ presupuesto()!.numeroPresupuesto }}</h1>
-            <p class="text-lg text-color-secondary">SIGRET - Sistema de Gestión de Reparaciones</p>
+          <div class="text-center py-2">
+            <img
+              src="assets/logos/logo-horizontal-original.png"
+              alt="Arroyo Electromecánica"
+              style="max-height: 70px; width: auto;"
+              class="mb-3">
+            <p class="text-color-secondary font-medium">
+              Presupuesto Nº {{ presupuesto()!.numeroPresupuesto }}
+            </p>
           </div>
         </p-card>
 
@@ -87,7 +95,7 @@
 
         <!-- Budget Details Table -->
         <p-card header="Detalle del Presupuesto">
-          <p-table [value]="presupuesto()!.detalles" [tableStyle]="{ 'min-width': '100%' }">
+          <p-table [value]="presupuesto()!.detalles" [tableStyle]="{ 'min-width': '28rem' }">
             <ng-template pTemplate="header">
               <tr>
                 <th>Ítem</th>
@@ -168,49 +176,95 @@
                 Este presupuesto ha vencido. Por favor contacte al técnico.
               </p>
             </div>
-          } @else {
-            <div class="text-center">
-              <h3 class="text-xl font-semibold mb-4">
-                {{ accion() === 'aprobar' ? '¿Desea aprobar este presupuesto?' : '¿Desea rechazar este presupuesto?' }}
-              </h3>
+          } @else if (presupuesto()!.mostrarOriginal && presupuesto()!.mostrarAlternativo) {
+            <!-- Dual price: two option cards -->
+            <div class="text-center mb-4">
+              <h3 class="text-xl font-semibold mb-1">¿Qué opción desea aprobar?</h3>
+              <p class="text-color-secondary text-sm">Seleccione la opción de precio que prefiere, o rechace el presupuesto.</p>
+            </div>
 
-              @if (accion() === 'aprobar') {
-                <p class="text-color-secondary mb-4">
-                  Al aprobar, el taller comenzará con la reparación de su equipo.
-                </p>
+            <div class="grid">
+              <div class="col-12 md:col-6">
+                <div class="border-round border-2 border-primary p-4 flex flex-column align-items-center gap-3 h-full">
+                  <p class="font-bold text-lg m-0">Con Repuestos Originales</p>
+                  <p class="text-3xl font-bold text-primary m-0">
+                    {{ formatCurrency(presupuesto()!.montoTotalOriginal) }}
+                  </p>
+                  <p-button
+                    label="Aprobar esta opción"
+                    icon="pi pi-check"
+                    severity="success"
+                    [loading]="procesando()"
+                    (onClick)="aprobarDirecto('ORIGINAL')">
+                  </p-button>
+                </div>
+              </div>
+              <div class="col-12 md:col-6">
+                <div class="border-round border-2 border-green-500 p-4 flex flex-column align-items-center gap-3 h-full">
+                  <p class="font-bold text-lg m-0">Con Repuestos Alternativos</p>
+                  <p class="text-3xl font-bold text-green-600 m-0">
+                    {{ formatCurrency(presupuesto()!.montoTotalAlternativo) }}
+                  </p>
+                  <p-button
+                    label="Aprobar esta opción"
+                    icon="pi pi-check"
+                    severity="success"
+                    [loading]="procesando()"
+                    (onClick)="aprobarDirecto('ALTERNATIVO')">
+                  </p-button>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-4 pt-3 border-top-1 surface-border">
+              <p class="text-color-secondary text-sm mb-3">Si no desea proceder con la reparación:</p>
+              <p-button
+                label="Rechazar presupuesto"
+                icon="pi pi-times"
+                severity="danger"
+                [outlined]="true"
+                [loading]="procesando()"
+                (onClick)="rechazar()">
+              </p-button>
+            </div>
+
+          } @else {
+            <!-- Single price: direct approve / reject -->
+            <div class="text-center">
+              <h3 class="text-xl font-semibold mb-2">¿Cuál es su decisión?</h3>
+              <p class="text-color-secondary mb-5 text-sm">Confirme si desea aprobar o rechazar el presupuesto.</p>
+
+              <div class="flex gap-3 justify-content-center flex-wrap">
                 <p-button
-                  label="Confirmar Aprobación"
+                  label="Aprobar presupuesto"
                   icon="pi pi-check"
                   severity="success"
                   size="large"
                   [loading]="procesando()"
-                  (onClick)="confirmarAccion()">
+                  (onClick)="aprobarDirecto(presupuesto()!.mostrarAlternativo ? 'ALTERNATIVO' : 'ORIGINAL')">
                 </p-button>
-              } @else {
-                <p class="text-color-secondary mb-4">
-                  Al rechazar, el presupuesto será cancelado. Si desea hacer consultas, contacte al taller.
-                </p>
                 <p-button
-                  label="Confirmar Rechazo"
+                  label="Rechazar presupuesto"
                   icon="pi pi-times"
                   severity="danger"
+                  [outlined]="true"
                   size="large"
                   [loading]="procesando()"
-                  (onClick)="confirmarAccion()">
+                  (onClick)="rechazar()">
                 </p-button>
-              }
+              </div>
             </div>
           }
         </p-card>
 
         <!-- Footer Info -->
-        <div class="text-center text-sm text-500 mt-4">
+        <div class="text-center text-sm text-500 mt-2">
           @if (presupuesto()!.fechaVencimiento) {
             <p>Este link es válido hasta el {{ formatFecha(presupuesto()!.fechaVencimiento) }}.</p>
           } @else {
             <p>Este link es de un solo uso.</p>
           }
-          <p>Si tiene alguna consulta, por favor responda al email recibido.</p>
+          <p>Si tiene alguna consulta, por favor contacte al taller.</p>
         </div>
 
       </div>

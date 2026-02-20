@@ -1,0 +1,5 @@
+# Variables de entorno (credenciales)
+.env
+
+# Dumps de base de datos (pueden contener datos reales)
+init/*.sql

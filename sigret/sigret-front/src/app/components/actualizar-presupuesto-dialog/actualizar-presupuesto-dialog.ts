@@ -144,7 +144,11 @@ export class ActualizarPresupuestoDialog {
   }
 
   onConfirm(): void {
-    if (!this.formulario || this.formulario.invalid || !this.presupuesto()) {
+    if (!this.formulario || !this.presupuesto()) return;
+
+    this.formulario.markAllAsTouched();
+
+    if (this.formulario.invalid) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error',

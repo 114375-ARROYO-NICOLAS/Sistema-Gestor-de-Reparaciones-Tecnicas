@@ -1,6 +1,7 @@
 import { Component, signal, computed, ChangeDetectionStrategy, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Button } from 'primeng/button';
 
 interface FAQ {
   question: string;
@@ -18,13 +19,18 @@ interface Module {
 
 @Component({
   selector: 'app-faq',
-  imports: [CommonModule],
+  imports: [CommonModule, Button],
   templateUrl: './faq.html',
   styleUrl: './faq.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FaqComponent {
   private sanitizer = inject(DomSanitizer);
+  private readonly location = inject(Location);
+
+  goBack(): void {
+    this.location.back();
+  }
 
   selectedModuleId = signal<string>('servicios');
 

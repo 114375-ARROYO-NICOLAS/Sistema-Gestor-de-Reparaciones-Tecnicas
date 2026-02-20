@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CdkDragDrop, CdkDrag, CdkDropList, CdkDropListGroup, transferArrayItem } from '@angular/cdk/drag-drop';
@@ -41,6 +41,7 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
   private readonly budgetService = inject(PresupuestoService);
   private readonly wsService = inject(WebSocketService);
   private readonly messageService = inject(MessageService);
+  private readonly location = inject(Location);
 
   private wsSubscription?: Subscription;
 
@@ -88,6 +89,10 @@ export class BudgetBoardComponent implements OnInit, OnDestroy {
       budgets: []
     }
   ];
+
+  goBack(): void {
+    this.location.back();
+  }
 
   ngOnInit(): void {
     this.loadBudgets();

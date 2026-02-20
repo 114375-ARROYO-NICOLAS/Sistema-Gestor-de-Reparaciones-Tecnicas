@@ -8,9 +8,9 @@
   width: 100% !important;
   height: 200px !important;
   touch-action: none;
-  border: 1px dashed #ccc;
+  border: 1px dashed var(--surface-border);
   border-radius: 6px;
-  background: white;
+  background: #ffffff;
 
   &.pointer-events-none {
     cursor: not-allowed;

@@ -1,19 +1,16 @@
 <div class="presupuesto-detail-container p-4">
   <!-- Header with Back Button -->
   <div class="flex justify-content-between align-items-center mb-4">
-    <h2 class="text-3xl font-semibold m-0">
-      @if (modoCreacion()) {
-        Crear Presupuesto
-      } @else {
-        Detalle del Presupuesto
-      }
-    </h2>
-    <p-button
-      label="Volver"
-      icon="pi pi-arrow-left"
-      [outlined]="true"
-      (onClick)="goBack()">
-    </p-button>
+    <div class="flex align-items-center gap-2">
+      <p-button
+        icon="pi pi-arrow-left"
+        [text]="true"
+        [rounded]="true"
+        severity="secondary"
+        (onClick)="goBack()">
+      </p-button>
+      <h2 class="text-3xl font-semibold m-0">Presupuesto</h2>
+    </div>
   </div>
 
   <!-- Loading State -->
@@ -513,7 +510,7 @@
             </div>
 
             <ng-template pTemplate="footer">
-              <div class="flex justify-content-between align-items-center">
+              <div class="flex flex-wrap justify-content-between align-items-center gap-3">
                 <div class="flex align-items-center gap-2 text-sm text-color-secondary">
                   @if (presupuesto()!.empleadoNombre) {
                     <i class="pi pi-user"></i>
@@ -523,7 +520,7 @@
                   }
                 </div>
 
-                <div class="flex gap-2">
+                <div class="flex flex-wrap gap-2">
                   <p-button
                     label="Volver"
                     severity="secondary"

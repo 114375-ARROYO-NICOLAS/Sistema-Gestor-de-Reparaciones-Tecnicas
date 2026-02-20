@@ -1,4 +1,5 @@
 import { Component, OnInit, OnDestroy, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import { Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription, interval, Subject } from 'rxjs';
@@ -34,6 +35,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private readonly themeService = inject(ThemeService);
   private readonly wsService = inject(WebSocketService);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
 
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
@@ -62,6 +64,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   readonly ordenesPorEmpleadoData = computed(() => this.buildOrdenesPorEmpleadoData());
   readonly garantiasPorTipoData = computed(() => this.buildGarantiasPorTipoData());
   readonly chartOptions = computed(() => this.buildChartOptions());
+  readonly circularChartOptions = computed(() => this.buildCircularChartOptions());
   readonly barChartOptions = computed(() => this.buildBarChartOptions());
   readonly horizontalBarOptions = computed(() => this.buildHorizontalBarOptions());
 
@@ -71,6 +74,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private subscriptions: Subscription[] = [];
   private refreshTrigger = new Subject<void>();
+
+  goBack(): void {
+    this.location.back();
+  }
 
   ngOnInit(): void {
     this.cargarEstadisticas();
@@ -284,6 +291,20 @@ export class DashboardComponent implements OnInit, OnDestroy {
       plugins: {
         legend: {
           labels: { color: textColor, usePointStyle: true, padding: 16 }
+        }
+      },
+      responsive: true,
+      maintainAspectRatio: false,
+    };
+  }
+
+  private buildCircularChartOptions(): unknown {
+    const textColor = this.isDarkMode() ? '#eee' : '#495057';
+    return {
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { color: textColor, usePointStyle: true, padding: 12 }
         }
       },
       responsive: true,

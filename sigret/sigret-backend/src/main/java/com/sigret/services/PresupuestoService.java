@@ -98,4 +98,9 @@ public interface PresupuestoService {
      * Actualizar presupuesto enviado (fecha, precios) y opcionalmente reenviar al cliente
      */
     PresupuestoResponseDto actualizarYReenviar(Long id, PresupuestoActualizarReenviarDto dto);
+
+    /**
+     * Marcar presupuesto como ENVIADO guardando qué opciones de precio se muestran al cliente
+     */
+    PresupuestoResponseDto marcarComoEnviado(Long id, Boolean mostrarOriginal, Boolean mostrarAlternativo);
 }

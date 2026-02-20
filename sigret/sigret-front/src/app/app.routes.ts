@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard, loginGuard } from './guards/auth.guard';
+import { authGuard, loginGuard, propietarioGuard, propietarioAdminGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   {
@@ -19,7 +19,8 @@ export const routes: Routes = [
       },
       {
         path: 'dashboard',
-        loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent)
+        loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent),
+        canActivate: [propietarioGuard]
       },
       {
         path: 'clientes',
@@ -40,6 +41,7 @@ export const routes: Routes = [
       },
       {
         path: 'empleados',
+        canActivate: [propietarioAdminGuard],
         children: [
           {
             path: '',
@@ -57,7 +59,8 @@ export const routes: Routes = [
       },
       {
         path: 'usuarios',
-        loadComponent: () => import('./components/user-management/user-management.component').then(m => m.UserManagementComponent)
+        loadComponent: () => import('./components/user-management/user-management.component').then(m => m.UserManagementComponent),
+        canActivate: [propietarioAdminGuard]
       },
       {
         path: 'equipos',
@@ -111,6 +114,7 @@ export const routes: Routes = [
       },
       {
         path: 'presupuestos',
+        canActivate: [propietarioAdminGuard],
         children: [
           {
             path: '',
@@ -137,6 +141,7 @@ export const routes: Routes = [
       },
       {
         path: 'configuracion',
+        canActivate: [propietarioGuard],
         children: [
           {
             path: 'tipos-equipo',
@@ -167,11 +172,15 @@ export const routes: Routes = [
     ]
   },
   {
+    path: 'p/:token',
+    loadComponent: () => import('./components/presupuesto-publico/presupuesto-publico.component').then(m => m.PresupuestoPublicoComponent)
+  },
+  {
     path: 'p/:token/:accion',
     loadComponent: () => import('./components/presupuesto-publico/presupuesto-publico.component').then(m => m.PresupuestoPublicoComponent)
   },
   {
     path: '**',
-    redirectTo: '/dashboard'
+    redirectTo: '/servicios'
   }
 ];

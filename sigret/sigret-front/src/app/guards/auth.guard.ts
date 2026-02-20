@@ -19,9 +19,44 @@ export const loginGuard = () => {
   const router = inject(Router);
 
   if (authService.isAuthenticated()) {
-    router.navigate(['/dashboard']);
+    const rol = authService.user()?.rol;
+    const destino = rol === 'PROPIETARIO' ? '/dashboard' : '/servicios';
+    router.navigate([destino]);
     return false;
   } else {
     return true;
   }
+};
+
+// Solo PROPIETARIO
+export const propietarioGuard = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isAuthenticated()) {
+    router.navigate(['/login']);
+    return false;
+  }
+  if (authService.user()?.rol === 'PROPIETARIO') {
+    return true;
+  }
+  router.navigate(['/servicios']);
+  return false;
+};
+
+// PROPIETARIO o ADMINISTRATIVO
+export const propietarioAdminGuard = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+
+  if (!authService.isAuthenticated()) {
+    router.navigate(['/login']);
+    return false;
+  }
+  const rol = authService.user()?.rol;
+  if (rol === 'PROPIETARIO' || rol === 'ADMINISTRATIVO') {
+    return true;
+  }
+  router.navigate(['/servicios']);
+  return false;
 };

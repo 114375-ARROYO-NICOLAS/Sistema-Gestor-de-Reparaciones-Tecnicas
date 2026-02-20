@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, inject, computed, ChangeDetectionStrategy } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { ServicioService } from '../../services/servicio.service';
 import { ServicioList, EstadoServicio } from '../../models/servicio.model';
@@ -31,6 +31,7 @@ export class ServiciosEliminadosComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
 
   readonly loading = signal<boolean>(true);
   readonly servicios = signal<ServicioList[]>([]);
@@ -61,6 +62,10 @@ export class ServiciosEliminadosComponent implements OnInit {
     [EstadoServicio.GARANTIA_RECHAZADA]: 'Garantía Rechazada',
     [EstadoServicio.FINALIZADO]: 'Finalizado'
   };
+
+  goBack(): void {
+    this.location.back();
+  }
 
   ngOnInit(): void {
     this.cargarServicios();

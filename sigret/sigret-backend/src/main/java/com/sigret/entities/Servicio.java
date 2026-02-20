@@ -101,7 +101,7 @@ public class Servicio {
     private BigDecimal montoPagado;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "estado", nullable = false)
+    @Column(name = "estado", nullable = false, columnDefinition = "VARCHAR(50)")
     private EstadoServicio estado = EstadoServicio.RECIBIDO;
 
     @Column(name = "fecha_creacion", nullable = false)

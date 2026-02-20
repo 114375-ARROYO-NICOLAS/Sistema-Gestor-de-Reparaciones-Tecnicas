@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, computed, inject, ChangeDetectionStrategy, effect, ElementRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
 import { MessageService, ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -74,6 +74,7 @@ export class EmployeeManagementComponent implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly router = inject(Router);
   public readonly employeeService = inject(EmployeeService);
+  private readonly location = inject(Location);
 
   // Signals
   public readonly employees = signal<EmployeeListDto[]>([]);
@@ -116,11 +117,6 @@ export class EmployeeManagementComponent implements OnInit {
     { label: 'Inactivos', value: false }
   ];
 
-  // Computed signals
-  public readonly totalEmployees = computed(() => this.totalRecords());
-  public readonly activeEmployees = computed(() => this.employees().filter(e => e.activo).length);
-  public readonly employeesWithUsers = computed(() => this.employees().filter(e => e.tieneUsuario).length);
-  
   // Check if addresses have changed
   public readonly addressesChanged = computed(() => {
     const current = this.addresses();
@@ -165,6 +161,10 @@ export class EmployeeManagementComponent implements OnInit {
     
     // Initialize form valid state
     this.formValid.set(this.employeeForm.valid);
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   ngOnInit(): void {

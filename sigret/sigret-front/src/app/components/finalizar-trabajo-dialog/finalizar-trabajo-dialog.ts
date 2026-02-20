@@ -16,7 +16,7 @@ import { Dialog } from 'primeng/dialog';
 import { Button } from 'primeng/button';
 import { Checkbox } from 'primeng/checkbox';
 import { Tag } from 'primeng/tag';
-import { MessageService } from 'primeng/api';
+import { MessageService, PrimeTemplate } from 'primeng/api';
 import { ServicioService } from '../../services/servicio.service';
 import SignaturePad from 'signature_pad';
 
@@ -28,7 +28,8 @@ import SignaturePad from 'signature_pad';
     Dialog,
     Button,
     Checkbox,
-    Tag
+    Tag,
+    PrimeTemplate
   ],
   templateUrl: './finalizar-trabajo-dialog.html',
   styleUrl: './finalizar-trabajo-dialog.scss'

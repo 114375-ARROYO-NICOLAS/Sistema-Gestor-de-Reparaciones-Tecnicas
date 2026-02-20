@@ -2,6 +2,7 @@ package com.sigret.security;
 
 
 import com.sigret.services.CustomUserDetailsService;
+import com.sigret.services.TokenBlacklistService;
 import com.sigret.utilities.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -26,6 +27,9 @@ public class JwtAuthenticationFilter extends  OncePerRequestFilter {
     @Autowired
     private CustomUserDetailsService userDetailsService;
 
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
@@ -38,6 +42,13 @@ public class JwtAuthenticationFilter extends  OncePerRequestFilter {
         // JWT Token está en el formato "Bearer token". Remover Bearer palabra y obtener solo el Token
         if (requestTokenHeader != null && requestTokenHeader.startsWith("Bearer ")) {
             jwtToken = requestTokenHeader.substring(7);
+
+            if (tokenBlacklistService.isBlacklisted(jwtToken)) {
+                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                response.getWriter().write("{\"error\":\"Token invalidado por logout\"}");
+                return;
+            }
+
             try {
                 username = jwtUtil.getUsernameFromToken(jwtToken);
             } catch (Exception e) {

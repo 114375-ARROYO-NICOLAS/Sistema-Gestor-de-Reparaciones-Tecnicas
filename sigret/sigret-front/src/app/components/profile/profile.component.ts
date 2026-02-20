@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, inject } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -37,6 +37,7 @@ export class ProfileComponent implements OnInit {
   private readonly userService = inject(UserService);
   private readonly messageService = inject(MessageService);
   private readonly fb = inject(FormBuilder);
+  private readonly location = inject(Location);
 
   // Signals
   public readonly profile = signal<UserProfile | null>(null);
@@ -49,6 +50,10 @@ export class ProfileComponent implements OnInit {
 
   constructor() {
     this.changePasswordForm = this.createPasswordForm();
+  }
+
+  goBack(): void {
+    this.location.back();
   }
 
   ngOnInit(): void {

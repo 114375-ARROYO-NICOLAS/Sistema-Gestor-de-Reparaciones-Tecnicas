@@ -33,12 +33,21 @@
             [minDate]="minFechaVencimiento"
             dateFormat="dd/mm/yy"
             placeholder="Seleccionar fecha"
-            styleClass="w-full">
+            styleClass="w-full"
+            [class.ng-invalid]="formulario.get('fechaVencimiento')?.invalid && formulario.get('fechaVencimiento')?.touched"
+            [class.ng-dirty]="formulario.get('fechaVencimiento')?.touched">
           </p-datepicker>
-          <small class="text-color-secondary">
-            <i class="pi pi-info-circle mr-1"></i>
-            El token del cliente expirara en esta fecha
-          </small>
+          @if (formulario.get('fechaVencimiento')?.invalid && formulario.get('fechaVencimiento')?.touched) {
+            <small class="text-red-500">
+              <i class="pi pi-exclamation-circle mr-1"></i>
+              La fecha de vencimiento es obligatoria
+            </small>
+          } @else {
+            <small class="text-color-secondary">
+              <i class="pi pi-info-circle mr-1"></i>
+              El token del cliente expirará en esta fecha
+            </small>
+          }
         </div>
 
         <!-- Items del Presupuesto -->
@@ -185,7 +194,7 @@
         severity="success"
         (onClick)="onConfirm()"
         [loading]="guardando()"
-        [disabled]="formulario.invalid">
+        [disabled]="!formulario || formulario.invalid">
       </p-button>
     </div>
   </ng-template>

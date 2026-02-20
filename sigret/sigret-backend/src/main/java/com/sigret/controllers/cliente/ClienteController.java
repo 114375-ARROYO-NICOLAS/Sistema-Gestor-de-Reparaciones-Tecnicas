@@ -142,7 +142,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "200", description = "Cliente eliminado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<Void> eliminarCliente(
             @Parameter(description = "ID del cliente") @PathVariable Long id) {
         clienteService.eliminarCliente(id);
@@ -154,7 +154,7 @@ public class ClienteController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Lista de clientes inactivos obtenida exitosamente")
     })
-    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<Page<ClienteListDto>> obtenerClientesInactivos(Pageable pageable) {
         Page<ClienteListDto> clientes = clienteService.obtenerClientesInactivos(pageable);
         return ResponseEntity.ok(clientes);
@@ -166,7 +166,7 @@ public class ClienteController {
             @ApiResponse(responseCode = "200", description = "Cliente reactivado exitosamente"),
             @ApiResponse(responseCode = "404", description = "Cliente no encontrado")
     })
-    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO')")
+    @PreAuthorize("hasAnyRole('PROPIETARIO', 'ADMINISTRATIVO', 'TECNICO')")
     public ResponseEntity<Void> reactivarCliente(
             @Parameter(description = "ID del cliente") @PathVariable Long id) {
         clienteService.reactivarCliente(id);

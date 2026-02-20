@@ -23,6 +23,15 @@
   height: 320px;
 }
 
+// Centra y fuerza forma cuadrada para gráficos pie/doughnut
+// El canvas de Chart.js (maintainAspectRatio: false) rellena este cuadrado → círculo perfecto
+.circular-wrapper {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
 @media (max-width: 768px) {
   .text-3xl {
     font-size: 1.75rem !important;
